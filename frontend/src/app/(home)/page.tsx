@@ -29,11 +29,11 @@ export default function Home() {
             <HeroSection />
             <BentoSection />
             {/* <AgentShowcaseSection /> */}
-            <OpenSourceSection />
+            {/* <OpenSourceSection /> */}
             <PricingSection />
             {/* <TestimonialSection /> */}
             {/* <FAQSection /> */}
-            <CTASection />
+            {/* <CTASection /> */}
             <FooterSection />
           </div>
         </main>

@@ -2,8 +2,8 @@ from agent.prompts.prompt import SYSTEM_PROMPT
 
 # Suna default configuration - simplified and centralized
 SUNA_CONFIG = {
-    "name": "Suna",
-    "description": "Suna is your AI assistant with access to various tools and integrations to help you with tasks across domains.",
+    "name": "Xera",
+    "description": "Xera is your AI assistant with access to various tools and integrations to help you with tasks across domains.",
     "avatar": "🌞",
     "avatar_color": "#F59E0B",
     "model": "openai/gpt-5-mini",
@@ -24,7 +24,6 @@ SUNA_CONFIG = {
         "sb_sheets_tool": False,
         "browser_tool": True,
         "data_providers_tool": True,
-        # "sb_web_dev_tool": True,
         "agent_config_tool": True,
         "agent_creation_tool": True,
         "mcp_search_tool": True,

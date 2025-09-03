@@ -1,5 +1,6 @@
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BootScreen } from '@/components/thread/tool-call-side-panel';
 import { ChatInput } from '@/components/thread/chat-input/chat-input';
 import { cn } from '@/lib/utils';
 
@@ -214,14 +215,10 @@ export function ThreadSkeleton({
                 </div>
             </div>
 
-            {/* Side Panel - Always visible in skeleton with exact responsive widths */}
+            {/* Side Panel - Always visible in skeleton; render boot screen for consistency */}
             <div className="hidden sm:block">
-                <div className="h-screen w-[90%] sm:w-[450px] md:w-[500px] lg:w-[550px] xl:w-[650px] border-l">
-                    <div className="p-4">
-                        <Skeleton className="h-8 w-32 mb-4" />
-                        <Skeleton className="h-20 w-full rounded-md mb-4" />
-                        <Skeleton className="h-40 w-full rounded-md" />
-                    </div>
+                <div className="h-screen w-[90%] sm:w-[450px] md:w-[500px] lg:w-[550px] xl:w-[650px] border-l flex flex-col">
+                    <BootScreen />
                 </div>
             </div>
         </div>

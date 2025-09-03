@@ -166,7 +166,7 @@ const LoggedInMenu: React.FC<UnifiedConfigMenuProps> = ({
                             <div className="flex items-center gap-2 min-w-0 max-w-[180px]">
                                 {renderAgentIcon(displayAgent)}
                                 <span className="truncate text-sm font-medium">
-                                    {displayAgent?.name || 'Suna'}
+                                    {displayAgent?.name || 'Xera'}
                                 </span>
                                 <ChevronDown size={12} className="opacity-60 flex-shrink-0" />
                             </div>
@@ -238,16 +238,18 @@ const LoggedInMenu: React.FC<UnifiedConfigMenuProps> = ({
 
                     {onAgentSelect && <DropdownMenuSeparator className="!mt-0" />}
 
-                    {/* Models */}
-                    <div className="px-1.5">
-                        <div className="px-3 py-1 text-[11px] font-medium text-muted-foreground">Models</div>
-                        <AgentModelSelector
-                            value={selectedModel}
-                            onChange={onModelChange}
-                            disabled={false}
-                            variant="menu-item"
-                        />
-                    </div>
+                    {/* Models (shown only when model options provided and onModelChange is meaningful) */}
+                    {modelOptions && modelOptions.length > 0 && typeof onModelChange === 'function' && (
+                        <div className="px-1.5">
+                            <div className="px-3 py-1 text-[11px] font-medium text-muted-foreground">Models</div>
+                            <AgentModelSelector
+                                value={selectedModel}
+                                onChange={onModelChange}
+                                disabled={false}
+                                variant="menu-item"
+                            />
+                        </div>
+                    )}
 
                     <DropdownMenuSeparator />
 
@@ -382,7 +384,7 @@ const GuestMenu: React.FC<UnifiedConfigMenuProps> = () => {
                                 <div className="flex-shrink-0">
                                     <KortixLogo size={20} />
                                 </div>
-                                <span className="truncate text-sm font-medium">Suna</span>
+                                <span className="truncate text-sm font-medium">Xera</span>
                                 <ChevronDown size={12} className="opacity-60 flex-shrink-0" />
                             </div>
                         </Button>

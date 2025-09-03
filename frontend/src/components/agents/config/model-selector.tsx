@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Check, Search, AlertTriangle, Crown, Cpu, Plus, Edit, Trash, KeyRound } from 'lucide-react';
+import { Check, Search, AlertTriangle, Crown, Plus, Edit, Trash, KeyRound, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -409,12 +409,6 @@ export function AgentModelSelector({
                     )}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="relative flex items-center justify-center">
-                        <Cpu className="h-4 w-4" />
-                        {MODELS[selectedModel]?.lowQuality && (
-                          <AlertTriangle className="h-2.5 w-2.5 text-amber-500 absolute -top-1 -right-1" />
-                        )}
-                      </div>
                       <span className="truncate">{selectedModelDisplay}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -431,18 +425,13 @@ export function AgentModelSelector({
                     variant="outline"
                     size="sm"
                     className={cn(
-                      "h-8 px-4 py-2",
+                      "h-8 px-3 py-2",
                       disabled && "opacity-50 cursor-not-allowed",
                       className
                     )}
                   >
-                    <div className="relative flex items-center justify-center">
-                      <Cpu className="h-4 w-4" />
-                      {MODELS[selectedModel]?.lowQuality && (
-                        <AlertTriangle className="h-2.5 w-2.5 text-amber-500 absolute -top-1 -right-1" />
-                      )}
-                    </div>
-                    <span className="text-sm">{selectedModelDisplay}</span>
+                    <span className="text-sm truncate max-w-[200px]">{selectedModelDisplay}</span>
+                    <ChevronDown className="ml-1.5 h-3.5 w-3.5 opacity-60" />
                   </Button>
                 )}
               </DropdownMenuTrigger>

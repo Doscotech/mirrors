@@ -33,25 +33,21 @@ export const metadata: Metadata = {
     template: `%s - ${siteConfig.name}`,
   },
   description:
-    'Kortix is a fully open source AI assistant that helps you accomplish real-world tasks with ease. Through natural conversation, Kortix becomes your digital companion for research, data analysis, and everyday challenges.',
+    'Xera is a SaaS platform to build, manage, and train your AI Workforce. Launch agents, connect tools, and orchestrate real work end-to-end with observability.',
   keywords: [
     'AI',
-    'artificial intelligence',
-    'browser automation',
-    'web scraping',
-    'file management',
-    'AI assistant',
-    'open source',
-    'research',
-    'data analysis',
+    'AI Worker',
+    'Generalist AI',
+    'Autonomous Agent',
+    'Agent Orchestration',
+    'Workflows',
+    'Observability',
   ],
-  authors: [{ name: 'Kortix Team', url: 'https://suna.so' }],
-  creator:
-    'Kortix Team',
-  publisher:
-    'Kortix Team',
+  authors: [{ name: 'Xera', url: siteConfig.url }],
+  creator: 'Xera',
+  publisher: 'Xera',
   category: 'Technology',
-  applicationName: 'Suna',
+  applicationName: 'Xera',
   formatDetection: {
     telephone: false,
     email: false,
@@ -66,17 +62,17 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'Suna - Open Source Generalist AI Worker',
+    title: 'Xera – Build, manage and train your AI Workforce',
     description:
-      'Suna is a fully open source AI assistant that helps you accomplish real-world tasks with ease through natural conversation.',
+      'Xera is a SaaS platform to build, manage, and train your AI Workforce. Launch agents, connect tools, and orchestrate real work end-to-end with observability.',
     url: siteConfig.url,
-    siteName: 'Suna',
+    siteName: 'Xera',
     images: [
       {
         url: '/banner.png',
         width: 1200,
         height: 630,
-        alt: 'Suna - Open Source Generalist AI Worker',
+        alt: 'Xera – Build, manage and train your AI Workforce',
         type: 'image/png',
       },
     ],
@@ -85,17 +81,17 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Suna - Open Source Generalist AI Worker',
+    title: 'Xera – Build, manage and train your AI Workforce',
     description:
-      'Suna is a fully open source AI assistant that helps you accomplish real-world tasks with ease through natural conversation.',
-    creator: '@kortixai',
-    site: '@kortixai',
+      'Xera is a SaaS platform to build, manage, and train your AI Workforce. Launch agents, connect tools, and orchestrate real work end-to-end with observability.',
+    creator: '@xera',
+    site: '@xera',
     images: [
       {
         url: '/banner.png',
         width: 1200,
         height: 630,
-        alt: 'Suna - Open Source Generalist AI Worker',
+        alt: 'Xera – Build, manage and train your AI Workforce',
       },
     ],
   },

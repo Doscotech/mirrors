@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
         right: 720,
       },
       title: fileName,
-      creator: 'Suna AI',
-      description: 'Document exported from Suna AI',
+  creator: 'Xera',
+  description: 'Document exported from Xera',
       font: 'Calibri',
       fontSize: 22,
     };

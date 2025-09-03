@@ -26,11 +26,10 @@ import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 import { Examples } from './examples';
 import { useThreadQuery } from '@/hooks/react-query/threads/use-threads';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
-import { KortixLogo } from '../sidebar/kortix-logo';
 import { AgentRunLimitDialog } from '@/components/thread/agent-run-limit-dialog';
-import { CustomAgentsSection } from './custom-agents-section';
 import { toast } from 'sonner';
 import { ReleaseBadge } from '../auth/release-badge';
+import { ModelSelectorBar } from '@/components/thread/ModelSelectorBar';
 import { useDashboardTour } from '@/hooks/use-dashboard-tour';
 import { TourConfirmationDialog } from '@/components/tour/TourConfirmationDialog';
 import { Calendar, MessageSquare, Plus, Sparkles, Zap } from 'lucide-react';
@@ -39,23 +38,23 @@ const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
 const dashboardTourSteps: Step[] = [
   {
-    target: '[data-tour="chat-input"]',
-    content: 'Type your questions or tasks here. Suna can help with research, analysis, automation, and much more.',
-    title: 'Start a Conversation',
-    placement: 'top',
-    disableBeacon: true,
-  },
-  {
-    target: '[data-tour="my-agents"]',
-    content: 'Create and manage your custom AI agents here. Build specialized agents for different tasks and workflows.',
-    title: 'Manage Your Agents',
-    placement: 'right',
+    target: '[data-tour="dashboard-title"]',
+    title: 'Welcome to Xera',
+    content: 'A clean workspace for getting things done. We\'ll show you the essentials in a few quick steps.',
+    placement: 'bottom',
     disableBeacon: true,
   },
   {
     target: '[data-tour="examples"]',
-    content: 'Get started quickly with these example prompts. Click any example to try it out.',
-    title: 'Example Prompts',
+    title: 'Example prompts',
+    content: 'Kickstart with curated prompts. Click any card to auto-fill the input below.',
+    placement: 'top',
+    disableBeacon: true,
+  },
+  {
+    target: '[data-tour="chat-input"]',
+    title: 'Start a conversation',
+    content: 'Describe what you need. Xera can research, analyze, and automate—drop files in too.',
     placement: 'top',
     disableBeacon: true,
   },
@@ -113,7 +112,7 @@ export function DashboardContent() {
   const selectedAgent = selectedAgentId
     ? agents.find(agent => agent.agent_id === selectedAgentId)
     : null;
-  const displayName = selectedAgent?.name || 'Suna';
+  const displayName = selectedAgent?.name || 'Xera';
   const agentAvatar = undefined;
   const isSunaAgent = selectedAgent?.metadata?.is_suna_default || false;
 
@@ -337,6 +336,9 @@ export function DashboardContent() {
         showUsageLimitAlert={true}
       />
       <div className="flex flex-col h-screen w-full overflow-hidden">
+        <div className="flex-none">
+          <ModelSelectorBar className="sticky top-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60" />
+        </div>
         <div className="flex-1 overflow-y-auto">
           <div className="min-h-full flex flex-col">
             {(
@@ -354,38 +356,37 @@ export function DashboardContent() {
                     What would you like to do today?
                   </p>
                 </div>
-                <div className="w-full" data-tour="chat-input">
-                  <ChatInput
-                    ref={chatInputRef}
-                    onSubmit={handleSubmit}
-                    loading={isSubmitting || isRedirecting}
-                    placeholder="Describe what you need help with..."
-                    value={inputValue}
-                    onChange={setInputValue}
-                    hideAttachments={false}
-                    selectedAgentId={selectedAgentId}
-                    onAgentSelect={setSelectedAgent}
-                    enableAdvancedConfig={true}
-                    onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
-                  />
-                </div>
+                {/* Spacer where input used to be; actual input sticks to bottom */}
+                <div className="w-full h-2" />
                 <div className="w-full" data-tour="examples">
                   <Examples onSelectPrompt={setInputValue} count={isMobile ? 3 : 4} />
                 </div>
               </div>
             </div>
-            {enabledEnvironment && (
-              <div className="w-full px-4 pb-8" data-tour="custom-agents">
-                <div className="max-w-7xl mx-auto">
-                  <CustomAgentsSection 
-                    onAgentSelect={setSelectedAgent}
-                  />
-                </div>
-              </div>
-            )}
+            {/* Removed specialised agents section per request */}
           </div>
         </div>
         
+        {/* Sticky bottom chat input */}
+        <div className="sticky bottom-0 z-10 bg-gradient-to-t from-background via-background/90 to-transparent px-4 pt-6 pb-4">
+          <div className="mx-auto w-full max-w-[650px]" data-tour="chat-input">
+            <ChatInput
+              ref={chatInputRef}
+              onSubmit={handleSubmit}
+              loading={isSubmitting || isRedirecting}
+              placeholder="Describe what you need help with..."
+              value={inputValue}
+              onChange={setInputValue}
+              hideAttachments={false}
+              selectedAgentId={selectedAgentId}
+              onAgentSelect={undefined}
+              hideAgentSelection={true}
+              enableAdvancedConfig={true}
+              onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
+            />
+          </div>
+        </div>
+
         <BillingErrorAlert
           message={billingError?.message}
           currentUsage={billingError?.currentUsage}

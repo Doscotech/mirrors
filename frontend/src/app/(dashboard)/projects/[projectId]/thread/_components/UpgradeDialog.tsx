@@ -33,8 +33,8 @@ export function UpgradeDialog({ open, onOpenChange, onDismiss }: UpgradeDialogPr
         open={open}
         onOpenChange={onOpenChange}
         icon={Crown}
-        title="Unlock the Full Suna Experience"
-        description="You're currently using Suna's free tier with limited capabilities. Upgrade now to access our most powerful AI model."
+        title="Unlock the Full Xera Experience"
+        description="You're currently using Xera's free tier with limited capabilities. Upgrade now to access our most powerful AI model."
         theme="primary"
         size="sm"
         preventOutsideClick={true}

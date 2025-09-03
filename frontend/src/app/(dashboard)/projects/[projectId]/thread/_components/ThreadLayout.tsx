@@ -1,5 +1,6 @@
 import React from 'react';
 import { SiteHeader } from '@/components/thread/thread-site-header';
+import { ModelSelectorBar } from '@/components/thread/ModelSelectorBar';
 import { FileViewerModal } from '@/components/thread/file-viewer-modal';
 import { ToolCallSidePanel } from '@/components/thread/tool-call-side-panel';
 import { BillingErrorAlert } from '@/components/billing/usage-limit-alert';
@@ -171,6 +172,9 @@ export function ThreadLayout({
           isMobileView={isMobile}
           debugMode={debugMode}
         />
+
+  {/* Top-left model selector (content header area) */}
+  <ModelSelectorBar className="sticky top-14 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60" />
 
         {children}
       </div>

@@ -4,14 +4,14 @@ import { siteConfig } from '@/lib/site';
 export const metadata: Metadata = {
   title: siteConfig.name,
   description: siteConfig.description,
-  keywords: ['Kortix Suna', 'Kortix', 'Suna', 'AI', 'Agent', 'Open Source'],
+  keywords: ['Xera', 'AI Worker', 'Generalist AI', 'Agent', 'SaaS', 'Orchestration'],
   authors: [
     {
-      name: 'Kortix AI Corp',
-      url: 'https://kortix.ai',
+      name: 'Xera',
+      url: siteConfig.url,
     },
   ],
-  creator: 'Kortix AI Corp',
+  creator: 'Xera',
   openGraph: {
     type: 'website',
     locale: 'en_US',

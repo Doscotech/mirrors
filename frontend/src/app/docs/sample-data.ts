@@ -26,7 +26,7 @@ export const sampleNavigation: DocsNavigationSection[] = [
     items: [
       {
         id: 'introduction',
-        title: 'What is Kortix?',
+        title: 'What is Xera?',
         href: '#introduction',
         icon: BookOpen,
         isActive: true
@@ -47,18 +47,18 @@ export const sampleNavigation: DocsNavigationSection[] = [
     ]
   },
   {
-    id: 'self-hosting',
-    title: 'Self-Hosting Guide',
+    id: 'system-deep-dive',
+    title: 'System Deep Dive',
     items: [
       {
         id: 'overview',
         title: 'Overview',
-        href: '#self-hosting-overview',
+        href: '#architecture-overview',
         icon: Layers
       },
       {
         id: 'prerequisites',
-        title: 'Prerequisites',
+        title: 'Components',
         href: '#prerequisites',
         icon: Settings,
         children: [
@@ -80,20 +80,20 @@ export const sampleNavigation: DocsNavigationSection[] = [
         ]
       },
       {
-        id: 'installation',
-        title: 'Installation',
-        href: '#installation',
+        id: 'operations',
+        title: 'Operations',
+        href: '#scaling-workers',
         icon: Code,
         children: [
           {
-            id: 'docker-setup',
-            title: 'Docker Setup',
-            href: '#docker-setup'
+            id: 'workers',
+            title: 'Workers',
+            href: '#scaling-workers'
           },
           {
-            id: 'manual-setup',
-            title: 'Manual Setup',
-            href: '#manual-setup'
+            id: 'queues',
+            title: 'Queues',
+            href: '#architecture-overview'
           }
         ]
       },

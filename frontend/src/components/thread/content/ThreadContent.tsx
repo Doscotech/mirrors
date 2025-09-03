@@ -356,7 +356,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     project,
     debugMode = false,
     isPreviewMode = false,
-    agentName = 'Suna',
+    agentName = 'Xera',
     agentAvatar = <KortixLogo size={16} />,
     emptyStateComponent,
     threadMetadata,
@@ -442,7 +442,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
         // Fallback: if this is a Suna default agent, always show KortixLogo
         if (isSunaDefaultAgent) {
             return {
-                name: agentName || 'Suna',
+                name: agentName || 'Xera',
                 avatar: (
                     <div className="h-5 w-5 flex items-center justify-center rounded text-xs">
                         <KortixLogo size={16} />
@@ -452,7 +452,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
         }
 
         return {
-            name: agentName || 'Suna',
+            name: agentName || 'Xera',
             avatar: agentAvatar
         };
     }, [threadMetadata, displayMessages, agentName, agentAvatar, agentMetadata, agentData]);

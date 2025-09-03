@@ -2,7 +2,6 @@
 
 # Kortix – Open Source Platform to Build, Manage and Train AI Agents
 
-![Kortix Screenshot](frontend/public/banner.png)
 
 **The complete platform for creating autonomous AI agents that work for you**
 

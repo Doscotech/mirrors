@@ -11,7 +11,7 @@ export function BentoSection() {
       content: <FirstBentoAnimation />,
       title: 'Design with conversation',
       description:
-        'Simply describe what you need your agent to accomplish, and Suna will build it for you.',
+        'Simply describe what you need your agent to accomplish, and Xera will build it for you.',
     },
     {
       id: 2,

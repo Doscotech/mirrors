@@ -12,7 +12,7 @@ export function HeroVideoSection() {
           Watch Intelligence in Motion
         </h2>
         <p className="text-muted-foreground text-center text-balance font-medium">
-          Watch how Suna executes complex workflows with precision and autonomy
+      See how Xera orchestrates agents and tools to complete real work end-to-end
         </p>
       </SectionHeader>
 

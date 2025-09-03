@@ -17,349 +17,141 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2, AlertCircle, Info, Zap, Lightbulb, ArrowRight, Bot } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Card } from '@/components/ui/card';
+import ArchitectureDiagram from '@/components/docs/ArchitectureDiagram';
 
 const breadcrumbs = [
   { title: 'Documentation', onClick: () => window.location.href = '/docs' },
-  { title: 'Quick Start' }
+  { title: 'System Deep Dive' }
 ];
 
-export default function QuickStartPage() {
+export default function SystemDeepDivePage() {
   return (
     <>
       <DocsHeader
-        title="Self Hosting Guide"
-        subtitle="Get the platform running in minutes with our automated setup wizard"
+  title="System Deep Dive"
+  subtitle="A practical look at how Xera's agents, threads, runs, workers, and queues work together"
         breadcrumbs={breadcrumbs}
         lastUpdated="August 2025"
         showSeparator
         size="lg"
         className="mb-8 sm:mb-12"
       />
-      <DocsBody className="mb-8">
-        <h2 id="prerequisites">What You Need First</h2>
-        <p className="mb-4">Before we start, make sure you have these installed:</p>
-        <ul className="list-disc pl-6 mb-6 space-y-2">
-          <li><strong>Python 3.11+</strong> - The setup wizard is written in Python</li>
-          <li><strong>Docker</strong> - For running Redis and the full platform</li>
-          <li><strong>Git</strong> - To clone the repository</li>
-          <li><strong>Node.js 18+</strong> - Only needed if you choose manual setup</li>
-        </ul>
-        
-        <Alert className="mb-6">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Recommended:</strong> Use Docker setup for the smoothest experience. It handles all dependencies automatically.
-          </AlertDescription>
-        </Alert>
-      </DocsBody>
 
+      {/* Architecture Deep Dive */}
       <DocsBody className="mb-8">
-        <h2 id="step-1-clone">Step 1: Clone and Enter</h2>
-        <p className="mb-4">Get the code and navigate to the project directory:</p>
-        <div className="mb-6">
-          <CodeBlock 
-            data={[{
-              language: "bash",
-              filename: "terminal",
-              code: `git clone https://github.com/kortix-ai/suna.git
-cd suna`
-            }]}
-            defaultValue="bash"
-          >
-            <CodeBlockBody>
-              {(item) => (
-                <CodeBlockItem key={item.language} value={item.language}>
-                  <CodeBlockContent language={item.language as BundledLanguage}>
-                    {item.code}
-                  </CodeBlockContent>
-                </CodeBlockItem>
-              )}
-            </CodeBlockBody>
-          </CodeBlock>
-        </div>
-      </DocsBody>
-
-      <DocsBody className="mb-8">
-        <h2 id="step-2-run-wizard">Step 2: Run the Setup Wizard</h2>
-        <p className="mb-4">Start the interactive setup wizard:</p>
-        <div className="mb-6">
-          <CodeBlock 
-            data={[{
-              language: "bash",
-              filename: "terminal", 
-              code: "python setup.py"
-            }]}
-            defaultValue="bash"
-          >
-            <CodeBlockBody>
-              {(item) => (
-                <CodeBlockItem key={item.language} value={item.language}>
-                  <CodeBlockContent language={item.language as BundledLanguage}>
-                    {item.code}
-                  </CodeBlockContent>
-                </CodeBlockItem>
-              )}
-            </CodeBlockBody>
-          </CodeBlock>
-        </div>
-        
-        <p className="mb-4">The wizard will ask you to choose between two setup methods:</p>
+        <h2 id="architecture-overview">How Xera's Agent System Works</h2>
+        <p className="mb-4">
+          Xera is built around an event-driven architecture where user actions create <strong>threads</strong> and <strong>runs</strong>,
+          which are executed by background <strong>workers</strong> connected to a <strong>queue</strong> (Redis). The UI streams
+          token-by-token output as the agent reasons, calls tools, and produces artifacts.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <DocsCard
-            title="Docker Compose (Recommended)"
-            description="Automatically manages all services and dependencies. Just run and go."
-          />
-          <DocsCard
-            title="Manual"
-            description="Requires installing dependencies and running services manually."
-          />
+          <div className="border rounded-lg p-4">
+            <h3 className="font-semibold mb-2">Core Concepts</h3>
+            <ul className="list-disc pl-6 space-y-2 text-sm">
+              <li><strong>Agent</strong>: A configured worker with tools, constraints, memory, and policies.</li>
+              <li><strong>Thread</strong>: A conversation timeline tying messages, files, and tool results.</li>
+              <li><strong>Run</strong>: A single execution pass of an agent in a thread with a specific goal.</li>
+              <li><strong>Tool Calls</strong>: Secure, scoped actions (web, files, email, APIs) invoked by the agent.</li>
+              <li><strong>Artifacts</strong>: Outputs like docs, spreadsheets, and exported reports.</li>
+            </ul>
+          </div>
+          <div className="border rounded-lg p-4">
+            <h3 className="font-semibold mb-2">Execution Flow</h3>
+            <ol className="list-decimal pl-6 space-y-2 text-sm">
+              <li>User submits a message or workflow trigger starts a <em>run</em>.</li>
+              <li>The backend enqueues a job; a background <em>worker</em> picks it up.</li>
+              <li>The worker streams tokens back to the UI and performs <em>tool calls</em> as needed.</li>
+              <li>State (messages, tool results, costs) is persisted for observability.</li>
+              <li>Completion signals the UI and any webhooks or follow-on automations.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="border rounded-lg p-4">
+            <h3 className="font-semibold mb-2">Workers & Queues</h3>
+            <ul className="list-disc pl-6 space-y-2 text-sm">
+              <li><strong>Redis</strong> powers pub/sub and job queues for resilient processing.</li>
+              <li>Workers handle long-running tasks (multi-step reasoning, scraping, file ops).</li>
+              <li>Built-in backoff, retries, and idempotency guards reduce flaky failures.</li>
+              <li>Scale horizontally by running more worker processes.</li>
+            </ul>
+          </div>
+          <div className="border rounded-lg p-4">
+            <h3 className="font-semibold mb-2">Tools, Sandboxing, and Safety</h3>
+            <ul className="list-disc pl-6 space-y-2 text-sm">
+              <li>Tools are permissioned and parameterized; calls are logged and auditable.</li>
+              <li><strong>Daytona</strong> provides isolated sandboxes for code execution when required.</li>
+              <li>Rate limits and cost caps protect budgets and external APIs.</li>
+              <li>Structured streaming keeps the UI responsive and transparent.</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Architecture Diagram */}
+        <div className="mt-6 border rounded-lg p-4">
+          <h3 className="font-semibold mb-2">Architecture Diagram</h3>
+          <p className="text-sm text-muted-foreground mb-3">High-level flow of a run through Xera's system.</p>
+          <ArchitectureDiagram className="h-[420px]" />
+        </div>
+      </DocsBody>
+  {/* Removed explicit self-hosting prerequisites; focus on system design */}
+
+  {/* Removed local cloning and setup sections to avoid legacy references */}
+
+  {/* Removed setup wizard specifics; emphasize architecture rather than install steps */}
+
+      <DocsBody className="mb-8">
+        <h2 id="platform-components">Behind the Scenes</h2>
+        <p className="mb-6">These are the building blocks Xera uses under the hood. You don’t need to set them up—this is here to explain how the system works.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border rounded-lg p-4">
+            <div className="font-semibold mb-1">Auth & Database</div>
+            <p className="text-sm text-muted-foreground">Stores users, conversations, agent configs, and access control.</p>
+          </div>
+          <div className="border rounded-lg p-4">
+            <div className="font-semibold mb-1">Queue</div>
+            <p className="text-sm text-muted-foreground">Moves work from the API to background workers reliably (pub/sub + jobs).</p>
+          </div>
+          <div className="border rounded-lg p-4">
+            <div className="font-semibold mb-1">Workers</div>
+            <p className="text-sm text-muted-foreground">Execute runs, stream tokens, and call tools with backoff and retries.</p>
+          </div>
+          <div className="border rounded-lg p-4">
+            <div className="font-semibold mb-1">Sandbox</div>
+            <p className="text-sm text-muted-foreground">Isolated environments for code execution when an agent needs it.</p>
+          </div>
+          <div className="border rounded-lg p-4">
+            <div className="font-semibold mb-1">LLMs</div>
+            <p className="text-sm text-muted-foreground">Reasoning and generation models used by agents during runs.</p>
+          </div>
+          <div className="border rounded-lg p-4">
+            <div className="font-semibold mb-1">Search & Crawling</div>
+            <p className="text-sm text-muted-foreground">Find and extract information from the web for research tasks.</p>
+          </div>
         </div>
       </DocsBody>
 
+  {/* Database provisioning details omitted; refer users to managed setup or internal runbooks */}
+
+  {/* Removed local run walkthrough; this page now focuses on system behavior */}
+
+      {/* Scaling and Ops */}
       <DocsBody className="mb-8">
-        <h2 id="step-3-provide-credentials">Step 3: Provide Your Credentials</h2>
-        <p className="mb-4">The wizard will walk you through configuring these services in 17 steps. Don't worry - it saves your progress!</p>
-        
-        <h3 id="required-services" className="mb-4">Required Services</h3>
-        <div className="space-y-4 mb-6">
-          <div className="border rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              <strong>Supabase (Database & Auth)</strong>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">Free tier available. Handles user data, conversations, and agent configs.</p>
-            <p className="text-sm">Get it at: <a href="https://supabase.com/dashboard/projects" className="text-blue-500 hover:underline">supabase.com</a></p>
-          </div>
-
-          <div className="border rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              <strong>Daytona (Sandboxing)</strong>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">Provides secure environments for agents to run code safely.</p>
-            <p className="text-sm">Get it at: <a href="https://app.daytona.io/" className="text-blue-500 hover:underline">daytona.io</a></p>
-          </div>
-
-          <div className="border rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              <strong>LLM Provider (At least one)</strong>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">Choose from OpenAI, Anthropic, Google Gemini, or OpenRouter.</p>
-            <p className="text-sm">Use Sonnet for the best results.</p>
-          </div>
-
-          <div className="border rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              <strong>Search APIs</strong>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">Tavily for search, Firecrawl for web scraping.</p>
-            <p className="text-sm">Get Tavily at: <a href="https://tavily.com" className="text-blue-500 hover:underline">tavily.com</a></p>
-            <p className="text-sm">Get Firecrawl at: <a href="https://firecrawl.dev" className="text-blue-500 hover:underline">firecrawl.dev</a></p>
-          </div>
-        </div>
-
-        <h3 id="optional-services" className="mb-4">Optional Services</h3>
-        <div className="space-y-4 mb-6">
-          <div className="border rounded-lg p-4 opacity-75">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-5 w-5 text-blue-500" />
-              <strong>Morph (AI Code Editing)</strong>
-            </div>
-            <p className="text-sm text-muted-foreground">Makes code editing much better. Highly recommended but not required.</p>
-          </div>
-
-          <div className="border rounded-lg p-4 opacity-75">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-5 w-5 text-blue-500" />
-              <strong>RapidAPI</strong>
-            </div>
-            <p className="text-sm text-muted-foreground">Enables extra tools like LinkedIn scraping. Skip for now if you want.</p>
-          </div>
-
-          <div className="border rounded-lg p-4 opacity-75">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-5 w-5 text-blue-500" />
-              <strong>Composio</strong>
-            </div>
-            <p className="text-sm text-muted-foreground">Tool integrations and workflows.</p>
-          </div>
-        </div>
-      </DocsBody>
-
-      <DocsBody className="mb-8">
-        <h2 id="step-4-database-setup">Step 4: Database Setup</h2>
-        <p className="mb-4">The wizard will offer to set up your Supabase database automatically. This requires the Supabase CLI:</p>
-        
-        <Alert className="mb-4">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            If you don't have the Supabase CLI, the wizard will let you skip this step. You can set up the database manually later using the migration files.
-          </AlertDescription>
-        </Alert>
-
-        <p className="mb-4">If you let the wizard handle it, it will:</p>
-        <ul className="list-disc pl-6 mb-6 space-y-1">
-          <li>Link your project to your Supabase instance</li>
-          <li>Push all necessary database migrations</li>
-          <li>Set up tables, functions, and security rules</li>
+        <h2 id="scaling-workers">Scaling Workers</h2>
+  <p className="mb-4">For heavier workloads, scale background workers horizontally. Each process pulls jobs from Redis and runs independently.</p>
+        <ul className="list-disc pl-6 space-y-2">
+          <li>Set sensible <strong>timeouts</strong> for long-running tools.</li>
+          <li>Use <strong>rate limiting</strong> to protect third-party APIs.</li>
+          <li>Monitor Redis memory and connection counts under sustained load.</li>
+          <li>Forward <strong>structured logs</strong> to your observability stack.</li>
         </ul>
-
-        <p className="mb-4"><strong>Important:</strong> After the migrations, you'll need to manually expose the 'basejump' schema in your Supabase dashboard:</p>
-        <ol className="list-decimal pl-6 mb-6 space-y-1">
-          <li>Go to Project Settings → Data API → Exposed schemas</li>
-          <li>Check the 'basejump' box</li>
-          <li>Save</li>
-        </ol>
       </DocsBody>
-
       <DocsBody className="mb-8">
-        <h2 id="step-5-start">Step 5: Start Kortix</h2>
-        
-        <h3 className="mb-4">If you chose Docker setup:</h3>
-        <p className="mb-4">The wizard automatically starts everything for you! After setup completes:</p>
-        <div className="mb-6">
-          <CodeBlock 
-            data={[{
-              language: "bash",
-              filename: "docker-commands",
-              code: `# Check if everything is running
-docker compose ps
-
-# Follow the logs to see what's happening
-docker compose logs -f
-
-# Stop everything when you're done
-docker compose down`
-            }]}
-            defaultValue="bash"
-          >
-            <CodeBlockBody>
-              {(item) => (
-                <CodeBlockItem key={item.language} value={item.language}>
-                  <CodeBlockContent language={item.language as BundledLanguage}>
-                    {item.code}
-                  </CodeBlockContent>
-                </CodeBlockItem>
-              )}
-            </CodeBlockBody>
-          </CodeBlock>
-        </div>
-
-        <h3 className="mb-4">If you chose manual setup:</h3>
-        <p className="mb-4">You'll need to start each service in separate terminals:</p>
-        
-        <div className="space-y-4 mb-6">
-          <div>
-            <h4 className="font-medium mb-2">Terminal 1 - Infrastructure:</h4>
-            <CodeBlock 
-              data={[{
-                language: "bash",
-                filename: "terminal-1",
-                code: "docker compose up redis -d"
-              }]}
-              defaultValue="bash"
-            >
-              <CodeBlockBody>
-                {(item) => (
-                  <CodeBlockItem key={item.language} value={item.language}>
-                    <CodeBlockContent language={item.language as BundledLanguage}>
-                      {item.code}
-                    </CodeBlockContent>
-                  </CodeBlockItem>
-                )}
-              </CodeBlockBody>
-            </CodeBlock>
-          </div>
-
-          <div>
-            <h4 className="font-medium mb-2">Terminal 2 - Frontend:</h4>
-            <CodeBlock 
-              data={[{
-                language: "bash", 
-                filename: "terminal-2",
-                code: "cd frontend && npm run dev"
-              }]}
-              defaultValue="bash"
-            >
-              <CodeBlockBody>
-                {(item) => (
-                  <CodeBlockItem key={item.language} value={item.language}>
-                    <CodeBlockContent language={item.language as BundledLanguage}>
-                      {item.code}
-                    </CodeBlockContent>
-                  </CodeBlockItem>
-                )}
-              </CodeBlockBody>
-            </CodeBlock>
-          </div>
-
-          <div>
-            <h4 className="font-medium mb-2">Terminal 3 - Backend API:</h4>
-            <CodeBlock 
-              data={[{
-                language: "bash",
-                filename: "terminal-3", 
-                code: "cd backend && uv run api.py"
-              }]}
-              defaultValue="bash"
-            >
-              <CodeBlockBody>
-                {(item) => (
-                  <CodeBlockItem key={item.language} value={item.language}>
-                    <CodeBlockContent language={item.language as BundledLanguage}>
-                      {item.code}
-                    </CodeBlockContent>
-                  </CodeBlockItem>
-                )}
-              </CodeBlockBody>
-            </CodeBlock>
-          </div>
-
-          <div>
-            <h4 className="font-medium mb-2">Terminal 4 - Background Worker:</h4>
-            <CodeBlock 
-              data={[{
-                language: "bash",
-                filename: "terminal-4",
-                code: "cd backend && uv run dramatiq run_agent_background" 
-              }]}
-              defaultValue="bash"
-            >
-              <CodeBlockBody>
-                {(item) => (
-                  <CodeBlockItem key={item.language} value={item.language}>
-                    <CodeBlockContent language={item.language as BundledLanguage}>
-                      {item.code}
-                    </CodeBlockContent>
-                  </CodeBlockItem>
-                )}
-              </CodeBlockBody>
-            </CodeBlock>
-          </div>
-        </div>
-      </DocsBody>
-
-      <DocsBody className="mb-8">
-        <h2 id="youre-done">You're Done! 🎉</h2>
-        <p className="text-lg mb-4">Once all services are running, open your browser and go to:</p>
-        <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
-          <p className="text-center font-mono text-lg">
-            <a href="http://localhost:3000" className="text-green-600 dark:text-green-400 hover:underline">
-              http://localhost:3000
-            </a>
-          </p>
-        </div>
-
-        <p className="mb-4">You should see the Kortix dashboard where you can start chatting with Suna or create your own agents.</p>
-
-        <Alert className="mb-6">
-          <CheckCircle2 className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Pro tip:</strong> The setup wizard saves your progress. If something goes wrong, just run <code>python setup.py</code> again and it'll pick up where you left off.
-          </AlertDescription>
-        </Alert>
+        <h2 id="tl-dr">TL;DR</h2>
+        <p className="mb-2">Submit → API enqueues → Workers execute → Tools run safely → UI streams results.</p>
+        <p className="text-muted-foreground">That’s the loop powering agents, with Redis for reliability and Supabase for state.</p>
       </DocsBody>
       <Separator className="my-6 w-full" />
       <div className='w-full items-center justify-end flex pb-8'>

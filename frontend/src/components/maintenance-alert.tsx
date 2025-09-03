@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Clock, Github, X } from 'lucide-react';
+import { Clock, ExternalLink, X } from 'lucide-react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -97,13 +97,11 @@ export function MaintenanceAlert({
 
           <AlertDialogFooter className="p-8 pt-4 border-t border-border/40 bg-background/40 backdrop-blur-sm">
             <Link
-              href="https://github.com/kortix-ai/suna"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/docs/quick-start"
               className="mx-auto w-full flex items-center justify-center gap-3 bg-gradient-to-tr from-primary to-primary/80 hover:opacity-90 text-white font-medium rounded-full px-8 py-3 transition-all hover:shadow-md"
             >
-              <Github className="h-5 w-5 transition-transform group-hover:scale-110" />
-              <span>Explore Self-Hosted Version</span>
+              <ExternalLink className="h-5 w-5 transition-transform group-hover:scale-110" />
+              <span>Get Started with Xera</span>
             </Link>
           </AlertDialogFooter>
         </motion.div>

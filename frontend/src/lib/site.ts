@@ -1,11 +1,11 @@
 export const siteConfig = {
-  name: 'Kortix Suna',
-  url: 'https://suna.so/',
-  description: 'Kortix AI',
+  name: 'Xera',
+  url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  description: 'The Generalist AI Worker that can act on your behalf.',
   links: {
-    twitter: 'https://x.com/kortixai',
-    github: 'https://github.com/kortix-ai/',
-    linkedin: 'https://www.linkedin.com/company/kortix/',
+    twitter: 'https://x.com/xera',
+    github: 'https://github.com/',
+    linkedin: 'https://www.linkedin.com/company/xera/',
   },
 };
 

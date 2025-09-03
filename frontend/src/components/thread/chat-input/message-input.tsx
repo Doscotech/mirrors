@@ -169,11 +169,11 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             selectedAgentId={!hideAgentSelection ? selectedAgentId : undefined}
             onAgentSelect={!hideAgentSelection ? onAgentSelect : undefined}
             selectedModel={selectedModel}
-            onModelChange={onModelChange}
-            modelOptions={modelOptions}
+            onModelChange={() => { /* disabled: model selector is now in top-left bar */ }}
+            modelOptions={[]}
             subscriptionStatus={subscriptionStatus}
-            canAccessModel={canAccessModel}
-            refreshCustomModels={refreshCustomModels}
+            canAccessModel={() => false}
+            refreshCustomModels={undefined}
           />
         </div>
       );

@@ -20,8 +20,7 @@ import { NewAgentDialog } from '@/components/agents/new-agent-dialog';
 
 import { useRouter } from 'next/navigation';
 import { cn, truncateString } from '@/lib/utils';
-import { KortixLogo } from '@/components/sidebar/kortix-logo';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+// Removed old KortixLogo branding; keep icons minimal and brand-neutral
 
 interface AgentSelectorProps {
   selectedAgentId?: string;
@@ -29,6 +28,7 @@ interface AgentSelectorProps {
   disabled?: boolean;
   isSunaAgent?: boolean;
   compact?: boolean;
+  isLoggedIn?: boolean;
 }
 
 export const AgentSelector: React.FC<AgentSelectorProps> = ({
@@ -36,7 +36,8 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
   onAgentSelect,
   disabled = false,
   isSunaAgent,
-  compact = false
+  compact = false,
+  isLoggedIn = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,7 +52,7 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
     setMounted(true);
   }, []);
 
-  const { data: agentsResponse, isLoading: agentsLoading } = useAgents();
+  const { data: agentsResponse, isLoading: agentsLoading } = useAgents({}, { enabled: isLoggedIn });
   const agents = agentsResponse?.agents || [];
 
   const allAgents = [
@@ -93,10 +94,9 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
   const getAgentDisplay = () => {
     const selectedAgent = allAgents.find(agent => agent.id === selectedAgentId);
     if (selectedAgent) {
-      const isSelectedAgentSuna = selectedAgent.metadata?.is_suna_default || false;
       return {
         name: selectedAgent.name,
-        icon: isSelectedAgentSuna ? <KortixLogo size={16} /> : selectedAgent.icon
+        icon: selectedAgent.icon || <Bot className="h-4 w-4" />
       };
     }
     
@@ -104,10 +104,9 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
     }
     
     const defaultAgent = allAgents[0];
-    const isDefaultAgentSuna = defaultAgent?.metadata?.is_suna_default || false;
     return {
-      name: defaultAgent?.name || 'Suna',
-      icon: isDefaultAgentSuna ? <KortixLogo size={16} /> : (defaultAgent?.icon || <KortixLogo size={16} />)
+      name: defaultAgent?.name || 'Xera',
+      icon: defaultAgent?.icon || <Bot className="h-4 w-4" />
     };
   };
 
@@ -157,7 +156,6 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
     const isSelected = agent.id === selectedAgentId;
     const isHighlighted = index === highlightedIndex;
     const hasSettings = agent.type === 'custom' && agent.id;
-    const isThisAgentSuna = agent.metadata?.is_suna_default || false;
 
     return (
       <TooltipProvider key={agent.id || 'default'}>
@@ -171,13 +169,7 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
               onClick={() => handleAgentSelect(agent.id)}
               onMouseEnter={() => setHighlightedIndex(index)}
             >
-              <div className="flex-shrink-0">
-                {isThisAgentSuna ? (
-                  <KortixLogo size={16} />
-                ) : (
-                  agent.icon
-                )}
-              </div>
+              <div className="flex-shrink-0">{agent.icon}</div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-sm text-foreground/90 truncate">

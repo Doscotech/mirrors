@@ -29,7 +29,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import GitHubSignIn from '@/components/GithubSignIn';
-import { KortixLogo } from '@/components/sidebar/kortix-logo';
 import { Ripple } from '@/components/ui/ripple';
 import { ReleaseBadge } from '@/components/auth/release-badge';
 
@@ -269,7 +268,7 @@ function LoginContent() {
       <div className="min-h-screen bg-background relative">
         <div className="absolute top-6 left-6 z-10">
           <Link href="/" className="flex items-center">
-            <KortixLogo size={28} />
+            <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Xera</span>
           </Link>
         </div>
         <div className="flex min-h-screen">

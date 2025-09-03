@@ -3,6 +3,22 @@
 @plugin 'tailwind-scrollbar';
 @plugin 'tailwind-scrollbar-hide';
 
+/* React Flow base styles (subset) */
+.react-flow__edge-path, .react-flow__connection-path {
+  stroke: color-mix(in oklab, currentColor 60%, transparent 40%);
+}
+.react-flow__handle {
+  background: hsl(var(--muted));
+}
+.react-flow__controls button {
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+}
+.react-flow__minimap {
+  background: hsl(var(--muted));
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {

@@ -26,22 +26,18 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { ThemeToggle } from "./home/theme-toggle"
-import { KortixLogo } from "./sidebar/kortix-logo"
-import Image from "next/image"
-import { useEffect } from "react"
-import { useTheme } from "next-themes"
 
 const data = {
   user: {
-    name: "Kortix User",
-    email: "docs@kortix.ai",
+    name: "Xera User",
+    email: "support@xera.ai",
     avatar: "/favicon.png",
   },
   teams: [
     {
-      name: "Kortix AI",
+      name: "Xera",
       logo: GalleryVerticalEnd,
-      plan: "Open Source",
+      plan: "Cloud",
     },
   ],
   navMain: [
@@ -49,11 +45,19 @@ const data = {
       title: "Getting Started",
       items: [
         {
-          title: "What is Kortix?",
+          title: "What is Xera?",
           url: "/docs/introduction",
         },
         {
-          title: "Self Hosting",
+          title: "Quick Start",
+          url: "/docs/quick-start",
+        },
+        {
+          title: "How Xera Works",
+          url: "/docs/how-xera-works",
+        },
+        {
+          title: "System Deep Dive",
           url: "/docs/self-hosting",
         },
         {
@@ -64,30 +68,22 @@ const data = {
       ],
     },
     {
-      title: "Contributing",
+      title: "Reference",
       items: [
         {
-          title: "Contributing Guide",
-          url: "/docs/contributing",
+          title: "API",
+          url: "/docs/api",
+          comingSoon: true,
         },
         {
-          title: "License",
-          url: "/docs/license",
-        },
-      ],
-    },
-    {
-      title: "Quick Links",
-      items: [
-        {
-          title: "GitHub Repository",
-          url: "https://github.com/kortix-ai/suna",
-          external: true,
+          title: "Limits",
+          url: "/docs/limits",
+          comingSoon: true,
         },
         {
-          title: "Discord Community",
-          url: "https://discord.gg/Py6pCBUUPw",
-          external: true,
+          title: "Billing",
+          url: "/docs/billing",
+          comingSoon: true,
         },
       ],
     },
@@ -96,18 +92,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
-  const [mounted, setMounted] = React.useState(false);
-  const { theme, resolvedTheme } = useTheme();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const logoSrc = !mounted
-    ? '/kortix-logo.svg'
-    : resolvedTheme === 'dark'
-      ? '/kortix-logo-white.svg'
-      : '/kortix-logo.svg';
   
 
   const isActive = (url: string) => {
@@ -117,14 +102,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar className="w-72 [&_[data-sidebar=sidebar]]:bg-white dark:[&_[data-sidebar=sidebar]]:bg-black border-none" {...props}>
       <SidebarHeader className="bg-transparent p-6 px-2">
-        <Image
-          src={logoSrc}
-          alt="Kortix Logo"
-          width={80}
-          height={14}
-          className="md:w-[100px] md:h-[18px]"
-          priority
-        /> 
+        <span className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Xera</span>
       </SidebarHeader>
       <SidebarContent className="px-2 bg-transparent scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
         {data.navMain.map((section) => (
@@ -147,10 +125,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             Coming Soon
                           </Badge>
                         </div>
-                      ) : item.external ? (
-                        <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full">
-                          <span>{item.title}</span>
-                        </a>
                       ) : (
                         <Link href={item.url} className="flex items-center justify-between w-full">
                           <span>{item.title}</span>

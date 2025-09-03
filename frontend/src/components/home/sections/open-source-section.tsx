@@ -315,7 +315,7 @@ export function OpenSourceSection() {
               100% Open Source
             </h2>
             <p className="text-muted-foreground text-center text-balance font-medium">
-              Suna is fully open source. Join our community and help shape the future of AI.
+              Xera is fully SaaS. Join our community and help shape the future of AI.
             </p>
           </SectionHeader>
 

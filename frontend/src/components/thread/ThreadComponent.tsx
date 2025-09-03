@@ -49,6 +49,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { threadKeys } from '@/hooks/react-query/threads/keys';
 import { useProjectRealtime } from '@/hooks/useProjectRealtime';
 import { handleGoogleSlidesUpload } from './tool-views/utils/presentation-utils';
+import { Examples } from '@/components/dashboard/examples';
 
 interface ThreadComponentProps {
   projectId: string;
@@ -679,7 +680,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
   // SEO title update
   useEffect(() => {
     if (projectName) {
-      document.title = `${projectName} | Kortix Suna`;
+  document.title = `${projectName} | Xera`;
 
       const metaDescription = document.querySelector(
         'meta[name="description"]',
@@ -687,13 +688,13 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
       if (metaDescription) {
         metaDescription.setAttribute(
           'content',
-          `${projectName} - Interactive agent conversation powered by Kortix Suna`,
+          `${projectName} - Interactive agent conversation powered by Xera`,
         );
       }
 
       const ogTitle = document.querySelector('meta[property="og:title"]');
       if (ogTitle) {
-        ogTitle.setAttribute('content', `${projectName} | Kortix Suna`);
+  ogTitle.setAttribute('content', `${projectName} | Xera`);
       }
 
       const ogDescription = document.querySelector(
@@ -890,6 +891,11 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
                 agentData={agent}
                 scrollContainerRef={scrollContainerRef}
                 isPreviewMode={true}
+                emptyStateComponent={(
+                  <div className="w-full flex flex-col items-center gap-4">
+                    <Examples count={4} />
+                  </div>
+                )}
               />
             </div>
           </div>
@@ -918,8 +924,8 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
               messages={messages}
               agentName={agent && agent.name}
               selectedAgentId={selectedAgentId}
-              onAgentSelect={handleAgentSelect}
-              hideAgentSelection={!!configuredAgentId}
+              onAgentSelect={undefined}
+              hideAgentSelection={true}
               toolCalls={toolCalls}
               toolCallIndex={currentToolIndex}
               showToolPreview={!isSidePanelOpen && toolCalls.length > 0}
@@ -1010,6 +1016,11 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
           agentMetadata={agent?.metadata}
           agentData={agent}
           scrollContainerRef={scrollContainerRef}
+          emptyStateComponent={(
+            <div className="w-full flex flex-col items-center gap-4">
+              <Examples count={4} />
+            </div>
+          )}
         />
 
         <div
@@ -1050,8 +1061,8 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
               messages={messages}
               agentName={agent && agent.name}
               selectedAgentId={selectedAgentId}
-              onAgentSelect={handleAgentSelect}
-              hideAgentSelection={!!configuredAgentId}
+              onAgentSelect={undefined}
+              hideAgentSelection={true}
               toolCalls={toolCalls}
               toolCallIndex={currentToolIndex}
               showToolPreview={!isSidePanelOpen && toolCalls.length > 0}

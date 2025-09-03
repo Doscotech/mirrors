@@ -24,11 +24,7 @@ export function NavMenu() {
 
   React.useEffect(() => {
     // Initialize with appropriate nav item based on current path
-    let targetHref = '#hero'; // default
-    if (pathname === '/enterprise') {
-      targetHref = '/enterprise';
-    }
-    
+    const targetHref = '#hero'; // default
     const targetItem = ref.current?.querySelector(
       `[href="${targetHref}"]`,
     )?.parentElement;

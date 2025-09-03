@@ -19,8 +19,8 @@ export default function ContributingPage() {
   return (
     <>
       <DocsHeader
-        title="Contributing to Suna"
-        description="Help make Suna better for everyone! We welcome contributions from the community"
+        title="Contributing to Xera"
+        description="Help improve Xera! We welcome thoughtful contributions from the community"
         breadcrumbs={breadcrumbs}
         lastUpdated="August 2025"
         showSeparator
@@ -38,7 +38,7 @@ export default function ContributingPage() {
         <DocsBullets variant="check" spacing="default" className="mb-8">
           <DocsBulletItem
             title="Fork the Repository"
-            description="Create your own fork of the Kortix repository on GitHub"
+            description="Create your own fork of the Xera repository"
           />
           <DocsBulletItem
             title="Clone Locally"
@@ -46,7 +46,7 @@ export default function ContributingPage() {
           />
           <DocsBulletItem
             title="Install Dependencies"
-            description="Follow the self-hosting guide to set up your local development environment"
+            description="Review the System Deep Dive to understand the platform components"
           />
           <DocsBulletItem
             title="Create a Branch"
@@ -59,7 +59,7 @@ export default function ContributingPage() {
         <DocsBody className="mb-8">
           <h2 id="ways-to-contribute">Ways to Contribute</h2>
           <p className="text-lg mb-6">
-            There are many ways to help improve Kortix:
+            There are many ways to help improve Xera:
           </p>
         </DocsBody>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -95,17 +95,17 @@ export default function ContributingPage() {
         <DocsBody className="mb-8">
           <h2 id="development-setup">Development Setup</h2>
           <p className="text-lg mb-6">
-            To set up your local development environment, follow our comprehensive self-hosting guide:
+            To understand how the system fits together, start with the System Deep Dive:
           </p>
         </DocsBody>
         <DocsCard
-          title="Self-Hosting Guide"
-          description="Complete setup instructions including prerequisites, API keys, and step-by-step installation"
+          title="System Deep Dive"
+          description="Agents, threads, runs, workers, queues, and how data flows through Xera"
           className="mb-6"
           clickable
           actions={[
             { 
-              label: 'View Setup Guide', 
+              label: 'Open Deep Dive', 
               variant: 'default',
               onClick: () => window.location.href = '/docs/self-hosting'
             }
@@ -113,8 +113,7 @@ export default function ContributingPage() {
         />
         <DocsBody className="mb-8">
           <p className="text-muted-foreground">
-            The self-hosting guide covers all prerequisites, dependencies, and configuration needed for development. 
-            Once you've completed the setup, you can start contributing to the project.
+            The deep dive focuses on architecture and operations. For local development, use standard Next.js and Python tooling.
           </p>
         </DocsBody>
       </section>
@@ -229,7 +228,7 @@ export default function ContributingPage() {
               { 
                 label: 'View Discussions', 
                 variant: 'default',
-                onClick: () => window.open('https://github.com/kortix-ai/suna/issues', '_blank')
+                onClick: () => window.open('https://github.com/', '_blank')
               }
             ]}
           />

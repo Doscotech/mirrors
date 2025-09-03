@@ -11,17 +11,20 @@ export const getRGBA = (
   cssColor: React.CSSProperties['color'],
   fallback: string = 'rgba(180, 180, 180)',
 ): string => {
-  if (typeof window === 'undefined') return fallback;
   if (!cssColor) return fallback;
 
   try {
     // Handle CSS variables
     if (typeof cssColor === 'string' && cssColor.startsWith('var(')) {
+      if (typeof window === 'undefined' || typeof document === 'undefined') {
+        return fallback;
+      }
       const element = document.createElement('div');
       element.style.color = cssColor;
       document.body.appendChild(element);
       const computedColor = window.getComputedStyle(element).color;
       document.body.removeChild(element);
+      if (!computedColor) return fallback;
       return Color.formatRGBA(Color.parse(computedColor));
     }
 

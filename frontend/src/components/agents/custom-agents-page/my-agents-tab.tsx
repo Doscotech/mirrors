@@ -3,6 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { Globe } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DiscoverHeader } from '@/components/agents/discover/DiscoverHeader';
+import { TabsNavigation } from './tabs-navigation';
 import { SearchBar } from './search-bar';
 import { EmptyState } from '../empty-state';
 import { AgentsGrid } from '../agents-grid';
@@ -19,6 +21,7 @@ interface MyAgentsTabProps {
   agents: any[];
   agentsPagination: any;
   viewMode: 'grid' | 'list';
+  setViewMode: (mode: 'grid' | 'list') => void;
   onCreateAgent: () => void;
   onEditAgent: (agentId: string) => void;
   onDeleteAgent: (agentId: string) => void;
@@ -68,6 +71,7 @@ export const MyAgentsTab = ({
   agents,
   agentsPagination,
   viewMode,
+  setViewMode,
   onCreateAgent,
   onEditAgent,
   onDeleteAgent,
@@ -168,13 +172,18 @@ export const MyAgentsTab = ({
   };
 
   return (
-    <div className="space-y-6 mt-8 flex flex-col min-h-full">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
-        <SearchBar
-          placeholder="Search agents..."
-          value={agentsSearchQuery}
-          onChange={setAgentsSearchQuery}
-        />
+    <div className="space-y-6 flex flex-col min-h-full">
+      <DiscoverHeader
+        value={agentsSearchQuery}
+        onChange={setAgentsSearchQuery}
+        onSubmit={() => { /* pagination reset handled upstream */ }}
+        nav={<TabsNavigation activeTab={'my-agents'} onTabChange={() => { /* page controls it */ }} />}
+        title="My Agents"
+        subtitle="Manage your personal and team agents. Create, edit, and publish templates."
+        placeholder="Search my agents"
+      />
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="hidden" />
         <div className="flex items-center gap-3">
           <Select value={agentFilter} onValueChange={(value: AgentFilter) => setAgentFilter(value)}>
             <SelectTrigger className="w-[180px] h-12 rounded-xl">
@@ -188,6 +197,18 @@ export const MyAgentsTab = ({
               ))}
             </SelectContent>
           </Select>
+          <div className="ml-1 inline-flex items-center rounded-xl border bg-background/70">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-2 text-sm rounded-l-xl ${viewMode === 'grid' ? 'bg-primary/10 text-primary border-r border-primary/20' : 'text-muted-foreground'}`}
+              title="Grid view"
+            >Grid</button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-2 text-sm rounded-r-xl ${viewMode === 'list' ? 'bg-primary/10 text-primary border-l border-primary/20' : 'text-muted-foreground'}`}
+              title="List view"
+            >List</button>
+          </div>
         </div>
       </div>
       <div className="flex-1">
@@ -213,6 +234,7 @@ export const MyAgentsTab = ({
                 isDeletingAgent={isDeletingAgent}
                 onPublish={onPublishAgent}
                 publishingId={publishingAgentId}
+                viewMode={viewMode}
               />
             )}
             

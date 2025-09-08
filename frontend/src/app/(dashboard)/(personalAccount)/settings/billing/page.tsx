@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useSharedSubscription } from '@/contexts/SubscriptionContext';
+import MobileSidebarToggle from '@/components/layout/MobileSidebarToggle';
 import { isLocalMode } from '@/lib/config';
 import Link from 'next/link';
 
@@ -71,6 +72,11 @@ export default function PersonalAccountBillingPage() {
 
   return (
     <div className="space-y-6">
+      <div className="relative">
+        <div className="absolute -top-2 -left-2 md:hidden z-10">
+          <MobileSidebarToggle />
+        </div>
+      </div>
       <BillingModal 
         open={showBillingModal} 
         onOpenChange={setShowBillingModal}

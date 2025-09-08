@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
+from fastapi.responses import StreamingResponse
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
+import time
+import asyncio
 
 from utils.logger import logger
 from utils.auth_utils import verify_and_get_user_id_from_jwt
@@ -26,6 +29,29 @@ from .utils import format_template_for_response
 router = APIRouter()
 
 db: Optional[DBConnection] = None
+
+# Simple in-memory rate limiter (per-process) for preview endpoints
+# NOTE: For multi-instance deployments, move this to a shared store (Redis) for correctness.
+_preview_rate_state: Dict[str, Dict[str, Any]] = {}
+_rate_lock = asyncio.Lock()
+PREVIEW_LIMIT_PER_MINUTE = 10
+
+async def _check_preview_rate_limit(user_id: str) -> None:
+    now = int(time.time())
+    window = 60
+    async with _rate_lock:
+        st = _preview_rate_state.get(user_id)
+        if not st or now >= st.get("reset", 0):
+            _preview_rate_state[user_id] = {"count": 0, "reset": now + window}
+            st = _preview_rate_state[user_id]
+        if st["count"] >= PREVIEW_LIMIT_PER_MINUTE:
+            retry_after = max(1, st["reset"] - now)
+            raise HTTPException(status_code=429, detail={
+                "message": "Too many preview requests. Please wait a bit and try again.",
+                "retry_after": retry_after,
+                "limit_per_minute": PREVIEW_LIMIT_PER_MINUTE,
+            })
+        st["count"] += 1
 
 
 class CreateTemplateRequest(BaseModel):
@@ -78,6 +104,27 @@ class InstallationResponse(BaseModel):
     missing_regular_credentials: List[Dict[str, Any]] = []
     missing_custom_configs: List[Dict[str, Any]] = []
     template_info: Optional[Dict[str, Any]] = None
+
+
+class TryChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class TryChatRequest(BaseModel):
+    # Either provide a single message or a full messages array
+    message: Optional[str] = None
+    messages: Optional[List[TryChatMessage]] = None
+    # Optional overrides
+    temperature: Optional[float] = 0.7
+    max_tokens: Optional[int] = 600
+    top_p: Optional[float] = 0.9
+
+
+class TryChatResponse(BaseModel):
+    reply: str
+    model: Optional[str] = None
+    usage: Optional[Dict[str, Any]] = None
 
 
 def initialize(database: DBConnection):
@@ -517,3 +564,230 @@ async def get_template(
 
 
 # Share link functionality removed - now using direct template ID URLs for simplicity 
+
+
+@router.post("/{template_id}/try-chat", response_model=TryChatResponse)
+async def try_chat_with_template(
+    template_id: str,
+    request: TryChatRequest,
+    user_id: str = Depends(verify_and_get_user_id_from_jwt)
+):
+    """
+    Ephemeral try-in-chat for a template without installing.
+
+    Constraints/safety:
+    - Allowed only if user owns the template or the template is public
+    - Uses the template's system_prompt and model; tools are disabled for preview
+    - Small token + temperature defaults
+    """
+    try:
+        await _check_preview_rate_limit(user_id)
+        template = await validate_template_access_and_get(template_id, user_id)
+
+        # Build messages array: include system prompt + user input(s)
+        messages: List[Dict[str, Any]] = []
+        system_prompt = template.system_prompt or ""
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+
+        # Accept either a single message or multiple
+        if request.messages and len(request.messages) > 0:
+            for m in request.messages:
+                role = m.role if m.role in ["user", "assistant"] else "user"
+                content = m.content or ""
+                if content:
+                    messages.append({"role": role, "content": content})
+        else:
+            # fallback to single message
+            user_msg = (request.message or "Give me a one-sentence overview of what you can do.").strip()
+            messages.append({"role": "user", "content": user_msg})
+
+        # Resolve model from template config
+        # Default to GPT-5 Mini for preview if template model is not set
+        template_model = template.config.get("model") or "openai/gpt-5-mini"
+
+        # Make a short, tool-free completion
+        from services.llm import make_llm_api_call
+        # Determine top_p usage: avoid for GPT-5 models
+        use_top_p = request.top_p if (request.top_p is not None and "gpt-5" not in template_model) else None
+
+        llm_response = await make_llm_api_call(
+            messages=messages,
+            model_name=template_model,
+            temperature=request.temperature if request.temperature is not None else 0.7,
+            max_tokens=request.max_tokens if request.max_tokens is not None else 600,
+            tools=None,
+            tool_choice="none",
+            stream=False,
+            top_p=use_top_p,
+        )
+
+        # Extract reply text robustly from LiteLLM ModelResponse
+        reply_text = None
+        try:
+            # Primary path
+            choice = llm_response.choices[0]
+            content = None
+            # Support both attribute and dict access
+            if hasattr(choice, "message") and getattr(choice, "message") is not None:
+                msg = getattr(choice, "message")
+                content = getattr(msg, "content", None)
+                if content is None and isinstance(msg, dict):
+                    content = msg.get("content")
+            elif isinstance(choice, dict):
+                message_obj = choice.get("message") or {}
+                content = message_obj.get("content")
+
+            # Handle content formats
+            if isinstance(content, list):
+                parts = []
+                for c in content:
+                    if isinstance(c, dict) and c.get("type") in ("text", "output_text"):
+                        parts.append(c.get("text") or c.get("output_text") or "")
+                    elif isinstance(c, str):
+                        parts.append(c)
+                merged = "\n".join([p for p in parts if p])
+                reply_text = merged if merged else None
+            elif isinstance(content, str):
+                reply_text = content or None
+
+            # Provider-specific conveniences
+            if not reply_text:
+                # Many providers include a convenience field
+                alt = getattr(llm_response, "output_text", None)
+                if not alt and hasattr(llm_response, "model_dump"):
+                    try:
+                        dump = llm_response.model_dump()
+                        alt = dump.get("output_text") or dump.get("content")
+                        if not alt and dump.get("choices"):
+                            m = dump["choices"][0].get("message", {})
+                            alt = m.get("content")
+                    except Exception:
+                        alt = None
+                if isinstance(alt, list):
+                    alt = "\n".join([str(a) for a in alt if a])
+                if isinstance(alt, str) and alt.strip():
+                    reply_text = alt
+        except Exception:
+            reply_text = None
+
+        if not reply_text:
+            # Final fallback: guard against leaking raw object string; provide friendly note
+            reply_text = "(No preview text returned by the model.)"
+
+        # Extract usage if available
+        usage = None
+        try:
+            usage = getattr(llm_response, "usage", None)
+            if usage and not isinstance(usage, dict):
+                usage = usage.model_dump() if hasattr(usage, "model_dump") else dict(usage)
+        except Exception:
+            usage = None
+
+        return TryChatResponse(
+            reply=reply_text,
+            model=template_model,
+            usage=usage,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in try-chat for template {template_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/{template_id}/try-chat/stream")
+async def try_chat_stream(
+    template_id: str,
+    request: TryChatRequest,
+    user_id: str = Depends(verify_and_get_user_id_from_jwt)
+):
+    """
+    Streaming (SSE) variant of try-chat for faster perceived latency.
+
+    Emits lines prefixed with 'data: ' where JSON payload includes:
+    { "type": "chunk" | "done" | "error", "delta"?: string, "usage"?: any }
+    """
+    try:
+        await _check_preview_rate_limit(user_id)
+        template = await validate_template_access_and_get(template_id, user_id)
+
+        messages: List[Dict[str, Any]] = []
+        system_prompt = template.system_prompt or ""
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        if request.messages and len(request.messages) > 0:
+            for m in request.messages:
+                role = m.role if m.role in ["user", "assistant"] else "user"
+                content = m.content or ""
+                if content:
+                    messages.append({"role": role, "content": content})
+        else:
+            user_msg = (request.message or "Give me a one-sentence overview of what you can do.").strip()
+            messages.append({"role": "user", "content": user_msg})
+
+        template_model = template.config.get("model") or "openai/gpt-5-mini"
+
+        from services.llm import make_llm_api_call
+
+        async def event_generator():
+            try:
+                # Avoid top_p for GPT-5
+                use_top_p = request.top_p if (request.top_p is not None and "gpt-5" not in template_model) else None
+                stream = await make_llm_api_call(
+                    messages=messages,
+                    model_name=template_model,
+                    temperature=request.temperature if request.temperature is not None else 0.7,
+                    max_tokens=request.max_tokens if request.max_tokens is not None else 600,
+                    tools=None,
+                    tool_choice="none",
+                    stream=True,
+                    top_p=use_top_p,
+                )
+
+                async for chunk in stream:  # LiteLLM yields dict-like chunks
+                    try:
+                        # Try to extract delta text in a provider-agnostic way
+                        delta = None
+                        if isinstance(chunk, dict):
+                            # OpenAI-like
+                            ch = chunk.get("choices", [{}])[0]
+                            if ch:
+                                delta = ch.get("delta", {}).get("content") or ch.get("message", {}).get("content")
+                        else:
+                            # Fallback to attribute access
+                            choices = getattr(chunk, "choices", None)
+                            if choices:
+                                ch0 = choices[0]
+                                delta_obj = getattr(ch0, "delta", None) or getattr(ch0, "message", None)
+                                if delta_obj is not None:
+                                    delta = getattr(delta_obj, "content", None)
+                        if delta:
+                            yield f"data: {{\"type\":\"chunk\",\"delta\":{json_dumps(delta)} }}\n\n"
+                    except Exception:
+                        # Skip malformed chunk
+                        continue
+                # Done signal
+                yield "data: {\"type\":\"done\"}\n\n"
+            except HTTPException as he:
+                detail = he.detail if isinstance(he.detail, dict) else {"message": str(he.detail)}
+                yield f"data: {{\"type\":\"error\",\"error\":{json_dumps(detail)} }}\n\n"
+            except Exception as e:
+                yield f"data: {{\"type\":\"error\",\"error\":{{\"message\":{json_dumps(str(e))}}}}}\n\n"
+
+        # Local minimal JSON serializer (avoid importing orjson)
+        def json_dumps(s: Any) -> str:
+            if isinstance(s, str):
+                return '"' + s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n') + '"'
+            try:
+                import json
+                return json.dumps(s)
+            except Exception:
+                return '""'
+
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in try-chat stream for template {template_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")

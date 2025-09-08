@@ -1,4 +1,3 @@
-export { AgentsPageHeader } from './header';
 export { TabsNavigation } from './tabs-navigation';
 export { SearchBar } from './search-bar';
 export { MyAgentsTab } from './my-agents-tab';

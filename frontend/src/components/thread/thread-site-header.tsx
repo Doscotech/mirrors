@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from "@/components/ui/button"
-import { FolderOpen, ExternalLink, Monitor, Copy, Check } from "lucide-react"
+import { FolderOpen, ExternalLink, Monitor, Copy, Check, Menu } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 import {
@@ -20,6 +20,7 @@ import { ShareModal } from "@/components/sidebar/share-modal"
 import { useQueryClient } from "@tanstack/react-query";
 import { projectKeys } from "@/hooks/react-query/sidebar/keys";
 import { threadKeys } from "@/hooks/react-query/threads/keys";
+import { useSidebar } from "@/components/ui/sidebar";
 
 interface ThreadSiteHeaderProps {
   threadId?: string;
@@ -55,6 +56,7 @@ export function SiteHeader({
 
   const isMobile = useIsMobile() || isMobileView
   const updateProjectMutation = useUpdateProject()
+  const { setOpenMobile } = useSidebar();
 
   const openShareModal = () => {
     setShowShareModal(true)
@@ -142,8 +144,21 @@ export function SiteHeader({
         isMobile && "px-2"
       )}>
 
+        {/* Embedded mobile menu trigger */}
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Open menu"
+            onClick={() => setOpenMobile(true)}
+            className="h-9 w-9 rounded-xl bg-background/70 backdrop-blur-sm border border-border text-foreground shadow-sm hover:bg-accent/60"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
 
-        <div className="flex flex-1 items-center gap-2 px-3">
+
+  <div className="flex flex-1 items-center gap-2 px-3">
           {variant === 'shared' ? (
             <div className="text-base font-medium text-muted-foreground flex items-center gap-2">
               {projectName}

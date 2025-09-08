@@ -64,11 +64,11 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   keywords: ['AI Worker', 'Generalist AI', 'SaaS', 'Autonomous Agent', 'Orchestration'],
   links: {
-    email: 'support@kortix.ai',
-    twitter: 'https://x.com/kortixai',
-    // discord: 'https://discord.gg/kortixai',
-  github: 'https://github.com/Kortix-ai',
-    instagram: 'https://instagram.com/kortixai',
+    email: 'support@xera.cc',
+    twitter: 'https://x.com/xera.cc',
+    // discord: 'https://discord.gg/xera.cc',
+    github: 'https://github.com',
+    instagram: 'https://instagram.com/xera.cc',
   },
   nav: {
     links: [
@@ -106,7 +106,7 @@ export const siteConfig = {
       </svg>
     ),
     badge: '',
-  githubUrl: 'https://github.com/Kortix-ai',
+  githubUrl: 'https://github.com',
     title: 'Xera – Build, manage and train your AI Workforce.',
     description:
       'Build agents, connect tools, and orchestrate real work end-to-end with observability.',
@@ -1206,7 +1206,7 @@ export const siteConfig = {
         id: 5,
         question: 'How do I get support?',
         answer:
-          'Use the in-app help or email support@kortix.ai. Priority support is available on paid plans.',
+          'Use the in-app help or email support@xera.cc. Priority support is available on paid plans.',
       },
       {
         id: 6,
@@ -1230,9 +1230,9 @@ export const siteConfig = {
     {
       title: 'Xera',
       links: [
-        { id: 1, title: 'About', url: 'https://kortix.ai' },
-        { id: 3, title: 'Contact', url: 'mailto:support@kortix.ai' },
-        { id: 4, title: 'Careers', url: 'https://kortix.ai/careers' },
+        { id: 1, title: 'About', url: 'https://xera.cc' },
+        { id: 3, title: 'Contact', url: 'mailto:support@xera.cc' },
+        { id: 4, title: 'Careers', url: 'https://xera.cc/careers' },
       ],
     },
     {

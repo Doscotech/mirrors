@@ -357,80 +357,10 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
               <ArrowDown className="w-4 h-4 text-muted-foreground" />
             </button>
           )}
-          <Card
-            className={`-mb-2 shadow-none w-full max-w-4xl mx-auto bg-transparent border-none overflow-visible ${enableAdvancedConfig && selectedAgentId ? '' : 'rounded-3xl'} relative z-10`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsDraggingOver(false);
-              if (fileInputRef.current && e.dataTransfer.files.length > 0) {
-                const files = Array.from(e.dataTransfer.files);
-                handleFiles(
-                  files,
-                  sandboxId,
-                  setPendingFiles,
-                  setUploadedFiles,
-                  setIsUploading,
-                  messages,
-                  queryClient,
-                );
-              }
-            }}
-          >
-            <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
-              <CardContent className={`w-full p-1.5 pb-2 ${bgColor} border rounded-3xl`}>
-                <AttachmentGroup
-                  files={uploadedFiles || []}
-                  sandboxId={sandboxId}
-                  onRemove={removeUploadedFile}
-                  layout="inline"
-                  maxHeight="216px"
-                  showPreviews={true}
-                />
-                <MessageInput
-                  ref={textareaRef}
-                  value={value}
-                  onChange={handleChange}
-                  onSubmit={handleSubmit}
-                  onTranscription={handleTranscription}
-                  placeholder={placeholder}
-                  loading={loading}
-                  disabled={disabled}
-                  isAgentRunning={isAgentRunning}
-                  onStopAgent={onStopAgent}
-                  isDraggingOver={isDraggingOver}
-                  uploadedFiles={uploadedFiles}
-
-                  fileInputRef={fileInputRef}
-                  isUploading={isUploading}
-                  sandboxId={sandboxId}
-                  setPendingFiles={setPendingFiles}
-                  setUploadedFiles={setUploadedFiles}
-                  setIsUploading={setIsUploading}
-                  hideAttachments={hideAttachments}
-                  messages={messages}
-
-                  selectedModel={selectedModel}
-                  onModelChange={handleModelChange}
-                  modelOptions={modelOptions}
-                  subscriptionStatus={subscriptionStatus}
-                  canAccessModel={canAccessModel}
-                  refreshCustomModels={refreshCustomModels}
-                  isLoggedIn={isLoggedIn}
-
-                  selectedAgentId={selectedAgentId}
-                  onAgentSelect={onAgentSelect}
-                  hideAgentSelection={hideAgentSelection}
-                />
-              </CardContent>
-            </div>
-          </Card>
-
+          {/* Quick action panel moved above the input */}
           {enableAdvancedConfig && selectedAgentId && (
-            <div className="w-full max-w-4xl mx-auto -mt-12 relative z-20">
-              <div className="bg-gradient-to-b from-transparent via-transparent to-muted/30 pt-8 pb-2 px-4 rounded-b-3xl border border-t-0 border-border/50 transition-all duration-300 ease-out">
+            <div className="w-full max-w-4xl mx-auto mb-0 relative z-20">
+              <div className={`px-4 pt-2 pb-0 ${bgColor} rounded-t-3xl border border-b-0 transition-all duration-300 ease-out`}>
                 <div className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-none relative">
                   <button
                     onClick={() => setRegistryDialogOpen(true)}
@@ -500,6 +430,79 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
               </div>
             </div>
           )}
+
+          <Card
+            className={`-mb-2 shadow-none w-full max-w-4xl mx-auto bg-transparent border-none overflow-visible ${enableAdvancedConfig && selectedAgentId ? '' : 'rounded-3xl'} relative z-10`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDraggingOver(false);
+              if (fileInputRef.current && e.dataTransfer.files.length > 0) {
+                const files = Array.from(e.dataTransfer.files);
+                handleFiles(
+                  files,
+                  sandboxId,
+                  setPendingFiles,
+                  setUploadedFiles,
+                  setIsUploading,
+                  messages,
+                  queryClient,
+                );
+              }
+            }}
+          >
+            <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
+              <CardContent className={`w-full p-1.5 pb-2 ${bgColor} border ${enableAdvancedConfig && selectedAgentId ? 'rounded-b-3xl border-t-0' : 'rounded-3xl'}`}>
+                <AttachmentGroup
+                  files={uploadedFiles || []}
+                  sandboxId={sandboxId}
+                  onRemove={removeUploadedFile}
+                  layout="inline"
+                  maxHeight="216px"
+                  showPreviews={true}
+                />
+                <MessageInput
+                  ref={textareaRef}
+                  value={value}
+                  onChange={handleChange}
+                  onSubmit={handleSubmit}
+                  onTranscription={handleTranscription}
+                  placeholder={placeholder}
+                  loading={loading}
+                  disabled={disabled}
+                  isAgentRunning={isAgentRunning}
+                  onStopAgent={onStopAgent}
+                  isDraggingOver={isDraggingOver}
+                  uploadedFiles={uploadedFiles}
+
+                  fileInputRef={fileInputRef}
+                  isUploading={isUploading}
+                  sandboxId={sandboxId}
+                  setPendingFiles={setPendingFiles}
+                  setUploadedFiles={setUploadedFiles}
+                  setIsUploading={setIsUploading}
+                  hideAttachments={hideAttachments}
+                  messages={messages}
+
+                  selectedModel={selectedModel}
+                  onModelChange={handleModelChange}
+                  modelOptions={modelOptions}
+                  subscriptionStatus={subscriptionStatus}
+                  canAccessModel={canAccessModel}
+                  refreshCustomModels={refreshCustomModels}
+                  isLoggedIn={isLoggedIn}
+
+                  selectedAgentId={selectedAgentId}
+                  onAgentSelect={onAgentSelect}
+                  hideAgentSelection={hideAgentSelection}
+                />
+              </CardContent>
+            </div>
+          </Card>
+
+          {/* Panel moved above; removed from below */}
 
           <Dialog open={registryDialogOpen} onOpenChange={setRegistryDialogOpen}>
             <DialogContent className="p-0 max-w-6xl h-[90vh] overflow-hidden">

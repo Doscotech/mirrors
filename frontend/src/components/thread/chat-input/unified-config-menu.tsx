@@ -162,20 +162,11 @@ const LoggedInMenu: React.FC<UnifiedConfigMenuProps> = ({
                         className="h-8 px-2 bg-transparent border-0 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/50 flex items-center gap-1.5"
                         aria-label="Config menu"
                     >
-                        {onAgentSelect ? (
-                            <div className="flex items-center gap-2 min-w-0 max-w-[180px]">
-                                {renderAgentIcon(displayAgent)}
-                                <span className="truncate text-sm font-medium">
-                                    {displayAgent?.name || 'Xera'}
-                                </span>
-                                <ChevronDown size={12} className="opacity-60 flex-shrink-0" />
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-1.5">
-                                <Cpu className="h-4 w-4" />
-                                <ChevronDown size={12} className="opacity-60" />
-                            </div>
-                        )}
+                        {/* When agent selection is handled in the top bar, keep this as a simple menu trigger */}
+                        <div className="flex items-center gap-1.5">
+                            <Cpu className="h-4 w-4" />
+                            <ChevronDown size={12} className="opacity-60" />
+                        </div>
                     </Button>
                 </DropdownMenuTrigger>
 
@@ -195,48 +186,7 @@ const LoggedInMenu: React.FC<UnifiedConfigMenuProps> = ({
                         </div>
                     </div>
 
-                    {/* Agents */}
-                    {onAgentSelect && (
-                        <div className="px-1.5">
-                            <div className="px-3 py-1 text-[11px] font-medium text-muted-foreground flex items-center justify-between">
-                                <span>Agents</span>
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                                    onClick={() => { setIsOpen(false); setShowNewAgentDialog(true); }}
-                                >
-                                    <Plus className="h-3.5 w-3.5" />
-                                </Button>
-                            </div>
-                            {topAgents.length === 0 ? (
-                                <div className="px-3 py-2 text-xs text-muted-foreground">No agents</div>
-                            ) : (
-                                <div className="max-h-[132px] overflow-y-auto">
-                                    {filteredAgents.map((agent) => (
-                                        <DropdownMenuItem
-                                            key={agent.agent_id}
-                                            className="text-sm px-3 py-2 mx-0 my-0.5 flex items-center justify-between cursor-pointer rounded-lg"
-                                            onClick={() => handleAgentClick(agent.agent_id)}
-                                        >
-                                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                {renderAgentIcon(agent)}
-                                                <span className="truncate font-medium">{agent.name}</span>
-                                            </div>
-                                            {selectedAgentId === agent.agent_id && (
-                                                <Check className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                                            )}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Agents "see all" removed; scroll container shows all */}
-                            {/* Playbooks moved below (as hover submenu) */}
-                        </div>
-                    )}
-
-                    {onAgentSelect && <DropdownMenuSeparator className="!mt-0" />}
+                    {/* Agents section removed from input menu; selection is handled in the top bar */}
 
                     {/* Models (shown only when model options provided and onModelChange is meaningful) */}
                     {modelOptions && modelOptions.length > 0 && typeof onModelChange === 'function' && (
@@ -254,7 +204,7 @@ const LoggedInMenu: React.FC<UnifiedConfigMenuProps> = ({
                     <DropdownMenuSeparator />
 
                     {/* Quick Actions */}
-                    {onAgentSelect && (selectedAgentId || displayAgent?.agent_id) && (
+                    {false && onAgentSelect && (selectedAgentId || displayAgent?.agent_id) && (
                         <div className="px-1.5">
                             <DropdownMenuItem
                                 className="text-sm px-3 py-2 mx-0 my-0.5 flex items-center gap-2 cursor-pointer rounded-lg"

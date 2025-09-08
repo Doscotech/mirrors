@@ -155,29 +155,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       }
     };
 
-    const renderDropdown = () => {
-      const showAdvancedFeatures = isLoggedIn && enableAdvancedConfig;
-      // Don't render dropdown components until after hydration to prevent ID mismatches
-      if (!mounted) {
-        return <div className="flex items-center gap-2 h-8" />; // Placeholder with same height
-      }
-      // Unified compact menu for both logged and non-logged (non-logged shows only models subset via menu trigger)
-      return (
-        <div className="flex items-center gap-2" data-tour="agent-selector">
-          <UnifiedConfigMenu
-            isLoggedIn={isLoggedIn}
-            selectedAgentId={!hideAgentSelection ? selectedAgentId : undefined}
-            onAgentSelect={!hideAgentSelection ? onAgentSelect : undefined}
-            selectedModel={selectedModel}
-            onModelChange={() => { /* disabled: model selector is now in top-left bar */ }}
-            modelOptions={[]}
-            subscriptionStatus={subscriptionStatus}
-            canAccessModel={() => false}
-            refreshCustomModels={undefined}
-          />
-        </div>
-      );
-    }
+  // Input-level config menu removed; model selection lives in the top-left bar
 
     return (
       <div className="relative flex flex-col w-full h-full gap-2 justify-between">
@@ -234,7 +212,6 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           } */}
 
           <div className='flex items-center gap-2'>
-            {renderDropdown()}
             <BillingModal
               open={billingModalOpen}
               onOpenChange={setBillingModalOpen}

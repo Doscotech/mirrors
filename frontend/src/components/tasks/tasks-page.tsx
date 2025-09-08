@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
+import MobileSidebarToggle from '@/components/layout/MobileSidebarToggle';
 import { useAllTriggers, type TriggerWithAgent } from '@/hooks/react-query/triggers/use-all-triggers';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -235,7 +236,10 @@ export function TasksPage() {
             "w-full px-4 transition-all duration-300 ease-in-out",
             selectedTrigger ? "max-w-2xl" : "max-w-4xl"
           )}>
-            <div className="flex items-center justify-between py-10">
+            <div className="flex items-center justify-between py-10 relative">
+              <div className="absolute -top-6 left-0 md:hidden">
+                <MobileSidebarToggle />
+              </div>
               <h1 className="text-xl font-semibold">Tasks</h1>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

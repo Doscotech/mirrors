@@ -31,6 +31,9 @@ export interface AgentTemplate {
   creator_id: string;
   name: string;
   description?: string;
+  // Optional system prompt/instructions for the agent
+  system_prompt?: string;
+  instructions?: string;
   mcp_requirements: MCPRequirement[];
   agentpress_tools: Record<string, any>;
   tags: string[];
@@ -509,3 +512,124 @@ export function useInstallTemplate() {
     },
   });
 } 
+
+// ================================================
+// Ephemeral Try-Chat (Preview) Hook
+// ================================================
+export interface TryChatRequest {
+  message?: string;
+  messages?: { role: 'user' | 'assistant'; content: string }[];
+  temperature?: number;
+  max_tokens?: number;
+  top_p?: number;
+}
+
+export interface TryChatResponse {
+  reply: string;
+  model?: string;
+  usage?: Record<string, any>;
+}
+
+export function useTryChat(template_id: string) {
+  return useMutation({
+    mutationFn: async (payload: TryChatRequest): Promise<TryChatResponse> => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to try chat');
+      }
+      const response = await fetch(`${API_URL}/templates/${template_id}/try-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    }
+  });
+}
+
+// Streaming (SSE over fetch) utility for preview chat
+export type TryChatStreamEvent =
+  | { type: 'chunk'; delta: string }
+  | { type: 'done' }
+  | { type: 'error'; error: any };
+
+export async function tryChatStream(
+  template_id: string,
+  payload: TryChatRequest,
+  onEvent: (ev: TryChatStreamEvent) => void,
+  signal?: AbortSignal
+): Promise<void> {
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('You must be logged in to try chat');
+
+  const res = await fetch(`${API_URL}/templates/${template_id}/try-chat/stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify(payload),
+    signal,
+  });
+
+  if (!res.ok) {
+    let detail: any = undefined;
+    try { detail = await res.json(); } catch {}
+    const message = detail?.message || detail?.detail?.message || `HTTP ${res.status}: ${res.statusText}`;
+    const retry_after = detail?.retry_after || detail?.detail?.retry_after;
+    const err: any = new Error(message);
+    if (retry_after) err.retry_after = retry_after;
+    throw err;
+  }
+
+  const reader = res.body?.getReader();
+  const decoder = new TextDecoder('utf-8');
+  if (!reader) {
+    throw new Error('No stream available');
+  }
+
+  let buffer = '';
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let sepIndex;
+      while ((sepIndex = buffer.indexOf('\n\n')) !== -1) {
+        const event = buffer.slice(0, sepIndex);
+        buffer = buffer.slice(sepIndex + 2);
+        const line = event.trim();
+        if (!line) continue;
+        // Expect lines like: data: {"type":"chunk","delta":"..."}
+        const dataPrefix = 'data:';
+        const idx = line.indexOf(dataPrefix);
+        if (idx !== -1) {
+          const jsonStr = line.slice(idx + dataPrefix.length).trim();
+          try {
+            const obj = JSON.parse(jsonStr);
+            if (obj?.type === 'chunk' && typeof obj.delta === 'string') {
+              onEvent({ type: 'chunk', delta: obj.delta });
+            } else if (obj?.type === 'done') {
+              onEvent({ type: 'done' });
+            } else if (obj?.type === 'error') {
+              onEvent({ type: 'error', error: obj.error || { message: 'Unknown error' } });
+            }
+          } catch {
+            // ignore malformed line
+          }
+        }
+      }
+    }
+  } finally {
+    try { await reader.cancel(); } catch {}
+  }
+}

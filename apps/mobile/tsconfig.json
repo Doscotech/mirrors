@@ -4,8 +4,10 @@
     "strict": true,
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
+  "baseUrl": ".",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
+  "skipLibCheck": true,
     "paths": {
       "@/*": [
         "./*"

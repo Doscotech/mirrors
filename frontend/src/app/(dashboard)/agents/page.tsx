@@ -13,7 +13,6 @@ import type { MarketplaceTemplate } from '@/components/agents/installation/types
 
 import { AgentsParams } from '@/hooks/react-query/agents/utils';
 
-import { AgentsPageHeader } from '@/components/agents/custom-agents-page/header';
 import { TabsNavigation } from '@/components/agents/custom-agents-page/tabs-navigation';
 import { MyAgentsTab } from '@/components/agents/custom-agents-page/my-agents-tab';
 import { MarketplaceTab } from '@/components/agents/custom-agents-page/marketplace-tab';
@@ -124,9 +123,25 @@ export default function AgentsPage() {
       limit: marketplacePageSize,
       search: marketplaceSearchQuery || undefined,
       tags: marketplaceSelectedTags.length > 0 ? marketplaceSelectedTags.join(',') : undefined,
-      sort_by: "download_count",
-      sort_order: "desc"
     };
+
+    // Map UI sort to API sort params
+    switch (marketplaceSortBy) {
+      case 'newest':
+        params.sort_by = 'marketplace_published_at';
+        params.sort_order = 'desc';
+        break;
+      case 'name':
+        params.sort_by = 'name';
+        params.sort_order = 'asc';
+        break;
+      case 'most_downloaded':
+      case 'popular':
+      default:
+        params.sort_by = 'download_count';
+        params.sort_order = 'desc';
+        break;
+    }
     
     if (marketplaceFilter === 'kortix') {
       params.is_kortix_team = true;
@@ -137,7 +152,7 @@ export default function AgentsPage() {
     }
     
     return params;
-  }, [marketplacePage, marketplacePageSize, marketplaceSearchQuery, marketplaceSelectedTags, marketplaceFilter]);
+  }, [marketplacePage, marketplacePageSize, marketplaceSearchQuery, marketplaceSelectedTags, marketplaceFilter, marketplaceSortBy]);
 
   const templatesQueryParams = useMemo(() => ({
     page: templatesPage,
@@ -233,7 +248,7 @@ export default function AgentsPage() {
 
   useEffect(() => {
     setMarketplacePage(1);
-  }, [marketplaceSearchQuery, marketplaceSelectedTags, marketplaceSortBy]);
+  }, [marketplaceSearchQuery, marketplaceSelectedTags, marketplaceSortBy, marketplaceFilter]);
 
   useEffect(() => {
     setTemplatesPage(1);
@@ -377,7 +392,7 @@ export default function AgentsPage() {
             ...(item.mcp_requirements || []),
             ...result.missing_regular_credentials.map((cred: any) => ({
               qualified_name: cred.qualified_name,
-              display_name: cred.display_name,
+              display_name: cred.display_name || cred.qualified_name,
               enabled_tools: cred.enabled_tools || [],
               required_config: cred.required_config || [],
               custom_type: cred.custom_type,
@@ -390,7 +405,7 @@ export default function AgentsPage() {
           
           setSelectedItem({
             ...item,
-            mcp_requirements: updatedRequirements
+            mcp_requirements: updatedRequirements as any
           });
           
           toast.warning('Additional configurations required. Please complete the setup.');
@@ -411,7 +426,6 @@ export default function AgentsPage() {
         setShowAgentLimitDialog(true);
         return;
       }
-
       if (error.message?.includes('already in your library')) {
         toast.error('This agent is already in your library');
       } else if (error.message?.includes('Credential profile not found')) {
@@ -421,7 +435,7 @@ export default function AgentsPage() {
       } else if (error.message?.includes('Invalid credential profile')) {
         toast.error('One or more selected credential profiles are invalid. Please select valid profiles.');
       } else if (error.message?.includes('inactive')) {
-        toast.error('One or more selected credential profiles are inactive. Please select active profiles.');
+  // no-op
       } else if (error.message?.includes('Template not found')) {
         toast.error('This agent template is no longer available');
       } else if (error.message?.includes('Access denied')) {
@@ -541,20 +555,31 @@ export default function AgentsPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="container mx-auto max-w-7xl px-4 py-8">
-        <AgentsPageHeader />
-      </div>
-      <div className="sticky top-0 z-50">
-        <div className="absolute inset-0 backdrop-blur-md" style={{
-          maskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)'
-        }}></div>
-        <div className="relative bg-gradient-to-b from-background/95 via-background/70 to-transparent">
-          <div className="container mx-auto max-w-7xl px-4 py-4">
-            <TabsNavigation activeTab={activeTab} onTabChange={handleTabChange} onCreateAgent={handleCreateNewAgent} />
+  {/* Nav is moved into the page headers (DiscoverHeader for marketplace; compact hero for my-agents) */}
+      {/* Compact gradient hero header only for My Agents; marketplace header lives in DiscoverHeader */}
+      {activeTab === 'my-agents' && (
+        <div className="relative overflow-hidden border-b border-border/60 bg-gradient-to-b from-[#0b1220] via-background to-background">
+          <div className="absolute top-3 left-3 md:hidden z-10">
+            {/* Mobile menu toggle */}
+            {/* Lazy import to avoid SSR issues not required; component is client */}
+            {(require('@/components/layout/MobileSidebarToggle').default) &&
+              (() => { const Toggle = require('@/components/layout/MobileSidebarToggle').default; return <Toggle />; })()}
           </div>
+          <div className="pointer-events-none absolute inset-0 opacity-60" style={{
+            background: 'radial-gradient(800px 300px at 10% 0%, rgba(6,182,212,0.12), transparent 60%),\
+                                             radial-gradient(600px 250px at 90% 10%, rgba(139,92,246,0.10), transparent 60%),\
+                                             radial-gradient(500px 200px at 50% 100%, rgba(244,63,94,0.08), transparent 60%)'
+          }} />
+          <div className="container mx-auto max-w-7xl px-4 py-4 space-y-4">
+            <TabsNavigation activeTab={activeTab} onTabChange={handleTabChange} onCreateAgent={handleCreateNewAgent} />
+            <div>
+              <h1 className="text-xl md:text-2xl font-semibold tracking-tight">My Agents</h1>
+              <p className="mt-1 text-sm text-muted-foreground">Manage your installed agents and templates.</p>
+            </div>
+          </div>
+          <div className="h-[2px] w-full" style={{ background: 'linear-gradient(90deg,#06b6d4 0%, #8b5cf6 50%, #f43f5e 100%)' }} />
         </div>
-      </div>
+      )}
       <div className="container mx-auto max-w-7xl px-4 py-2">
         <div className="w-full min-h-[calc(100vh-300px)]">
           {activeTab === "my-agents" && (
@@ -565,6 +590,7 @@ export default function AgentsPage() {
               agents={agents}
               agentsPagination={agentsPagination}
               viewMode={viewMode}
+              setViewMode={setViewMode}
               onCreateAgent={handleCreateNewAgent}
               onEditAgent={handleEditAgent}
               onDeleteAgent={handleDeleteAgent}
@@ -599,6 +625,7 @@ export default function AgentsPage() {
               setMarketplaceSearchQuery={setMarketplaceSearchQuery}
               marketplaceFilter={marketplaceFilter}
               setMarketplaceFilter={setMarketplaceFilter}
+  // no-op
               marketplaceLoading={marketplaceLoading}
               allMarketplaceItems={allMarketplaceItems}
               mineItems={[]}

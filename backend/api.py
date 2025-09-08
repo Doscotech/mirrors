@@ -129,7 +129,7 @@ async def log_requests_middleware(request: Request, call_next):
         raise
 
 # Define allowed origins based on environment
-allowed_origins = ["https://hoekage.tech", "http:localhost:3000"]
+allowed_origins = ["https://xera.cc", "http:localhost:3000"]
 allow_origin_regex = None
 
 # Add staging-specific origins

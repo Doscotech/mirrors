@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import { useCreateTemplate, useUnpublishTemplate } from '@/hooks/react-query/secure-mcp/use-secure-mcp';
 import { toast } from 'sonner';
 import { AgentCard } from './custom-agents-page/agent-card';
+import { AgentCardV2 } from '@/components/agents/discover/AgentCardV2';
+import type { MarketplaceTemplate } from '@/components/agents/installation/types';
 import { KortixLogo } from '../sidebar/kortix-logo';
 import { DynamicIcon } from 'lucide-react/dynamic';
 
@@ -59,7 +61,34 @@ interface AgentsGridProps {
   isDeletingAgent?: (agentId: string) => boolean;
   onPublish?: (agent: Agent) => void;
   publishingId?: string | null;
+  viewMode?: 'grid' | 'list';
 }
+
+// Map internal Agent to MarketplaceTemplate-like item for AgentCardV2 display
+const agentToTemplate = (agent: Agent): MarketplaceTemplate => {
+  return {
+    id: agent.agent_id,
+    creator_id: '',
+    name: agent.name,
+    description: agent.description || '',
+    tags: agent.tags || [],
+    download_count: agent.download_count || 0,
+    creator_name: agent.is_public ? 'You' : 'Private',
+    created_at: agent.created_at,
+    profile_image_url: agent.profile_image_url,
+    avatar: agent.icon_name ? undefined : agent.name?.[0]?.toUpperCase() || '🤖',
+    avatar_color: undefined,
+    icon_name: agent.icon_name || undefined,
+    icon_color: agent.icon_color || undefined,
+    icon_background: agent.icon_background || undefined,
+    template_id: agent.template_id || agent.agent_id,
+    is_kortix_team: agent.metadata?.is_suna_default || false,
+    model: undefined,
+    agentpress_tools: agent.agentpress_tools,
+    mcp_requirements: [],
+    metadata: undefined,
+  };
+};
 
 interface AgentModalProps {
   agent: Agent | null;
@@ -231,7 +260,8 @@ export const AgentsGrid: React.FC<AgentsGridProps> = ({
   deleteAgentMutation,
   isDeletingAgent,
   onPublish,
-  publishingId: externalPublishingId
+  publishingId: externalPublishingId,
+  viewMode = 'grid'
 }) => {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [unpublishingId, setUnpublishingId] = useState<string | null>(null);
@@ -277,7 +307,8 @@ export const AgentsGrid: React.FC<AgentsGridProps> = ({
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+  {viewMode === 'grid' ? (
+  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {agents.map((agent) => {
           const agentData = {
             ...agent,
@@ -299,11 +330,10 @@ export const AgentsGrid: React.FC<AgentsGridProps> = ({
               )}
               
               <div className={`transition-all duration-200 ${isDeleting ? 'opacity-60 scale-95' : ''}`}>
-                <AgentCard
-                  mode="agent"
-                  data={agentData}
-                  styling={undefined}
-                  onClick={() => !isDeleting && handleAgentClick(agent)}
+                <AgentCardV2
+                  item={agentToTemplate(agent)}
+                  onPreview={() => !isDeleting && handleAgentClick(agent)}
+                  onInstall={() => router.push(`/agents/config/${agent.agent_id}`)}
                 />
               </div>
               <div className={`absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity ${isDeleting ? 'pointer-events-none' : ''}`}>
@@ -367,6 +397,58 @@ export const AgentsGrid: React.FC<AgentsGridProps> = ({
           );
         })}
       </div>
+      ) : (
+      <div className="divide-y rounded-xl border">
+        {agents.map((agent) => {
+          const isDeleting = isDeletingAgent?.(agent.agent_id) || false;
+          return (
+            <div key={agent.agent_id} className={`flex items-center justify-between p-3 ${isDeleting ? 'opacity-60' : ''}`}>
+              <div className="min-w-0 flex-1">
+                <div className="font-medium truncate">{agent.name}</div>
+                <div className="text-xs text-muted-foreground truncate">{agent.description}</div>
+              </div>
+              <div className="ml-3 flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleCustomize(agent.agent_id)}>Customize</Button>
+                <Button size="sm" onClick={() => handleChat(agent.agent_id)}>Chat</Button>
+                {!agent.is_default && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
+                        disabled={isDeleting}
+                        title="Delete agent"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="max-w-md">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl">Delete Agent</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete &quot;{agent.name}&quot;? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => onDeleteAgent(agent.agent_id)}
+                          className="bg-destructive hover:bg-destructive/90 text-white"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      )}
 
       <AgentModal
         agent={selectedAgent}

@@ -12,12 +12,12 @@ interface PageHeaderProps {
 export const PageHeader: React.FC<PageHeaderProps> = ({ icon: Icon, children }) => {
   return (
     <div className="relative overflow-hidden rounded-3xl flex items-center justify-center border bg-background">
-      <div className="relative px-8 py-16 text-center">
+      <div className="relative px-6 py-8 md:px-8 md:py-10 text-center">
         <div className="mx-auto max-w-3xl space-y-6">
-          <div className="inline-flex items-center justify-center rounded-full bg-muted p-3">
-            <Icon className="h-8 w-8 text-primary" />
+          <div className="inline-flex items-center justify-center rounded-full bg-muted p-2.5">
+            <Icon className="h-6 w-6 md:h-7 md:w-7 text-primary" />
           </div>
-          <h1 className="text-4xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
             {children}
           </h1>
         </div>

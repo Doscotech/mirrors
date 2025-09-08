@@ -34,28 +34,25 @@ const TabButton = ({ value, isActive, onClick, children }: TabButtonProps) => {
     <button
       onClick={onClick}
       className={cn(
-        "relative flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-300 ease-out",
-        !isActive && (isDark ? "hover:bg-white/8" : "hover:bg-muted/60"),
-        isActive 
-          ? isDark ? "text-white" : "text-foreground bg-background border border-border/50"
-          : isDark ? "text-white/60 hover:text-white/85" : "text-muted-foreground hover:text-foreground"
+        "relative flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-300 ease-out",
+        !isActive && (isDark ? "hover:bg-white/5" : "hover:bg-muted/50"),
+        isActive
+          ? isDark
+            ? "text-white bg-white/10 border border-white/15 shadow-[0_4px_8px_rgba(0,0,0,0.2)]"
+            : "text-foreground bg-background border border-border/50"
+          : isDark
+            ? "text-white/70 hover:text-white"
+            : "text-muted-foreground hover:text-foreground"
       )}
       style={isActive && isDark ? {
-        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08))',
-        backdropFilter: 'blur(12px)',
-        boxShadow: `
-          0 4px 8px rgba(0, 0, 0, 0.1),
-          0 0 20px rgba(255, 255, 255, 0.1),
-          0 0 40px rgba(255, 255, 255, 0.1),
-          inset 0 1px 0 rgba(255, 255, 255, 0.2)
-        `
+        backdropFilter: 'blur(12px)'
       } : undefined}
     >
       {isActive && isDark && (
         <div 
-          className="absolute inset-0 rounded-2xl opacity-40 blur-sm"
+          className="absolute inset-0 rounded-xl opacity-30 blur-[2px]"
           style={{
-            background: 'linear-gradient(45deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))',
+            background: 'linear-gradient(45deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))',
             zIndex: -1
           }}
         />
@@ -72,15 +69,14 @@ export const FancyTabs = ({ tabs, activeTab, onTabChange, className }: FancyTabs
   return (
     <div 
       className={cn(
-        "overflow-hidden grid w-full max-w-lg mx-auto rounded-3xl p-1.5",
-        isDark ? "border-white/5" : "border-border/20 bg-muted",
+        "overflow-hidden inline-grid rounded-2xl p-1 border",
+        isDark ? "border-white/10 bg-white/5" : "border-border/50 bg-muted/60",
         className
       )}
       style={{
         gridTemplateColumns: `repeat(${tabs.length}, 1fr)`,
         ...(isDark ? {
-          background: 'rgba(255, 255, 255, 0.05)',
-          backdropFilter: 'blur(20px)',
+          backdropFilter: 'blur(16px)'
         } : {})
       }}
     >

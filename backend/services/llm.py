@@ -213,10 +213,13 @@ def _configure_openai_gpt5(params: Dict[str, Any], model_name: str) -> None:
     if "gpt-5" not in model_name:
         return
     
-
     # Drop unsupported temperature param (only default 1 allowed)
     if "temperature" in params and params["temperature"] != 1:
         params.pop("temperature", None)
+
+    # Drop unsupported top_p for GPT-5 models
+    if "top_p" in params:
+        params.pop("top_p", None)
 
     # Request priority service tier when calling OpenAI directly
 
@@ -301,8 +304,8 @@ def prepare_params(
         "model": resolved_model_name,
         "messages": messages,
         "temperature": temperature,
-        "response_format": response_format,
-        "top_p": top_p,
+    "response_format": response_format,
+    # top_p may be unsupported by some models (e.g., GPT-5). We'll set it conditionally below.
         "stream": stream,
         "num_retries": MAX_RETRIES,
     }
@@ -324,6 +327,10 @@ def prepare_params(
             )
         
         setup_provider_router(api_key, api_base)
+
+    # Conditionally set top_p if not GPT-5
+    if top_p is not None and ("gpt-5" not in resolved_model_name):
+        params["top_p"] = top_p
 
     # Handle token limits
     _configure_token_limits(params, resolved_model_name, max_tokens)

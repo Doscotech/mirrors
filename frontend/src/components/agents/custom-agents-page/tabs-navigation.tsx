@@ -44,10 +44,13 @@ export const TabsNavigation = ({ activeTab, onTabChange, onCreateAgent }: TabsNa
   };
 
   return (
-    <FancyTabs
-      tabs={tabs}
-      activeTab={activeTab}
-      onTabChange={handleTabSelection}
-    />
-);
+    <div className="flex items-center">
+      <FancyTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={handleTabSelection}
+        className="mx-0"
+      />
+    </div>
+  );
 }

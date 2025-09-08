@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "Suna",
-    "slug": "suna-mobile",
+    "name": "Xera",
+    "slug": "xeramobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "owner": "kortix",
-    "scheme": "sunamobile",
+    "owner": "hoekage77",
+    "scheme": "xeramobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "description": "Suna is a fully open source AI assistant that helps you accomplish real-world tasks with ease. Through natural conversation, Suna becomes your digital companion for research, data analysis, and everyday challenges.",
+    "description": "Xera is an AI assistant that helps you accomplish real-world tasks with ease. Through natural conversation, Xera becomes your digital companion for research, data analysis, and everyday challenges.",
     "primaryColor": "#121215",
     "privacy": "public",
     "platforms": [
@@ -28,16 +28,17 @@
       "research",
       "data analysis"
     ],
-    "githubUrl": "https://github.com/kortix-ai/suna",
+    "githubUrl": "https://github.com/hoekage77",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kortix.suna",
+      "bundleIdentifier": "com.xpathedge.xera",
       "buildNumber": "1.0.0",
       "infoPlist": {
-        "CFBundleDisplayName": "Suna",
+        "CFBundleDisplayName": "Xera",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
+        },
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -46,7 +47,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.kortix.suna",
+      "package": "com.xpathedge.xera",
       "versionCode": 1,
       "permissions": [
         "INTERNET",
@@ -58,9 +59,9 @@
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png",
-      "name": "Suna - Open Source Generalist AI Agent",
-      "shortName": "Suna",
-      "description": "Suna is a fully open source AI assistant that helps you accomplish real-world tasks with ease through natural conversation.",
+      "name": "Xera - Generalist AI Agent",
+      "shortName": "Xera",
+      "description": "Xera is an AI assistant that helps you accomplish real-world tasks with ease. Through natural conversation, Xera becomes your digital companion for research, data analysis, and everyday challenges.",
       "startUrl": "/",
       "display": "standalone",
       "orientation": "portrait",
@@ -89,13 +90,17 @@
     },
     "extra": {
       "metadata": {
-        "applicationName": "Suna",
-        "authors": "Kortix Team",
-        "creator": "Kortix Team",
-        "publisher": "Kortix Team",
+        "applicationName": "Xera",
+        "authors": "Jesse",
+        "creator": "Jesse",
+        "publisher": "Jesse",
         "category": "Technology",
-        "siteUrl": "https://suna.so",
-        "twitterHandle": "@kortixai"
+        "siteUrl": "https://xera.cc",
+        "twitterHandle": "@xera"
+      },
+      "router": {},
+      "eas": {
+        "projectId": "d920abc5-570c-4803-8720-0810769ce2ee"
       }
     }
   }

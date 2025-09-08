@@ -23,11 +23,11 @@ def extract_agent_config(agent_data: Dict[str, Any], version_data: Optional[Dict
 
 
 def _extract_suna_agent_config(agent_data: Dict[str, Any], version_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Extract config for Suna agents - always use central config with user customizations."""
+    """Extract config for Xera agents - always use central config with user customizations."""
     from agent.suna_config import SUNA_CONFIG
     
     agent_id = agent_data.get('agent_id', 'Unknown')
-    logger.debug(f"Using Suna central config for agent {agent_id}")
+    logger.debug(f"Using Xera central config for agent {agent_id}")
     
     # Start with central Suna config
     config = {
@@ -227,12 +227,12 @@ def _get_default_agentpress_tools() -> Dict[str, bool]:
         "sb_presentation_tool": True,
 
         "sb_sheets_tool": False,
-        # "sb_web_dev_tool": True,
+        "sb_web_dev_tool": True,
         "browser_tool": True,
         "data_providers_tool": True,
         "agent_config_tool": True,
         "mcp_search_tool": True,
-        "credential_profile_tool": True,
+        "credential_profile_tool": False,
         "agent_creation_tool": True,
         "workflow_tool": True,
         "trigger_tool": True

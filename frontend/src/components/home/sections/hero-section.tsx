@@ -1,5 +1,5 @@
 'use client';
-import { HeroVideoSection } from '@/components/home/sections/hero-video-section';
+
 import { siteConfig } from '@/lib/home';
 import { ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -14,6 +14,9 @@ import { isLocalMode, config } from '@/lib/config';
 import { toast } from 'sonner';
 import { BillingModal } from '@/components/billing/billing-modal';
 import GitHubSignIn from '@/components/GithubSignIn';
+import { motion } from 'framer-motion';
+import { UnicornBackground } from './unicorn-background';
+import { vujahdayScript } from '@/app/fonts';
 
 // (Hero simplified: input and prompts removed)
 
@@ -39,6 +42,17 @@ export function HeroSection() {
 
   // no chat input submission in simplified hero
 
+  const [isShortScreen, setIsShortScreen] = useState(false);
+
+  useEffect(() => {
+      const checkScreenHeight = () => {
+          setIsShortScreen(window.innerHeight < 700);
+      };
+      checkScreenHeight();
+      window.addEventListener('resize', checkScreenHeight);
+      return () => window.removeEventListener('resize', checkScreenHeight);
+  }, []);
+
   return (
     <section id="hero" className="w-full relative overflow-hidden">
       <BillingModal 
@@ -46,87 +60,85 @@ export function HeroSection() {
         onOpenChange={setShowPaymentModal}
         showUsageLimitAlert={true}
       />
-      <div className="relative flex flex-col items-center w-full px-4 sm:px-6">
-        {/* Simplified background (no dotted grid) */}
-        <div className="absolute inset-x-0 top-0 h-[520px] sm:h-[640px] md:h-[760px] -z-20 bg-gradient-to-b from-background to-background/0"></div>
-
-        <div className="relative z-10 pt-16 sm:pt-24 md:pt-32 mx-auto h-full w-full max-w-6xl flex flex-col items-center justify-center">
-          {/* <p className="border border-border bg-accent rounded-full text-sm h-8 px-3 flex items-center gap-2">
-            {hero.badgeIcon}
-            {hero.badge}
-          </p> */}
-
-          {/* <Link
-            href={hero.githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group border border-border/50 bg-background hover:bg-accent/20 hover:border-secondary/40 rounded-full text-sm h-8 px-3 flex items-center gap-2 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-105 hover:-translate-y-0.5"
-          >
-            {hero.badgeIcon}
-            <span className="font-medium text-muted-foreground text-xs tracking-wide group-hover:text-primary transition-colors duration-300">
-              {hero.badge}
-            </span>
-            <span className="inline-flex items-center justify-center size-3.5 rounded-full bg-muted/30 group-hover:bg-secondary/30 transition-colors duration-300">
-              <svg
-                width="8"
-                height="8"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="text-muted-foreground group-hover:text-primary"
+      <div className="w-full h-full flex flex-col items-center text-lg text-center relative">
+        <UnicornBackground />
+        <div className="w-full h-full flex flex-col items-center justify-center mb-42 gap-10 pt-12">
+          <div className="flex flex-col gap-3 items-center relative z-20 pt-8 pb-2">
+            {!isShortScreen && (
+              <motion.div
+                className="flex flex-col gap-3 items-center relative z-20 pt-4 pb-2 mb-6"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 1.2, ease: "easeOut" }}
               >
-                <path
-                  d="M7 17L17 7M17 7H8M17 7V16"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-          </Link> */}
-          <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 pt-8 sm:pt-12 max-w-5xl mx-auto">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium tracking-tighter text-balance text-center px-2">
-              <span className="text-primary">Xera helps you build, manage, and train your </span>
-              <span className="text-secondary">AI workforce</span>
-            </h1>
-            <p className="text-base md:text-lg text-center text-muted-foreground font-medium text-balance leading-relaxed tracking-tight max-w-3xl px-2">
-              Xera is a SaaS platform for orchestrating autonomous AI workers and workflows. Design agents, connect tools, and ship outcomes—not prompts.
-            </p>
+                <a
+                  href="https://github.com/Doscotech/mirrors"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 hover:bg-foreground-secondary/20 backdrop-blur-sm border border-foreground-secondary/20 rounded-full text-xs text-foreground-secondary transition-all duration-200 hover:scale-102"
+                >
+                  Star us on GitHub
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              </motion.div>
+            )}
 
-            <p className="text-xs sm:text-sm text-muted-foreground/90 font-medium tracking-wide uppercase flex gap-3 items-center">
-              <span>Agents</span>
-              <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-              <span>Tools</span>
-              <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-              <span>Workflows</span>
-              <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-              <span>Observability</span>
-            </p>
+            <motion.h1
+              className="text-6xl font-light leading-tight text-center !leading-[0.9] max-w-4xl"
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              style={{ willChange: "opacity, filter", transform: "translateZ(0)" }}
+            >
+              Xera for
+              <br />
+              <span className={`italic font-normal ${vujahdayScript.className} text-[4.2rem] ml-1 leading-[1.0] text-primary`}>Autonomous Work</span>
+            </motion.h1>
 
-            <div className="mt-2 flex flex-col sm:flex-row items-center gap-2">
+            <motion.p
+              className="text-lg text-muted-foreground max-w-xl text-center mt-3 text-balance"
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+              style={{ willChange: "opacity, filter", transform: "translateZ(0)" }}
+            >
+              Build agents. Connect tools. Ship outcomes.
+            </motion.p>
+
+            <motion.div
+              className="flex flex-wrap justify-center gap-3 text-sm mt-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+            >
+              <span className="px-4 py-1.5 rounded-full bg-foreground-secondary/10 backdrop-blur-sm text-foreground-secondary">Agents</span>
+              <span className="px-4 py-1.5 rounded-full bg-foreground-secondary/10 backdrop-blur-sm text-foreground-secondary">Tools</span>
+              <span className="px-4 py-1.5 rounded-full bg-foreground-secondary/10 backdrop-blur-sm text-foreground-secondary">Workflows</span>
+            </motion.div>
+
+            <motion.div
+              className="flex flex-col sm:flex-row items-center gap-3 mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.45, ease: "easeOut" }}
+            >
               <Link href="/auth">
-                <Button size="lg" className="rounded-full px-6">
-                  Start free
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button
+                  size="lg"
+                  className="rounded-full px-8 py-6 text-base font-medium bg-primary hover:bg-primary/90 transition-all duration-200 h-12"
+                >
+                  Start building
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="#process" className="w-full sm:w-auto">
-                <Button variant="outline" size="lg" className="rounded-full px-6">
-                  See how it works
-                </Button>
-              </Link>
-            </div>
+              
+            </motion.div>
           </div>
-
-          {/* Removed chat input and example prompts */}
-
         </div>
-
       </div>
-        <div className="mb-8 sm:mb-16 sm:mt-32 mx-auto"></div>
+      <div className="mb-8 sm:mb-16 sm:mt-32 mx-auto"></div>
 
-  {/* Auth Dialog removed in simplified hero */}
+            {/* Auth Dialog removed in simplified hero */}
 
       {/* Add Billing Error Alert here */}
       <BillingErrorAlert
@@ -137,8 +149,6 @@ export function HeroSection() {
         onDismiss={clearBillingError}
         isOpen={!!billingError}
       />
-
-  {/* Agent run limit dialog not used in simplified hero */}
     </section>
   );
 }

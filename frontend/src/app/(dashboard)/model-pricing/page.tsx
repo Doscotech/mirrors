@@ -20,6 +20,7 @@ import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-billin
 import type { Model } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import MobileSidebarToggle from '@/components/layout/MobileSidebarToggle';
 import { useModelSelection } from '@/components/thread/chat-input/_use-model-selection';
 
 // Example task data with token usage
@@ -249,7 +250,10 @@ export default function PricingPage() {
   return (
     <div className="space-y-8 p-8 max-w-4xl mx-auto">
       {/* Header Section */}
-      <div className="space-y-4">
+      <div className="space-y-4 relative">
+        <div className="absolute -top-2 -left-2 md:hidden">
+          <MobileSidebarToggle />
+        </div>
         <h1 className="text-3xl font-bold text-foreground">Token Pricing</h1>
         <p className="text-lg text-muted-foreground max-w-3xl">
           Understand how tokens work, explore pricing for AI models, and find

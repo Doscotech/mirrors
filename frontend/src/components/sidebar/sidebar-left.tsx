@@ -43,27 +43,8 @@ function FloatingMobileMenuButton() {
   const { setOpenMobile, openMobile } = useSidebar();
   const isMobile = useIsMobile();
 
-  if (!isMobile || openMobile) return null;
 
-  return (
-    <div className="fixed top-6 left-4 z-50 md:hidden">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            onClick={() => setOpenMobile(true)}
-            size="icon"
-            className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-200 hover:scale-105 active:scale-95 touch-manipulation"
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          Open menu
-        </TooltipContent>
-      </Tooltip>
-    </div>
-  );
+  return null;
 }
 
 export function SidebarLeft({
@@ -183,6 +164,21 @@ export function SidebarLeft({
               </span>
             </SidebarMenuButton>
           </Link>
+          <Link href="/overview">
+            <SidebarMenuButton 
+              className={cn('touch-manipulation mt-1', {
+                'bg-accent text-accent-foreground font-medium': pathname === '/overview',
+              })} 
+              onClick={() => {
+                if (isMobile) setOpenMobile(false);
+              }}
+            >
+              <Zap className="h-4 w-4 mr-1" />
+              <span className="flex items-center justify-between w-full">
+                Overview
+              </span>
+            </SidebarMenuButton>
+          </Link>
           <Link href="/tasks">
             <SidebarMenuButton 
               className={cn('touch-manipulation mt-1', {
@@ -198,7 +194,7 @@ export function SidebarLeft({
               </span>
             </SidebarMenuButton>
           </Link>
-      <Link href="/agents">
+  <Link href="/agents?tab=marketplace">
             <SidebarMenuButton 
               className={cn('touch-manipulation mt-1', {
                 'bg-accent text-accent-foreground font-medium': pathname.startsWith('/agents'),

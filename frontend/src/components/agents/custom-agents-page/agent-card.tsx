@@ -87,6 +87,7 @@ interface AgentCardProps {
   onDeleteAction?: (data: any, e?: React.MouseEvent) => void;
   onClick?: (data: any) => void;
   currentUserId?: string;
+  compact?: boolean; // smaller, glassy variant for My Agents grid
 }
 
 const MarketplaceBadge: React.FC<{ 
@@ -418,13 +419,14 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   onSecondaryAction,
   onDeleteAction,
   onClick,
-  currentUserId
+  currentUserId,
+  compact = false
 }) => {
   
   const isSunaAgent = mode === 'agent' && (data as AgentData).metadata?.is_suna_default === true;
   const isOwner = currentUserId && mode === 'marketplace' && (data as MarketplaceData).creator_id === currentUserId;
   
-  const cardClassName = `group relative bg-card rounded-2xl overflow-hidden shadow-sm transition-all duration-300 border cursor-pointer flex flex-col min-h-[280px] max-h-[320px] border-border/50 hover:border-primary/20`;
+  const cardClassName = `group relative rounded-2xl overflow-hidden shadow-sm transition-all duration-300 border cursor-pointer flex flex-col ${compact ? 'min-h-[220px] max-h-[260px] bg-background/60 supports-[backdrop-filter]:bg-background/50 backdrop-blur border-border/40 hover:border-primary/25' : 'min-h-[280px] max-h-[320px] bg-card border-border/50 hover:border-primary/20'}`;
   
   const renderBadge = () => {
     switch (mode) {
@@ -482,7 +484,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   return (
     <div className={cardClassName} onClick={() => onClick?.(data)}>
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      <div className="relative p-6 flex flex-col flex-1">
+  <div className={`${compact ? 'p-4' : 'p-6'} relative flex flex-col flex-1`}>
         <div className="flex items-start justify-between mb-4">
           <CardAvatar 
             isSunaAgent={isSunaAgent} 

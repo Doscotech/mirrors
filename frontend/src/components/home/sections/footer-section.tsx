@@ -44,17 +44,26 @@ export function FooterSection() {
                 <li className="mb-2 text-sm font-semibold text-primary">
                   {column.title}
                 </li>
-                {column.links.map((link) => (
-                  <li
-                    key={link.id}
-                    className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug text-muted-foreground"
-                  >
-                    <Link href={link.url}>{link.title}</Link>
-                    <div className="flex size-4 items-center justify-center border border-border rounded translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100">
-                      <ChevronRightIcon className="h-4 w-4 " />
-                    </div>
-                  </li>
-                ))}
+                {column.links.map((link) => {
+                  const isExternal = /^https?:\/\//.test(link.url) || link.url.startsWith('mailto:');
+                  return (
+                    <li
+                      key={link.id}
+                      className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug text-muted-foreground"
+                    >
+                      {isExternal ? (
+                        <a href={link.url} target="_blank" rel="noopener noreferrer">
+                          {link.title}
+                        </a>
+                      ) : (
+                        <Link href={link.url}>{link.title}</Link>
+                      )}
+                      <div className="flex size-4 items-center justify-center border border-border rounded translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100">
+                        <ChevronRightIcon className="h-4 w-4 " />
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             ))}
               </div>

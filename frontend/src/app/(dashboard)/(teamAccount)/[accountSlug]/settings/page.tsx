@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/server';
+import MobileSidebarToggle from '@/components/layout/MobileSidebarToggle';
 
 type AccountParams = {
   accountSlug: string;
@@ -58,6 +59,11 @@ export default function TeamSettingsPage({
 
   return (
     <div className="space-y-6">
+      <div className="relative">
+        <div className="absolute -top-2 -left-2 md:hidden z-10">
+          <MobileSidebarToggle />
+        </div>
+      </div>
       <div>
         <h3 className="text-lg font-medium text-card-title">Team Settings</h3>
         <p className="text-sm text-foreground/70">

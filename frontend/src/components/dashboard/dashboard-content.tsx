@@ -33,6 +33,7 @@ import { ModelSelectorBar } from '@/components/thread/ModelSelectorBar';
 import { useDashboardTour } from '@/hooks/use-dashboard-tour';
 import { TourConfirmationDialog } from '@/components/tour/TourConfirmationDialog';
 import { Calendar, MessageSquare, Plus, Sparkles, Zap } from 'lucide-react';
+import MobileSidebarToggle from '@/components/layout/MobileSidebarToggle';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -336,7 +337,11 @@ export function DashboardContent() {
         showUsageLimitAlert={true}
       />
       <div className="flex flex-col h-screen w-full overflow-hidden">
-        <div className="flex-none">
+        <div className="flex-none relative">
+          {/* Mobile sidebar toggle always available on dashboard */}
+          <div className="absolute top-2 left-2 md:hidden z-20">
+            <MobileSidebarToggle />
+          </div>
           <ModelSelectorBar className="sticky top-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60" />
         </div>
         <div className="flex-1 overflow-y-auto">

@@ -265,7 +265,7 @@ export function XeraInterfaceMockup() {
           </div>
 
           {/* Right: Agent console */}
-          <div className={`relative border-l border-white/10 bg-black/20 backdrop-blur-md ${activeTab === "console" ? "block" : "hidden md:block"}`}>
+          <div className={`relative md:border-l border-t md:border-t-0 border-white/10 bg-black/20 backdrop-blur-md ${activeTab === "console" ? "block" : "hidden md:block"}`}>
             {/* Title bar */}
             <div className="h-10 px-3 sm:px-4 flex items-center justify-between border-b border-white/10 text-sm text-white/80">
               <div>Xera's Console</div>

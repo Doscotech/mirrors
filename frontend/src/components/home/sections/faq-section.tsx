@@ -17,7 +17,7 @@ export function FAQSection() {
     >
       <div className="w-full px-6">
       <SectionHeader>
-        <h2 className="text-3xl md:text-4xl font-medium tracking-tighter text-center text-balance">
+        <h2 className="xera-headline text-center text-balance">
           {faqSection.title}
         </h2>
         <p className="text-muted-foreground text-center text-balance font-medium">

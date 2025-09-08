@@ -71,26 +71,21 @@ export function FooterSection() {
           </div>
         </div>
       </div>
-      <Link
-        href="https://www.youtube.com/watch?v=nuf5BF1jvjQ"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block w-full h-48 md:h-64 relative mt-24 z-0 cursor-pointer"
-      >
+      <div className="block w-full h-32 md:h-44 relative mt-12 z-0">
         <div className="absolute inset-0 bg-gradient-to-t from-transparent to-background z-10 from-40%" />
         <div className="absolute inset-0 ">
           <FlickeringGrid
             text={tablet ? 'Agents' : 'Agents Agents Agents'}
-            fontSize={tablet ? 60 : 90}
+            fontSize={tablet ? 48 : 72}
             className="h-full w-full"
             squareSize={2}
             gridGap={tablet ? 2 : 3}
             color="#6B7280"
-            maxOpacity={0.3}
-            flickerChance={0.1}
+            maxOpacity={0.28}
+            flickerChance={0.08}
           />
         </div>
-      </Link>
+      </div>
     </footer>
   );
 }

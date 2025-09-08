@@ -136,12 +136,33 @@ export default function AgentPreviewPage() {
 
     return (
         <div className="min-h-screen">
-            <div className="relative overflow-hidden border-b border-border/60 bg-gradient-to-b from-[#0b1220] via-background to-background">
+                <div className="relative overflow-hidden border-b border-border/60 bg-gradient-to-b from-white via-background to-background dark:from-[#0b1220] dark:via-background dark:to-background">
                 <div className="pointer-events-none absolute inset-0 opacity-60" style={{
                     background: 'radial-gradient(800px 300px at 10% 0%, rgba(6,182,212,0.12), transparent 60%),\
                                              radial-gradient(600px 250px at 90% 10%, rgba(139,92,246,0.10), transparent 60%),\
                                              radial-gradient(500px 200px at 50% 100%, rgba(244,63,94,0.08), transparent 60%)'
                 }} />
+                    {/* Glow gradients (lighter in light, stronger in dark) */}
+                    <div className="pointer-events-none absolute inset-0 opacity-20 dark:opacity-60" style={{
+                        background: 'radial-gradient(800px 300px at 10% 0%, rgba(6,182,212,0.12), transparent 60%),\
+                                             radial-gradient(600px 250px at 90% 10%, rgba(139,92,246,0.10), transparent 60%),\
+                                             radial-gradient(500px 200px at 50% 100%, rgba(244,63,94,0.08), transparent 60%)'
+                    }} />
+                    {/* Light mode accent rings */}
+                    <div className="pointer-events-none absolute inset-0 opacity-[0.18] dark:hidden" style={{
+                        backgroundImage: 'repeating-radial-gradient(circle at 15% -10%, rgba(6,182,212,0.20) 0px, rgba(6,182,212,0.20) 1px, transparent 2px, transparent 24px),\
+                                          repeating-radial-gradient(circle at 85% 0%, rgba(139,92,246,0.16) 0px, rgba(139,92,246,0.16) 1px, transparent 2px, transparent 22px)'
+                    }} />
+                    {/* Dark mode soft dots */}
+                    <div className="pointer-events-none absolute inset-0 hidden dark:block opacity-[0.14]" style={{
+                        backgroundImage: 'repeating-radial-gradient(circle at 15% -10%, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 1px, transparent 2px, transparent 26px),\
+                                          repeating-radial-gradient(circle at 85% 0%, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.10) 1px, transparent 2px, transparent 22px)'
+                    }} />
+                    {/* Edge feather gradients */}
+                    <div className="pointer-events-none absolute inset-0" style={{
+                        background: 'linear-gradient(180deg, rgba(6,182,212,0.06), transparent 22%, transparent 78%, rgba(244,63,94,0.06)),\
+                                     linear-gradient(90deg, rgba(6,182,212,0.05), transparent 18%, transparent 82%, rgba(139,92,246,0.05))'
+                    }} />
                 <div className="container mx-auto max-w-5xl px-4 py-10">
                     <div className="flex items-start gap-4">
                         <div className="h-16 w-16 rounded-2xl ring-1 ring-white/10" style={{ background: accent }} />

@@ -591,6 +591,7 @@ export default function AgentsPage() {
               getTemplateStyling={getTemplateStyling}
               onPublishAgent={handleAgentPublish}
               publishingAgentId={publishingAgentId}
+              onTabChange={handleTabChange}
             />
           )}
 
@@ -615,6 +616,7 @@ export default function AgentsPage() {
               marketplacePageSize={marketplacePageSize}
               onMarketplacePageSizeChange={handleMarketplacePageSizeChange}
               marketplacePagination={marketplaceTemplates?.pagination}
+              onTabChange={handleTabChange}
             />
           )}
         </div>

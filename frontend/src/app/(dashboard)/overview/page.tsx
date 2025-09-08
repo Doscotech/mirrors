@@ -84,8 +84,8 @@ export default function OverviewPage() {
           <div className="absolute top-2 left-2 md:hidden z-10">
             <MobileSidebarToggle />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
-          <p className="text-sm text-muted-foreground">Quick snapshot of your account, usage, and workspace.</p>
+          <h1 className="xera-headline">Overview</h1>
+          <p className="xera-subtitle">Quick snapshot of your account, usage, and workspace.</p>
         </div>
       </div>
 

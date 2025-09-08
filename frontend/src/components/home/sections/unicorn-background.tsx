@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
+import { useTheme } from 'next-themes';
 
 // Types for the UnicornStudio global
 interface UnicornStudioScene {
@@ -62,9 +63,21 @@ export function UnicornBackground() {
     const [isBackgroundVisible, setIsBackgroundVisible] = useState(false);
     const sceneRef = useRef<UnicornStudioScene | null>(null);
     const { isLoaded, UnicornStudio } = useUnicornStudio();
+    const { resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === 'dark';
 
     useEffect(() => {
         if (!isLoaded) return;
+
+        // In light mode, ensure any existing scene is destroyed and remain hidden
+        if (!isDark) {
+            if (sceneRef.current?.destroy) {
+                sceneRef.current.destroy();
+                sceneRef.current = null;
+            }
+            setIsBackgroundVisible(false);
+            return;
+        }
 
         const init = async () => {
             const container = document.querySelector('[data-us-project="Gr1LmwbKSeJOXhpYEdit"]');
@@ -92,17 +105,18 @@ export function UnicornBackground() {
                 sceneRef.current = null;
             }
         };
-    }, [isLoaded, UnicornStudio]);
+    }, [isLoaded, UnicornStudio, isDark]);
 
     return (
         <div className="absolute inset-0 w-full h-screen overflow-hidden">
             <motion.div
                 data-us-project="Gr1LmwbKSeJOXhpYEdit"
                 className="absolute inset-0 w-full h-[calc(100vh+80px)] z-0"
-                style={{ pointerEvents: 'none', willChange: 'opacity', transform: 'translateZ(0)' }}
+                style={{ pointerEvents: 'none', willChange: 'opacity', transform: 'translateZ(0)', backgroundColor: 'transparent' }}
                 initial={{ opacity: 0 }}
-                animate={{ opacity: isBackgroundVisible ? 1 : 0 }}
+                animate={{ opacity: isDark && isBackgroundVisible ? 1 : 0 }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
+                aria-hidden={!isDark}
             />
         </div>
     );

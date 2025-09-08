@@ -46,6 +46,7 @@ interface MarketplaceTabProps {
     has_next: boolean;
     has_previous: boolean;
   };
+  onTabChange?: (tab: string) => void;
 }
 
 export const MarketplaceTab = ({
@@ -70,7 +71,8 @@ export const MarketplaceTab = ({
   setMarketplacePage,
   marketplacePageSize,
   onMarketplacePageSizeChange,
-  marketplacePagination
+  marketplacePagination,
+  onTabChange
 }: MarketplaceTabProps) => {
   const router = useRouter();
   const handleAgentClick = (item: MarketplaceTemplate) => {
@@ -94,7 +96,7 @@ export const MarketplaceTab = ({
         value={marketplaceSearchQuery}
         onChange={setMarketplaceSearchQuery}
         onSubmit={() => { /* triggers useEffect pagination reset upstream */ }}
-        nav={<TabsNavigation activeTab={'marketplace'} onTabChange={() => { /* handled by page via tabs, noop here */ }} />}
+  nav={<TabsNavigation activeTab={'marketplace'} onTabChange={(tab) => { onTabChange?.(tab); }} />}
       />
 
       <FiltersBar

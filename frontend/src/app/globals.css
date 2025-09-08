@@ -374,6 +374,61 @@
   }
 }
 
+/* Ensure Unicorn background is transparent by default */
+[data-us-project] {
+  background: transparent !important;
+}
+[data-us-project] canvas,
+[data-us-project] video,
+[data-us-project] .us-canvas {
+  background: transparent !important;
+}
+
+/* Xera Typography Utilities */
+@layer utilities {
+  /* Display headline: large, tight leading, light weight */
+  .xera-display {
+    font-size: clamp(2.75rem, 6vw, 4.5rem);
+    font-weight: 300; /* font-light */
+    line-height: 0.95;
+    letter-spacing: -0.02em; /* tracking-tight-ish */
+  }
+  @media (min-width: 1280px) {
+    .xera-display { font-size: clamp(3.5rem, 6vw, 5rem); }
+  }
+  @media (max-width: 640px) {
+    .xera-display { font-size: clamp(2.25rem, 8vw, 3.25rem); line-height: 1.0; }
+  }
+
+  /* Accent script span inside headlines */
+  .xera-accent {
+    font-family: var(--font-xera-accent), ui-serif, Georgia, 'Times New Roman', serif;
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.0;
+    letter-spacing: -0.01em;
+  }
+  /* Scale accent relative to heading context */
+  .xera-accent-lg { font-size: clamp(2.5rem, 6vw, 4.25rem); }
+  .xera-accent-md { font-size: clamp(2rem, 4.5vw, 3.25rem); }
+  .xera-accent-primary { color: hsl(var(--primary)); }
+
+  /* Subheadline/body under hero */
+  .xera-subtitle {
+    font-size: 1.125rem; /* text-lg */
+    color: hsl(var(--muted-foreground));
+    text-wrap: balance;
+  }
+
+  /* Section headline (H2) */
+  .xera-headline {
+    font-size: clamp(1.875rem, 4.5vw, 3rem); /* 3xl -> 5xl */
+    font-weight: 300; /* light */
+    line-height: 1.125; /* leading-tight */
+    letter-spacing: -0.02em; /* tracking-tight-ish */
+  }
+}
+
 /* Custom styles for Markdown chat content */
 .prose.chat-markdown {
   /* Ensure reasonable spacing */

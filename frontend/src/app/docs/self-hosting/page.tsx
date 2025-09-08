@@ -55,6 +55,28 @@ export default function SystemDeepDivePage() {
               <li><strong>Tool Calls</strong>: Secure, scoped actions (web, files, email, APIs) invoked by the agent.</li>
               <li><strong>Artifacts</strong>: Outputs like docs, spreadsheets, and exported reports.</li>
             </ul>
+            <div className="mt-4 grid gap-3">
+              <div className="rounded-md border p-3 bg-card">
+                <p className="text-xs font-mono mb-1">Agent Example</p>
+                <p className="text-xs text-muted-foreground">“SEO Analyst” using Web Browse + Sheets, memory on, approval before publishing.</p>
+              </div>
+              <div className="rounded-md border p-3 bg-card">
+                <p className="text-xs font-mono mb-1">Thread Example</p>
+                <p className="text-xs text-muted-foreground">Messages: kickoff → research results → edits → final approval; files attached: sitemap.xlsx</p>
+              </div>
+              <div className="rounded-md border p-3 bg-card">
+                <p className="text-xs font-mono mb-1">Run Example</p>
+                <p className="text-xs text-muted-foreground">Goal: “Generate keywords for 10 pages” • Steps: crawl → cluster → write → review</p>
+              </div>
+              <div className="rounded-md border p-3 bg-card">
+                <p className="text-xs font-mono mb-1">Tool Calls Example</p>
+                <p className="text-xs text-muted-foreground">Browse → extract → write to Sheets; all calls logged with params and outputs.</p>
+              </div>
+              <div className="rounded-md border p-3 bg-card">
+                <p className="text-xs font-mono mb-1">Artifacts Example</p>
+                <p className="text-xs text-muted-foreground">Generated “keywords.csv” and “strategy.md”, both linked from the run trace.</p>
+              </div>
+            </div>
           </div>
           <div className="border rounded-lg p-4">
             <h3 className="font-semibold mb-2">Execution Flow</h3>

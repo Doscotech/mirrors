@@ -103,7 +103,7 @@ export function Navbar() {
     <header
       className={cn(
         'sticky z-50 flex justify-center transition-all duration-300',
-        hasScrolled ? 'top-6 mx-4 md:mx-0' : 'top-4 mx-2 md:mx-0',
+        hasScrolled ? 'top-0 mx-4 md:mx-0' : 'top-0 mx-2 md:mx-0',
       )}
     >
       <motion.div
@@ -116,7 +116,7 @@ export function Navbar() {
             'mx-auto max-w-7xl rounded-2xl transition-all duration-300 xl:px-0',
             hasScrolled
               ? 'px-2 md:px-2 border border-border backdrop-blur-lg bg-background/75'
-              : 'shadow-none px-3 md:px-7',
+              : 'shadow-none px-3 md:px-7 bg-transparent',
           )}
         >
           <div className="flex h-[56px] items-center p-2 md:p-4">

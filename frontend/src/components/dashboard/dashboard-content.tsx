@@ -355,7 +355,7 @@ export function DashboardContent() {
               <div className="w-full max-w-[650px] flex flex-col items-center justify-center space-y-4 md:space-y-6">
                 <div className="flex flex-col items-center text-center w-full">
                   <p 
-                    className="tracking-tight text-2xl md:text-3xl font-normal text-foreground/90"
+                    className="xera-headline"
                     data-tour="dashboard-title"
                   >
                     What would you like to do today?

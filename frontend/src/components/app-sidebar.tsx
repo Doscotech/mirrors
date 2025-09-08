@@ -68,6 +68,31 @@ const data = {
       ],
     },
     {
+      title: "Core Concepts",
+      items: [
+        {
+          title: "Integrations",
+          url: "/docs/integrations",
+        },
+        {
+          title: "Knowledge Base",
+          url: "/docs/knowledge-base",
+        },
+        {
+          title: "Triggers",
+          url: "/docs/triggers",
+        },
+        {
+          title: "Instructions",
+          url: "/docs/instructions",
+        },
+        {
+          title: "Playbooks",
+          url: "/docs/playbooks",
+        },
+      ],
+    },
+    {
       title: "Reference",
       items: [
         {

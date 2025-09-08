@@ -106,7 +106,7 @@ export const siteConfig = {
       </svg>
     ),
     badge: '',
-  githubUrl: 'https://github.com',
+  // githubUrl removed per design: no GitHub link in hero
     title: 'Xera – Build, manage and train your AI Workforce.',
     description:
       'Build agents, connect tools, and orchestrate real work end-to-end with observability.',
@@ -1218,7 +1218,7 @@ export const siteConfig = {
   },
   ctaSection: {
     id: 'cta',
-    title: 'Launch Your First AI Worker Today',
+  title: 'Launch Your First AI Agent',
     backgroundImage: '/holo.png',
     button: {
       text: 'Get Started for free',

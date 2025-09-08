@@ -57,6 +57,7 @@ interface MyAgentsTabProps {
 
   onPublishAgent?: (agent: any) => void;
   publishingAgentId?: string | null;
+  onTabChange?: (tab: string) => void;
 }
 
 const filterOptions = [
@@ -97,7 +98,8 @@ export const MyAgentsTab = ({
   onUnpublish,
   getTemplateStyling,
   onPublishAgent,
-  publishingAgentId
+  publishingAgentId,
+  onTabChange
 }: MyAgentsTabProps) => {
   const [agentFilter, setAgentFilter] = useState<AgentFilter>('all');
 
@@ -177,7 +179,7 @@ export const MyAgentsTab = ({
         value={agentsSearchQuery}
         onChange={setAgentsSearchQuery}
         onSubmit={() => { /* pagination reset handled upstream */ }}
-        nav={<TabsNavigation activeTab={'my-agents'} onTabChange={() => { /* page controls it */ }} />}
+  nav={<TabsNavigation activeTab={'my-agents'} onTabChange={(tab) => onTabChange?.(tab)} />}
         title="My Agents"
         subtitle="Manage your personal and team agents. Create, edit, and publish templates."
         placeholder="Search my agents"

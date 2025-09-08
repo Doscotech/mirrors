@@ -16,7 +16,6 @@ import { TestimonialSection } from '@/components/home/sections/testimonial-secti
 import { FAQSection } from '@/components/home/sections/faq-section';
 import { AgentShowcaseSection } from '@/components/home/sections/agent-showcase-section';
 import { ResponsiveMockupSection } from '@/components/home/sections/responsive-mockup-section';
-import { AiCodeDesignSection } from '@/components/home/sections/ai-code-design-section';
 
 export default function Home() {
   return (
@@ -27,7 +26,6 @@ export default function Home() {
           <div className="w-full divide-y divide-border">
             <HeroSection />
             <ResponsiveMockupSection />
-            <AiCodeDesignSection />
             <BentoSection />
             <PricingSection />
             <TestimonialSection />

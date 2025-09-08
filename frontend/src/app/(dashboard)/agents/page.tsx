@@ -555,31 +555,6 @@ export default function AgentsPage() {
 
   return (
     <div className="min-h-screen">
-  {/* Nav is moved into the page headers (DiscoverHeader for marketplace; compact hero for my-agents) */}
-      {/* Compact gradient hero header only for My Agents; marketplace header lives in DiscoverHeader */}
-      {activeTab === 'my-agents' && (
-        <div className="relative overflow-hidden border-b border-border/60 bg-gradient-to-b from-[#0b1220] via-background to-background">
-          <div className="absolute top-3 left-3 md:hidden z-10">
-            {/* Mobile menu toggle */}
-            {/* Lazy import to avoid SSR issues not required; component is client */}
-            {(require('@/components/layout/MobileSidebarToggle').default) &&
-              (() => { const Toggle = require('@/components/layout/MobileSidebarToggle').default; return <Toggle />; })()}
-          </div>
-          <div className="pointer-events-none absolute inset-0 opacity-60" style={{
-            background: 'radial-gradient(800px 300px at 10% 0%, rgba(6,182,212,0.12), transparent 60%),\
-                                             radial-gradient(600px 250px at 90% 10%, rgba(139,92,246,0.10), transparent 60%),\
-                                             radial-gradient(500px 200px at 50% 100%, rgba(244,63,94,0.08), transparent 60%)'
-          }} />
-          <div className="container mx-auto max-w-7xl px-4 py-4 space-y-4">
-            <TabsNavigation activeTab={activeTab} onTabChange={handleTabChange} onCreateAgent={handleCreateNewAgent} />
-            <div>
-              <h1 className="text-xl md:text-2xl font-semibold tracking-tight">My Agents</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Manage your installed agents and templates.</p>
-            </div>
-          </div>
-          <div className="h-[2px] w-full" style={{ background: 'linear-gradient(90deg,#06b6d4 0%, #8b5cf6 50%, #f43f5e 100%)' }} />
-        </div>
-      )}
       <div className="container mx-auto max-w-7xl px-4 py-2">
         <div className="w-full min-h-[calc(100vh-300px)]">
           {activeTab === "my-agents" && (

@@ -396,7 +396,7 @@ function CodeWorkbench() {
                 {type === 'ctx' && i === 6 ? (
                   <>
                     {content}
-                    <span className="opacity-30">  // consider enum Plan {'{'} free pro enterprise {'}'}</span>
+                    <span className="opacity-30">  {'//'} consider enum Plan {'{'} free pro enterprise {'}'}</span>
                   </>
                 ) : (
                   ln

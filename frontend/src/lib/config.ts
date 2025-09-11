@@ -62,7 +62,7 @@ const PROD_TIERS: SubscriptionTiers = {
     name: '12h/$100',
   },
   TIER_25_200: {
-    priceId: 'price_1RILb4G6l1KZGqIrGAD8rNjb',
+  priceId: 'price_1S63qtK1vBaPZ9xHy8HTfS2q',
     name: '25h/$200',
   },
   TIER_50_400: {
@@ -74,7 +74,7 @@ const PROD_TIERS: SubscriptionTiers = {
     name: '125h/$800',
   },
   TIER_200_1000: {
-    priceId: 'price_1RILb3G6l1KZGqIrmauYPOiN',
+  priceId: 'price_1S63OJK1vBaPZ9xHxOsRxkQJ',
     name: '200h/$1000',
   },
   // Legacy yearly plans with 15% discount (12x monthly price with 15% off)
@@ -103,7 +103,7 @@ const PROD_TIERS: SubscriptionTiers = {
     name: '125h/$8160/year (legacy)',
   },
   TIER_200_1000_YEARLY: {
-    priceId: 'price_1ReH8qG6l1KZGqIrK1akY90q',
+  priceId: 'price_1S63OeK1vBaPZ9xH2Pd8PTlp',
     name: '200h/$10200/year (legacy)',
   },
   // Yearly commitment plans (15% discount, monthly payments with 12-month commitment)

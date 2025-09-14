@@ -927,7 +927,7 @@ export const siteConfig = {
         features: [
           '2 custom agents',
           'Public projects',
-          'Basic models',
+          'All models included',
           'Community support',
         ],
         description: 'Perfect for getting started',
@@ -944,7 +944,7 @@ export const siteConfig = {
         features: [
           '5 custom agents',
           'Private projects',
-          'Premium models',
+          'All models included',
           'Community support',
         ],
         description: 'Best for individuals and small teams',
@@ -961,7 +961,7 @@ export const siteConfig = {
         features: [
           '20 custom agents',
           'Private projects',
-          'Premium models',
+          'All models included',
           'Priority support',
         ],
         description: 'Ideal for growing businesses',

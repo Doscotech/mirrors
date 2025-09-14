@@ -6,6 +6,7 @@ export const threadKeys = createQueryKeys({
   messages: (threadId: string) => ['thread', threadId, 'messages'] as const,
   project: (projectId: string) => ['project', projectId] as const,
   publicProjects: () => ['public-projects'] as const,
+  projects: (q?: string) => ['projects', q || 'all'] as const,
   agentRuns: (threadId: string) => ['thread', threadId, 'agent-runs'] as const,
   billingStatus: ['billing', 'status'] as const,
   byProject: (projectId: string) => ['project', projectId, 'threads'] as const,

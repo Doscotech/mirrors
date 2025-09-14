@@ -15,6 +15,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { HealthCheckedVncIframe } from './HealthCheckedVncIframe';
 import { BrowserHeader } from './tool-views/BrowserToolView';
+import { SandboxPiP } from './SandboxPiP';
+import { useSandboxViewStore } from '@/lib/stores/sandbox-view-store';
+import { useToolPanelPiPStore } from '@/lib/stores/tool-panel-pip-store';
 
 import {
   Drawer,
@@ -254,9 +257,10 @@ interface PanelHeaderProps {
   onClose: () => void;
   isStreaming?: boolean;
   variant?: 'drawer' | 'desktop' | 'motion';
-  showMinimize?: boolean;
   hasToolResult?: boolean;
   layoutId?: string;
+  panelViewMode: 'tv' | 'expanded';
+  onSetMode: (mode: 'tv' | 'expanded') => void;
 }
 
 const PanelHeader: React.FC<PanelHeaderProps> = ({
@@ -264,11 +268,13 @@ const PanelHeader: React.FC<PanelHeaderProps> = ({
   onClose,
   isStreaming = false,
   variant = 'desktop',
-  showMinimize = false,
   hasToolResult = false,
   layoutId,
+  panelViewMode,
+  onSetMode,
 }) => {
   const title = getComputerTitle(agentName);
+  const isExpanded = panelViewMode === 'expanded';
   
   if (variant === 'drawer') {
     return (
@@ -280,11 +286,11 @@ const PanelHeader: React.FC<PanelHeaderProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={onClose}
+            onClick={() => onSetMode(isExpanded ? 'tv' : 'expanded')}
             className="h-8 w-8"
-            title="Minimize to floating preview"
+            title={isExpanded ? 'Minimize to PiP' : 'Expand'}
           >
-            <Minimize2 className="h-4 w-4" />
+            {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
         </div>
       </DrawerHeader>
@@ -316,11 +322,20 @@ const PanelHeader: React.FC<PanelHeaderProps> = ({
             <Button
               variant="ghost"
               size="icon"
+              className="h-8 w-8"
+              title={isExpanded ? 'Minimize to PiP' : 'Expand'}
+              onClick={() => onSetMode(isExpanded ? 'tv' : 'expanded')}
+            >
+              {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onClose}
               className="h-8 w-8"
-              title="Minimize to floating preview"
+              title="Close panel"
             >
-              <Minimize2 className="h-4 w-4" />
+              <X className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -348,11 +363,20 @@ const PanelHeader: React.FC<PanelHeaderProps> = ({
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => onSetMode(isExpanded ? 'tv' : 'expanded')}
+            className="h-8 w-8"
+            title={isExpanded ? 'Minimize to PiP' : 'Expand'}
+          >
+            {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             className="h-8 w-8"
-            title={showMinimize ? "Minimize to floating preview" : "Close"}
+            title="Close"
           >
-            {showMinimize ? <Minimize2 className="h-4 w-4" /> : <X className="h-4 w-4" />}
+            <X className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -398,6 +422,79 @@ export function ToolCallSidePanel({
   const { isOpen: isDocumentModalOpen } = useDocumentModalStore();
 
   const sandbox = project?.sandbox;
+  const { mode: sandboxViewMode } = useSandboxViewStore();
+  const {
+    mode: panelViewMode,
+    position: panelPosition,
+    size: panelSize,
+    setMode: setPanelMode,
+    setPosition: setPanelPosition,
+    setSize: setPanelSize,
+    cycleMode,
+    userDismissed,
+    markDismissed,
+    clearDismissed,
+  } = useToolPanelPiPStore();
+
+  // PiP refs & states (must be declared unconditionally for hooks rule)
+  const pipRef = React.useRef<HTMLDivElement | null>(null);
+  const dragState = React.useRef<{ dragging: boolean; offsetX: number; offsetY: number }>({ dragging: false, offsetX: 0, offsetY: 0 });
+  const resizeState = React.useRef<{ resizing: boolean; startX: number; startY: number; startW: number; startH: number }>({ resizing: false, startX: 0, startY: 0, startW: 0, startH: 0 });
+
+  // Effect to handle global mouse events for drag/resize only in tv mode
+  React.useEffect(() => {
+    if (panelViewMode !== 'tv') return;
+    const handleMove = (e: MouseEvent) => {
+      if (dragState.current.dragging) {
+        const newX = e.clientX - dragState.current.offsetX;
+        const newY = e.clientY - dragState.current.offsetY;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const width = panelSize.width;
+        const height = panelSize.height;
+        const clampedX = Math.min(Math.max(8, newX), vw - width - 8);
+        const clampedY = Math.min(Math.max(8, newY), vh - height - 8);
+        setPanelPosition({ x: clampedX, y: clampedY });
+      } else if (resizeState.current.resizing) {
+        const dx = e.clientX - resizeState.current.startX;
+        const dy = e.clientY - resizeState.current.startY;
+        const newW = Math.min(Math.max(360, resizeState.current.startW + dx), window.innerWidth - panelPosition.x - 8);
+        const newH = Math.min(Math.max(320, resizeState.current.startH + dy), window.innerHeight - panelPosition.y - 8);
+        setPanelSize({ width: newW, height: newH });
+      }
+    };
+    const handleUp = () => {
+      dragState.current.dragging = false;
+      resizeState.current.resizing = false;
+      document.body.style.userSelect = '';
+    };
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [panelViewMode, panelSize.width, panelSize.height, panelPosition.x, panelPosition.y, setPanelPosition, setPanelSize]);
+
+  // Handlers declared once
+  const startDrag = React.useCallback((e: React.MouseEvent) => {
+    if (panelViewMode !== 'tv') return;
+    if (!(e.target as HTMLElement).closest('[data-pip-drag-handle]')) return;
+    dragState.current.dragging = true;
+    dragState.current.offsetX = e.clientX - panelPosition.x;
+    dragState.current.offsetY = e.clientY - panelPosition.y;
+    document.body.style.userSelect = 'none';
+  }, [panelViewMode, panelPosition.x, panelPosition.y]);
+
+  const startResize = React.useCallback((e: React.MouseEvent) => {
+    if (panelViewMode !== 'tv') return;
+    resizeState.current.resizing = true;
+    resizeState.current.startX = e.clientX;
+    resizeState.current.startY = e.clientY;
+    resizeState.current.startW = panelSize.width;
+    resizeState.current.startH = panelSize.height;
+    document.body.style.userSelect = 'none';
+  }, [panelViewMode, panelSize.width, panelSize.height]);
   
   // Add refresh key state for VNC iframe
   const [vncRefreshKey, setVncRefreshKey] = React.useState(0);
@@ -806,26 +903,35 @@ export function ToolCallSidePanel({
     return () => clearInterval(interval);
   }, [isStreaming]);
 
-  if (!isOpen) {
-    return null;
-  }
-
-  if (isLoading) {
+  // Remove early returns for isOpen / isLoading to maintain consistent hook order
+  // Expanded panel only shows when explicitly open; tv renders regardless, minimized hidden
+  const isTvMode = panelViewMode === 'tv';
+  const isExpanded = panelViewMode === 'expanded';
+  const showPanel = !isLoading && (isExpanded ? isOpen : (panelViewMode === 'tv' && !userDismissed));
+  const loadingElement = (() => {
+    if (!isLoading) return null;
     if (isMobile) {
       return (
         <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
           <DrawerContent className="h-[85vh]">
             <PanelHeader 
               agentName={agentName}
-              onClose={handleClose}
+              onClose={() => {
+                if (panelViewMode === 'tv') {
+                  markDismissed();
+                } else {
+                  handleClose();
+                }
+              }}
               variant="drawer"
+              panelViewMode={panelViewMode === 'expanded' ? 'expanded' : 'tv'}
+              onSetMode={(m) => setPanelMode(m)}
             />
             <BootScreen agentName={agentName} />
           </DrawerContent>
         </Drawer>
       );
     }
-
     return (
       <div className="fixed inset-0 z-30 pointer-events-none">
         <div className="p-4 h-full flex items-stretch justify-end pointer-events-auto">
@@ -834,8 +940,15 @@ export function ToolCallSidePanel({
               <div className="flex flex-col h-full">
                 <PanelHeader 
                   agentName={agentName}
-                  onClose={handleClose}
-                  showMinimize={true}
+                  onClose={() => {
+                    if (panelViewMode === 'tv') {
+                      markDismissed();
+                    } else {
+                      handleClose();
+                    }
+                  }}
+                  panelViewMode={panelViewMode === 'expanded' ? 'expanded' : 'tv'}
+                  onSetMode={(m) => setPanelMode(m)}
                 />
                 <BootScreen agentName={agentName} />
               </div>
@@ -844,16 +957,20 @@ export function ToolCallSidePanel({
         </div>
       </div>
     );
-  }
+  })();
 
   const renderContent = () => {
+  const isPanelPiP = panelViewMode === 'tv';
+
     if (!displayToolCall && toolCallSnapshots.length === 0) {
       return (
         <div className="flex flex-col h-full">
-          {!isMobile && (
+          {!isMobile && isExpanded && (
             <PanelHeader 
               agentName={agentName}
               onClose={handleClose}
+              panelViewMode={panelViewMode === 'expanded' ? 'expanded' : 'tv'}
+              onSetMode={(m) => setPanelMode(m)}
             />
           )}
           <div className="flex flex-col items-center justify-center flex-1 p-8">
@@ -881,57 +998,40 @@ export function ToolCallSidePanel({
     }
 
     if (!displayToolCall && toolCallSnapshots.length > 0) {
-      const firstStreamingTool = toolCallSnapshots.find(s => s.toolCall.toolResult?.content === 'STREAMING');
-      if (firstStreamingTool && totalCompletedCalls === 0) {
-        return (
-          <div className="flex flex-col h-full">
-            {!isMobile && (
-              <PanelHeader 
-                agentName={agentName}
-                onClose={handleClose}
-                isStreaming={true}
-              />
-            )}
-            {isMobile && (
-              <div className="px-4 pb-2">
-                <div className="flex items-center justify-center">
-                  <div className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 flex items-center gap-1.5">
-                    <CircleDashed className="h-3 w-3 animate-spin" />
-                    <span>Running</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div className="flex flex-col items-center justify-center flex-1 p-8">
-              <div className="flex flex-col items-center space-y-4 max-w-sm text-center">
-                <div className="relative">
-                  <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                    <CircleDashed className="h-8 w-8 text-blue-500 dark:text-blue-400 animate-spin" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
-                    Tool is running
-                  </h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                    {getUserFriendlyToolName(firstStreamingTool.toolCall.assistantCall.name || 'Tool')} is currently executing. Results will appear here when complete.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      }
-
+      const latest = toolCallSnapshots[toolCallSnapshots.length - 1];
+      const latestCall = latest.toolCall;
       return (
         <div className="flex flex-col h-full">
-          {!isMobile && (
-            <PanelHeader 
+          {!isMobile && isExpanded && (
+            <PanelHeader
               agentName={agentName}
               onClose={handleClose}
+              isStreaming={latestCall.toolResult?.content === 'STREAMING'}
+              variant="motion"
+              hasToolResult={!!latestCall.toolResult?.content && latestCall.toolResult?.content !== 'STREAMING'}
+              layoutId={CONTENT_LAYOUT_ID}
+              panelViewMode={panelViewMode === 'expanded' ? 'expanded' : 'tv'}
+              onSetMode={(m) => setPanelMode(m)}
             />
           )}
-          <BootScreen agentName={agentName} />
+          <div className="flex-1 overflow-hidden">
+            <ToolView
+              name={latestCall.assistantCall.name}
+              assistantContent={latestCall.assistantCall.content}
+              toolContent={latestCall.toolResult?.content}
+              assistantTimestamp={latestCall.assistantCall.timestamp}
+              toolTimestamp={latestCall.toolResult?.timestamp}
+              isSuccess={true}
+              isStreaming={latestCall.toolResult?.content === 'STREAMING'}
+              project={project}
+              messages={messages}
+              agentStatus={agentStatus}
+              currentIndex={toolCallSnapshots.length - 1}
+              totalCalls={toolCallSnapshots.length}
+              onFileClick={onFileClick}
+              viewToggle={<ViewToggle currentView={currentView} onViewChange={setCurrentView} />}
+            />
+          </div>
         </div>
       );
     }
@@ -957,7 +1057,7 @@ export function ToolCallSidePanel({
 
     return (
       <div className="flex flex-col h-full">
-        {!isMobile && (
+  {!isMobile && isExpanded && (
           <PanelHeader 
             agentName={agentName}
             onClose={handleClose}
@@ -965,12 +1065,14 @@ export function ToolCallSidePanel({
             variant="motion"
             hasToolResult={!!displayToolCall.toolResult?.content}
             layoutId={CONTENT_LAYOUT_ID}
+            panelViewMode={panelViewMode === 'expanded' ? 'expanded' : 'tv'}
+            onSetMode={(m) => setPanelMode(m)}
           />
         )}
 
         <div className={`flex-1 ${currentView === 'browser' ? 'overflow-hidden' : 'overflow-hidden'} scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700 scrollbar-track-transparent`}>
           {/* Always render VNC iframe to maintain connection when available */}
-          {persistentVncIframe && (
+          {persistentVncIframe && sandboxViewMode !== 'pip' && (
             <div className={`${currentView === 'browser' ? 'h-full flex flex-col' : 'hidden'}`}>
               <BrowserHeader isConnected={true} onRefresh={handleVncRefresh} viewToggle={<ViewToggle currentView={currentView} onViewChange={setCurrentView} />} />
               {/* VNC iframe container - unchanged */}
@@ -1011,21 +1113,68 @@ export function ToolCallSidePanel({
     );
   };
 
+  // Shared footer (desktop & pip) to avoid duplication
+  const renderDesktopFooter = () => (
+  isExpanded && (displayTotalCalls > 1 || (isCurrentToolStreaming && totalCompletedCalls > 0)) && (
+      <div className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-4 py-2.5">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={navigateToPrevious}
+              disabled={displayIndex <= 0}
+              className="h-7 w-7 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium tabular-nums px-1 min-w-[44px] text-center">
+              {displayIndex + 1}/{displayTotalCalls}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={navigateToNext}
+              disabled={safeInternalIndex >= latestIndex}
+              className="h-7 w-7 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex-1 relative">
+            <Slider
+              min={0}
+              max={Math.max(0, totalCalls - 1)}
+              step={1}
+              value={[safeInternalIndex]}
+              onValueChange={handleSliderChange}
+              className="w-full [&>span:first-child]:h-1.5 [&>span:first-child]:bg-zinc-200 dark:[&>span:first-child]:bg-zinc-800 [&>span:first-child>span]:bg-zinc-500 dark:[&>span:first-child>span]:bg-zinc-400 [&>span:first-child>span]:h-1.5"
+            />
+          </div>
+            <div className="flex items-center gap-1.5">
+              {renderStatusButton()}
+            </div>
+        </div>
+      </div>
+    )
+  );
+
   // Mobile version - use drawer
-  if (isMobile) {
-    return (
+  let panelElement: React.ReactNode = null;
+  if (isMobile && showPanel && isExpanded) {
+    panelElement = (
       <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DrawerContent className="h-[85vh]">
           <PanelHeader 
             agentName={agentName}
             onClose={handleClose}
             variant="drawer"
+            panelViewMode={panelViewMode === 'expanded' ? 'expanded' : 'tv'}
+            onSetMode={(m) => setPanelMode(m)}
           />
-          
           <div className="flex-1 flex flex-col overflow-hidden">
             {renderContent()}
           </div>
-          
           {(displayTotalCalls > 1 || (isCurrentToolStreaming && totalCompletedCalls > 0)) && (
             <div className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-3">
               <div className="flex items-center justify-between">
@@ -1039,14 +1188,12 @@ export function ToolCallSidePanel({
                   <ChevronLeft className="h-3.5 w-3.5 mr-1" />
                   <span>Prev</span>
                 </Button>
-
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium tabular-nums min-w-[44px]">
                     {safeInternalIndex + 1}/{totalCalls}
                   </span>
                   {renderStatusButton()}
                 </div>
-
                 <Button
                   variant="outline"
                   size="sm"
@@ -1063,83 +1210,130 @@ export function ToolCallSidePanel({
         </DrawerContent>
       </Drawer>
     );
-  }
-
-  // Desktop version - use fixed panel
-  return (
-    <AnimatePresence mode="wait">
-      {isOpen && (
-        <motion.div
-          key="sidepanel"
-          layoutId={FLOATING_LAYOUT_ID}
-          initial={disableInitialAnimation ? { opacity: 1 } : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{
-            opacity: { duration: disableInitialAnimation ? 0 : 0.15 },
-            layout: {
-              type: "spring",
-              stiffness: 400,
-              damping: 35
-            }
-          }}
-          className={compact 
-            ? "m-4 h-[calc(100%-2rem)] w-[calc(100%-2rem)] border rounded-3xl flex flex-col z-30"
-            : "fixed top-2 right-2 bottom-4 border rounded-3xl flex flex-col z-30 w-[40vw] sm:w-[450px] md:w-[500px] lg:w-[550px] xl:w-[645px]"
-          }
-          style={{
-            overflow: 'hidden',
-          }}
+  } else if (!isMobile && showPanel) {
+    // Desktop: differentiate between docked and pip modes
+  if (panelViewMode === 'tv') {
+      panelElement = (
+        <div
+          ref={pipRef}
+          className="fixed z-40 rounded-3xl border shadow-2xl flex flex-col bg-card overflow-hidden"
+          style={{ left: panelPosition.x, top: panelPosition.y, width: panelSize.width, height: panelSize.height }}
+          onMouseDown={startDrag}
         >
-          <div className="flex-1 flex flex-col overflow-hidden bg-card">
+          <div data-pip-drag-handle className="cursor-move select-none">
+            <PanelHeader
+              agentName={agentName}
+              onClose={() => {
+                markDismissed();
+              }}
+              isStreaming={isStreaming}
+              variant="motion"
+              hasToolResult={!!displayToolCall?.toolResult?.content}
+              layoutId={CONTENT_LAYOUT_ID}
+              panelViewMode={panelViewMode as 'tv' | 'expanded'}
+              onSetMode={(m) => setPanelMode(m)}
+            />
+          </div>
+          {/* TV mode overlay (minimal live status) */}
+          <div className="pointer-events-none absolute top-2 right-2 flex flex-col items-end gap-1 text-[11px] font-medium">
+            {agentStatus === 'running' && (
+              <div className="px-2 py-1 rounded-full bg-emerald-500/90 text-white shadow">
+                LIVE
+              </div>
+            )}
+            {displayToolCall && (
+              <div className="px-2 py-1 rounded-md bg-black/60 text-white backdrop-blur-sm max-w-[240px] truncate">
+                {isStreaming ? 'Running: ' : ''}{getUserFriendlyToolName(currentToolName)}
+              </div>
+            )}
+          </div>
+          <div className="flex-1 flex flex-col overflow-hidden">
             {renderContent()}
           </div>
-          {(displayTotalCalls > 1 || (isCurrentToolStreaming && totalCompletedCalls > 0)) && (
-            <div className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-4 py-2.5">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={navigateToPrevious}
-                    disabled={displayIndex <= 0}
-                    className="h-7 w-7 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium tabular-nums px-1 min-w-[44px] text-center">
-                    {displayIndex + 1}/{displayTotalCalls}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={navigateToNext}
-                    disabled={safeInternalIndex >= latestIndex}
-                    className="h-7 w-7 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="flex-1 relative">
-                  <Slider
-                    min={0}
-                    max={Math.max(0, totalCalls - 1)}
-                    step={1}
-                    value={[safeInternalIndex]}
-                    onValueChange={handleSliderChange}
-                    className="w-full [&>span:first-child]:h-1.5 [&>span:first-child]:bg-zinc-200 dark:[&>span:first-child]:bg-zinc-800 [&>span:first-child>span]:bg-zinc-500 dark:[&>span:first-child>span]:bg-zinc-400 [&>span:first-child>span]:h-1.5"
-                  />
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  {renderStatusButton()}
-                </div>
+          {renderDesktopFooter()}
+          <div
+            onMouseDown={startResize}
+            className="absolute bottom-1.5 right-1.5 h-4 w-4 cursor-nwse-resize opacity-60 hover:opacity-100 transition"
+          >
+            <div className="h-full w-full rounded-sm bg-zinc-400 dark:bg-zinc-600" />
+          </div>
+        </div>
+      );
+  } else if (isExpanded) {
+      panelElement = (
+        <AnimatePresence mode="wait">
+          {isOpen && (
+            <motion.div
+              key="sidepanel"
+              layoutId={FLOATING_LAYOUT_ID}
+              initial={disableInitialAnimation ? { opacity: 1 } : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{
+                opacity: { duration: disableInitialAnimation ? 0 : 0.15 },
+                layout: { type: "spring", stiffness: 400, damping: 35 }
+              }}
+              className={compact
+                ? "m-4 h-[calc(100%-2rem)] w-[calc(100%-2rem)] border rounded-3xl flex flex-col z-30"
+                : "fixed top-2 right-2 bottom-4 border rounded-3xl flex flex-col z-30 w-[40vw] sm:w-[450px] md:w-[500px] lg:w-[550px] xl:w-[645px]"}
+              style={{ overflow: 'hidden' }}
+            >
+              <div className="flex-1 flex flex-col overflow-hidden bg-card">
+                {renderContent()}
               </div>
-            </div>
+              {renderDesktopFooter()}
+            </motion.div>
           )}
-        </motion.div>
+        </AnimatePresence>
+      );
+    }
+  }
+
+  // Global keyboard shortcut for panel PiP toggle (Cmd/Ctrl + Shift + O)
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'O' || e.key === 'o')) {
+        e.preventDefault();
+        // Toggle tv <-> expanded
+        if (panelViewMode === 'tv') {
+          clearDismissed();
+          setPanelMode('expanded');
+        } else if (panelViewMode === 'expanded') {
+          setPanelMode('tv');
+          clearDismissed();
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
+        e.preventDefault();
+        setPanelMode(panelViewMode === 'expanded' ? 'tv' : 'expanded');
+      }
+      if (e.key === 'Escape') {
+        if (panelViewMode === 'expanded') setPanelMode('tv');
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [panelViewMode, setPanelMode, cycleMode]);
+
+  // Force live navigation mode automatically in PiP (TV) mode
+  React.useEffect(() => {
+    if (panelViewMode === 'tv' && navigationMode !== 'live') {
+      setNavigationMode('live');
+      setInternalIndex(Math.max(0, toolCallSnapshots.length - 1));
+    }
+  }, [panelViewMode, navigationMode, toolCallSnapshots.length]);
+
+  // Minimized mode removed; activity indicators no longer used
+
+  return (
+    <>
+    {loadingElement}
+    {panelElement}
+      {sandboxViewMode === 'pip' && persistentVncIframe && (
+        <SandboxPiP title={getComputerTitle(agentName)} agentStatus={agentStatus}>
+          {persistentVncIframe}
+        </SandboxPiP>
       )}
-    </AnimatePresence>
+    </>
   );
 }

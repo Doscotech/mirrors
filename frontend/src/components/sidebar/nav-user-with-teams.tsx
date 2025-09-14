@@ -292,42 +292,14 @@ export function NavUserWithTeams({
               <DropdownMenuGroup>
                 <DropdownMenuItem onClick={() => setShowBillingModal(true)}>
                   <Zap className="h-4 w-4" />
-                  Upgrade
+                  Usage & Billing
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/settings/billing">
-                    <CreditCard className="h-4 w-4" />
-                    Billing
+                  <Link href="/profile">
+                    <User className="h-4 w-4" />
+                    Profile & Settings
                   </Link>
                 </DropdownMenuItem>
-                {(
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings/credentials">
-                      <Plug className="h-4 w-4" />
-                      Integrations
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {(
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings/api-keys">
-                      <Key className="h-4 w-4" />
-                      API Keys (Admin)
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {isLocalMode() && <DropdownMenuItem asChild>
-                  <Link href="/settings/env-manager">
-                    <KeyRound className="h-4 w-4" />
-                    Local .Env Manager
-                  </Link>
-                </DropdownMenuItem>}
-                {/* <DropdownMenuItem asChild>
-                  <Link href="/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem> */}
                 <DropdownMenuItem
                   onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
                 >

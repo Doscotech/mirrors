@@ -19,6 +19,29 @@ import { ShowToolStream } from './ShowToolStream';
 import { ComposioUrlDetector } from './composio-url-detector';
 import { StreamingText } from './StreamingText';
 import { HIDE_STREAMING_XML_TAGS } from '@/components/thread/utils';
+import { MessageActionMenu } from '@/components/thread/message-actions/MessageActionMenu';
+import { toast } from 'sonner';
+import { useCreateAgentKnowledgeBaseEntry } from '@/hooks/react-query/knowledge-base/use-knowledge-base-queries';
+
+// Helper to derive plain text from message.content (stored JSON string or raw)
+function extractPlainText(raw: any): string {
+    if (!raw) return '';
+    if (typeof raw === 'string') {
+        // Try parse JSON if it looks like JSON containing {"content": ...}
+        try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+                if (typeof parsed.content === 'string') return parsed.content;
+            }
+        } catch { /* ignore */ }
+        return raw;
+    }
+    try {
+        return JSON.stringify(raw);
+    } catch {
+        return String(raw);
+    }
+}
 
 
 // Helper function to render all attachments as standalone messages
@@ -369,6 +392,35 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     const contentRef = useRef<HTMLDivElement>(null);
     const [shouldJustifyToTop, setShouldJustifyToTop] = useState(false);
     const { session } = useAuth();
+    // Knowledge base create mutation
+    const createKbEntry = useCreateAgentKnowledgeBaseEntry();
+
+    // Helper to resolve active agent id for KB actions
+    const resolveAgentId = () => {
+        // Prefer explicit agentData id
+        if (agentData?.agent_id) return agentData.agent_id;
+        // Fallback: last assistant message agent_id
+        const lastAssistant = [...messages].reverse().find(m => m.type === 'assistant' && m.agent_id);
+        if (lastAssistant?.agent_id) return lastAssistant.agent_id;
+        return undefined;
+    };
+
+    const handleAddToKnowledgeBase = async (rawContent: string | undefined) => {
+        if (!rawContent) return toast.error('Nothing to add');
+        const agentId = resolveAgentId();
+        if (!agentId) {
+            toast.error('No agent context for knowledge base');
+            return;
+        }
+        const plain = extractPlainText(rawContent).trim();
+        if (!plain) return toast.error('Empty content');
+        const title = plain.split('\n').find(l => l.trim().length > 0)?.slice(0,80) || 'Entry';
+        try {
+            await createKbEntry.mutateAsync({ agentId, data: { name: title, content: plain } });
+        } catch (e: any) {
+            // toast handled in hook onError, but keep silent catch
+        }
+    };
 
     // React Query file preloader
     const { preloadFiles } = useFilePreloader();
@@ -743,23 +795,45 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                         // Remove attachment info from the message content
                                         const cleanContent = messageContent.replace(/\[Uploaded File: .*?\]/g, '').trim();
 
-                                        return (
+                                        const isFailed = message.ui_status === 'failed';
+                                        const attempt = message.attempt || 1;
+                                        const showAttempt = attempt > 1;
+
+                            return (
                                             <div key={group.key} className="space-y-3">
                                                 {/* All file attachments rendered outside message bubble */}
                                                 {renderStandaloneAttachments(attachments as string[], handleOpenFileViewer, sandboxId, project, true)}
                                                 
-                                                <div className="flex justify-end">
-                                                    <div className="flex max-w-[85%] rounded-3xl rounded-br-lg bg-card border px-4 py-3 break-words overflow-hidden">
-                                                        <div className="space-y-3 min-w-0 flex-1">
-                                                            {cleanContent && (
-                                                                <ComposioUrlDetector content={cleanContent} className="text-sm prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere" />
-                                                            )}
-
-                                                            {/* Use the helper function to render regular (non-spreadsheet) attachments */}
-                                                            {renderAttachments(attachments as string[], handleOpenFileViewer, sandboxId, project)}
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                                                                <div className="flex justify-end">
+                                                                                                        <div className={`flex max-w-[85%] flex-col items-stretch gap-1`}>
+                                                                                                                <div className={`rounded-3xl rounded-br-lg bg-card border px-4 py-3 break-words overflow-hidden ${isFailed ? 'border-destructive/70' : ''}`}>
+                                                                                                                        <div className="space-y-3 min-w-0 flex-1">
+                                                                                                                                {cleanContent && (
+                                                                                                                                        <ComposioUrlDetector content={cleanContent} className="text-sm prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere" />
+                                                                                                                                )}
+                                                                                                                                {/* Use the helper function to render regular (non-spreadsheet) attachments */}
+                                                                                                                                {renderAttachments(attachments as string[], handleOpenFileViewer, sandboxId, project)}
+                                                                                                                        </div>
+                                                                                                                </div>
+                                                                                                                {(showAttempt || isFailed) && (
+                                                                                                                    <div className="flex items-center justify-end gap-2 flex-wrap pl-2 pr-1">
+                                                                                                                        {showAttempt && (
+                                                                                                                            <span className="text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/50">Attempt {attempt}</span>
+                                                                                                                        )}
+                                                                                                                        {isFailed && (
+                                                                                                                            <span className="text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300/50 dark:border-red-800/60">Failed</span>
+                                                                                                                        )}
+                                                                                                                        {isFailed && (
+                                                                                                                            <EditableRetryControls
+                                                                                                                                messageId={message.message_id || ''}
+                                                                                                                                originalContent={cleanContent}
+                                                                                                                            />
+                                                                                                                        )}
+                                                                                                                    </div>
+                                                                                                                )}
+                                                                                                        </div>
+                                                                                                        {/* Wrap user message container with action menu */}
+                                                                                                </div>
                                             </div>
                                         );
                                     } else if (group.type === 'assistant_group') {
@@ -851,95 +925,50 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                                         );
 
                                                                         elements.push(
-                                                                            <div key={msgKey} className={assistantMessageCount > 0 ? "mt-4" : ""}>
-                                                                                <div className="prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-hidden">
-                                                                                    {renderedContent}
+                                                                            <MessageActionMenu
+                                                                                key={msgKey}
+                                                                                message={message}
+                                                                                isAssistant={true}
+                                                                                isUser={false}
+                                                                                isFailed={message.ui_status === 'failed'}
+                                                                                isStreaming={message.ui_status === 'streaming'}
+                                                                                collapsed={false}
+                                                                                onRetry={() => {}}
+                                                                                onRegenerate={() => {
+                                                                                    const retryEvent = new CustomEvent('xera-message-retry', { detail: { messageId: message.message_id } });
+                                                                                    window.dispatchEvent(retryEvent);
+                                                                                }}
+                                                                                onQuote={() => {
+                                                                                    if (message.content) {
+                                                                                        const text = extractPlainText(message.content);
+                                                                                        const quoted = text.split('\n').slice(0,50).map(l => `> ${l}`).join('\n');
+                                                                                        window.dispatchEvent(new CustomEvent('xera-insert-text', { detail: { text: quoted + '\n\n' } }));
+                                                                                    }
+                                                                                }}
+                                                                                onCopy={() => {
+                                                                                    const text = extractPlainText(message.content);
+                                                                                    navigator.clipboard.writeText(text).then(() => toast.success('Copied')); 
+                                                                                }}
+                                                                                
+                                                                                onCollapseToggle={() => { /* future collapse state */ }}
+                                                                                onAddToKnowledgeBase={() => handleAddToKnowledgeBase(message.content as any)}
+                                                                                onSaveSnippet={() => toast.message('Saved snippet (stub)')}
+                                                                            >
+                                                                                <div className={assistantMessageCount > 0 ? "mt-4" : ""}>
+                                                                                    <div className="prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-hidden">
+                                                                                        {renderedContent}
+                                                                                    </div>
                                                                                 </div>
-                                                                            </div>
+                                                                            </MessageActionMenu>
                                                                         );
 
                                                                         assistantMessageCount++; // Increment after adding the element
                                                                     }
                                                                 });
 
+                                                                // End assistant group messages rendering
                                                                 return elements;
                                                             })()}
-
-                                                            {groupIndex === finalGroupedMessages.length - 1 && !readOnly && (streamHookStatus === 'streaming' || streamHookStatus === 'connecting') && (
-                                                                <div className="mt-4">
-                                                                    {(() => {
-                                                                        // In debug mode, show raw streaming content
-                                                                        if (debugMode && streamingTextContent) {
-                                                                            return (
-                                                                                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto p-2 border border-border rounded-md bg-muted/30">
-                                                                                    {streamingTextContent}
-                                                                                </pre>
-                                                                            );
-                                                                        }
-
-                                                                        let detectedTag: string | null = null;
-                                                                        let tagStartIndex = -1;
-                                                                        if (streamingTextContent) {
-                                                                            // First check for new format
-                                                                            const functionCallsIndex = streamingTextContent.indexOf('<function_calls>');
-                                                                            if (functionCallsIndex !== -1) {
-                                                                                detectedTag = 'function_calls';
-                                                                                tagStartIndex = functionCallsIndex;
-                                                                            } else {
-                                                                                // Fall back to old format detection
-                                                                                for (const tag of HIDE_STREAMING_XML_TAGS) {
-                                                                                    const openingTagPattern = `<${tag}`;
-                                                                                    const index = streamingTextContent.indexOf(openingTagPattern);
-                                                                                    if (index !== -1) {
-                                                                                        detectedTag = tag;
-                                                                                        tagStartIndex = index;
-                                                                                        break;
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-
-                                                                        const textToRender = streamingTextContent || '';
-                                                                        const textBeforeTag = detectedTag ? textToRender.substring(0, tagStartIndex) : textToRender;
-                                                                        const showCursor =
-                                                                          (streamHookStatus ===
-                                                                            'streaming' ||
-                                                                            streamHookStatus ===
-                                                                              'connecting') &&
-                                                                          !detectedTag;
-
-                                                                        // Show minimal processing indicator when agent is active but no streaming text
-                                                                        if (!streamingTextContent && (streamHookStatus === 'streaming' || streamHookStatus === 'connecting')) {
-                                                                            return (
-                                                                                <div className="flex items-center gap-1 py-1 ">
-                                                                                    <div className="h-1 w-1 rounded-full bg-primary/40 animate-pulse duration-1000" />
-                                                                                    <div className="h-1 w-1 rounded-full bg-primary/40 animate-pulse duration-1000 delay-150" />
-                                                                                    <div className="h-1 w-1 rounded-full bg-primary/40 animate-pulse duration-1000 delay-300" />
-                                                                                </div>
-                                                                            );
-                                                                        }
-
-                                                                        return (
-                                                                            <>
-                                                                                <StreamingText 
-                                                                                    content={textBeforeTag} 
-                                                                                    className="text-sm prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere"
-                                                                                />
-
-                                                                                {detectedTag && (
-                                                                                    <ShowToolStream
-                                                                                        content={textToRender.substring(tagStartIndex)}
-                                                                                        messageId={visibleMessages && visibleMessages.length > 0 ? visibleMessages[visibleMessages.length - 1].message_id : "playback-streaming"}
-                                                                                        onToolClick={handleToolClick}
-                                                                                        showExpanded={true}
-                                                                                        startTime={Date.now()}
-                                                                                    />
-                                                                                )}
-                                                                            </>
-                                                                        );
-                                                                    })()}
-                                                                </div>
-                                                            )}
 
                                                             {/* For playback mode, show streaming text and tool calls */}
                                                             {readOnly && groupIndex === finalGroupedMessages.length - 1 && isStreamingText && (
@@ -1094,6 +1123,66 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
 
             {/* No scroll button needed with flex-column-reverse */}
         </>
+    );
+};
+
+// Lightweight child component for editable retry controls (isolated state via closure map in parent not required; each instance maintains own state)
+const EditableRetryControls: React.FC<{ messageId: string; originalContent: string; }> = ({ messageId, originalContent }) => {
+    const [isEditing, setIsEditing] = React.useState(false);
+    const [edited, setEdited] = React.useState(originalContent);
+    useEffect(() => {
+        setEdited(originalContent);
+    }, [originalContent]);
+    return (
+        <div className="absolute -bottom-6 right-2 flex items-center gap-2 text-xs">
+            {!isEditing && (
+                <>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const evt = new CustomEvent('xera-message-retry', { detail: { messageId } });
+                            window.dispatchEvent(evt);
+                        }}
+                        className="px-2 py-0.5 rounded-md bg-muted hover:bg-muted/70 border border-border/50 transition-colors"
+                    >Retry</button>
+                    <button
+                        type="button"
+                        onClick={() => setIsEditing(true)}
+                        className="px-2 py-0.5 rounded-md bg-muted hover:bg-muted/70 border border-border/50 transition-colors"
+                    >Edit & Retry</button>
+                    <button
+                        type="button"
+                        onClick={() => navigator.clipboard.writeText(originalContent || '')}
+                        className="px-2 py-0.5 rounded-md bg-muted hover:bg-muted/70 border border-border/50 transition-colors"
+                    >Copy</button>
+                </>
+            )}
+            {isEditing && (
+                <div className="flex items-start gap-2 w-full">
+                    <textarea
+                        className="w-64 text-xs rounded-md border bg-background/70 p-1 resize-none h-20 focus:outline-none focus:ring-1 focus:ring-primary"
+                        value={edited}
+                        onChange={(e) => setEdited(e.target.value)}
+                    />
+                    <div className="flex flex-col gap-1">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const evt = new CustomEvent('xera-message-retry', { detail: { messageId, content: edited } });
+                                window.dispatchEvent(evt);
+                                setIsEditing(false);
+                            }}
+                            className="px-2 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-[11px]"
+                        >Send Retry</button>
+                        <button
+                            type="button"
+                            onClick={() => { setEdited(originalContent); setIsEditing(false); }}
+                            className="px-2 py-1 rounded-md bg-muted hover:bg-muted/70 border border-border/50 text-[11px]"
+                        >Cancel</button>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 

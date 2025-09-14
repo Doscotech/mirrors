@@ -3,7 +3,7 @@ globs: frontend/**/*
 alwaysApply: false
 ---
 
-# Frontend Development Guidelines
+# Frontend Development Guidelines (Xera)
 
 ## TypeScript Standards
 

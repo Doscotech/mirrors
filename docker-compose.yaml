@@ -1,8 +1,10 @@
 services:
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    # IMPORTANT: Redis should not be exposed publicly in production.
+    # If you truly need host access for local dev, you can temporarily uncomment:
+    # ports:
+    #   - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
       - ./backend/services/docker/redis.conf:/usr/local/etc/redis/redis.conf:ro

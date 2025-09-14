@@ -389,27 +389,81 @@ async def create_message(
     
     try:
         await verify_and_authorize_thread_access(client, thread_id, user_id)
-        
+        # Idempotency check (best-effort) if key provided
+        if message_data.idempotency_key:
+            try:
+                existing = await client.table('messages').select('*') \
+                    .eq('thread_id', thread_id) \
+                    .eq('idempotency_key', message_data.idempotency_key) \
+                    .limit(1).execute()
+                if existing.data:
+                    logger.debug(f"Idempotent create_message hit for key={message_data.idempotency_key}")
+                    return existing.data[0]
+            except Exception as e:
+                logger.warning(f"Idempotency pre-check failed (continuing): {e}")
+
+        # Determine if this is a retry and compute attempt
+        attempt = 1
+        retry_root_id = None
+        if message_data.retry_of:
+            # Fetch original/root message
+            orig_res = await client.table('messages').select('*').eq('message_id', message_data.retry_of).limit(1).execute()
+            if not orig_res.data:
+                raise HTTPException(status_code=404, detail="Original message for retry not found")
+            orig = orig_res.data[0]
+            # Determine root (if the original itself was a retry keep its retry_of root)
+            retry_root_id = orig.get('retry_of') or orig.get('message_id')
+            # Get max attempt so far across chain
+            chain_res = await client.table('messages').select('attempt').or_(f"message_id.eq.{retry_root_id},retry_of.eq.{retry_root_id}").eq('thread_id', thread_id).execute()
+            existing_attempts = [r.get('attempt', 1) for r in (chain_res.data or [])]
+            attempt = (max(existing_attempts) + 1) if existing_attempts else 2
+            # Content reuse from original root
+            # We re-fetch root if necessary
+            if retry_root_id != orig.get('message_id'):
+                root_res = await client.table('messages').select('*').eq('message_id', retry_root_id).limit(1).execute()
+                if root_res.data:
+                    orig = root_res.data[0]
+            # Support edit-on-retry: if user supplies new content (non-empty and different) use it, else reuse root content
+            original_content_payload = orig.get('content')
+            if isinstance(original_content_payload, dict):
+                root_text = original_content_payload.get('content')
+            else:
+                root_text = None
+            incoming = (message_data.content or '').strip()
+            if incoming and root_text and incoming != root_text:
+                message_content_text = incoming
+            elif incoming and not root_text:  # no structured root text
+                message_content_text = incoming
+            else:
+                message_content_text = root_text or message_data.content
+        else:
+            message_content_text = message_data.content
+            retry_root_id = None
+
         message_payload = {
             "role": "user" if message_data.type == "user" else "assistant",
-            "content": message_data.content
+            "content": message_content_text
         }
-        
+
+        new_message_id = str(uuid.uuid4())
         insert_data = {
-            "message_id": str(uuid.uuid4()),
+            "message_id": new_message_id,
             "thread_id": thread_id,
             "type": message_data.type,
             "is_llm_message": message_data.is_llm_message,
-            "content": message_payload,  # Store as JSONB object, not JSON string
-            "created_at": datetime.now(timezone.utc).isoformat()
+            "content": message_payload,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "retry_of": retry_root_id,
+            "attempt": attempt,
+            "idempotency_key": message_data.idempotency_key,
         }
-        
+
         message_result = await client.table('messages').insert(insert_data).execute()
-        
+
         if not message_result.data:
             raise HTTPException(status_code=500, detail="Failed to create message")
-        
-        logger.debug(f"Created message: {message_result.data[0]['message_id']}")
+
+        logger.debug(f"Created message: {message_result.data[0]['message_id']} (attempt={attempt}, retry_of={retry_root_id})")
         return message_result.data[0]
         
     except HTTPException:

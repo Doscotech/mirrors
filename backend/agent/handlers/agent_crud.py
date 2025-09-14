@@ -17,6 +17,11 @@ from ..config_helper import build_unified_config
 
 router = APIRouter()
 
+@router.options("/agents")
+async def options_agents():
+    """CORS preflight handler for agents listing."""
+    return {"allow": True}
+
 @router.put("/agents/{agent_id}", response_model=AgentResponse)
 async def update_agent(
     agent_id: str,

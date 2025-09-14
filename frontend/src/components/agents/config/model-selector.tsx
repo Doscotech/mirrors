@@ -16,17 +16,13 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { 
-  useModelSelection, 
-  MODELS,
-  DEFAULT_FREE_MODEL_ID,
-  DEFAULT_PREMIUM_MODEL_ID
-} from '@/components/thread/chat-input/_use-model-selection';
+// Use the unified (new) model selection hook directly
+import { useModelSelection } from '@/components/thread/chat-input/_use-model-selection-new';
+import { MODELS, DEFAULT_FREE_MODEL_ID, DEFAULT_PREMIUM_MODEL_ID } from '@/components/thread/chat-input/_use-model-selection';
 import { formatModelName, getPrefixedModelId } from '@/lib/stores/model-store';
 import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-billing';
 import { isLocalMode } from '@/lib/config';
 import { CustomModelDialog, CustomModelFormData } from '@/components/thread/chat-input/custom-model-dialog';
-import { PaywallDialog } from '@/components/payment/paywall-dialog';
 import { BillingModal } from '@/components/billing/billing-modal';
 import Link from 'next/link';
 
@@ -67,8 +63,7 @@ export function AgentModelSelector({
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
-  const [paywallOpen, setPaywallOpen] = useState(false);
-  const [lockedModel, setLockedModel] = useState<string | null>(null);
+  // Paywall removed – universal access
   const [billingModalOpen, setBillingModalOpen] = useState(false);
   
   const [isCustomModelDialogOpen, setIsCustomModelDialogOpen] = useState(false);
@@ -102,6 +97,17 @@ export function AgentModelSelector({
   
   // Use the prop value if provided, otherwise fall back to store value
   const selectedModel = normalizedValue || storeSelectedModel;
+
+  // Keep store in sync if parent passes a different controlled value
+  useEffect(() => {
+    if (normalizedValue && normalizedValue !== storeSelectedModel) {
+      try {
+        if (typeof storeHandleModelChange === 'function') {
+          storeHandleModelChange(normalizedValue);
+        }
+      } catch {}
+    }
+  }, [normalizedValue, storeSelectedModel, storeHandleModelChange]);
 
   const enhancedModelOptions = useMemo(() => {
     const modelMap = new Map();
@@ -193,33 +199,27 @@ export function AgentModelSelector({
     }
   }, [isOpen]);
 
+  // Universal access: all models are selectable without gating
   const handleSelect = (modelId: string) => {
-    const isCustomModel = customModels.some(model => model.id === modelId);
-    
-    if (isCustomModel && isLocalMode()) {
-      onChange(modelId);
-      setIsOpen(false);
-      return;
+    // Update global/store selection for consistency
+    try {
+      if (typeof storeHandleModelChange === 'function') {
+        storeHandleModelChange(modelId);
+      }
+    } catch (e) {
+      console.warn('Model selector: failed updating store selection', e);
     }
-    
-    const hasAccess = isLocalMode() || canAccessModel(modelId);
-    if (hasAccess) {
-      onChange(modelId);
-      setIsOpen(false);
-    } else {
-      setLockedModel(modelId);
-      setPaywallOpen(true);
-    }
+    // Fire external change handler (agent config, etc.)
+    onChange(modelId);
+    setIsOpen(false);
   };
 
   const handleUpgradeClick = () => {
+    // Billing upgrade no longer needed for model access – repurpose to open billing if desired
     setBillingModalOpen(true);
   };
 
-  const closePaywallDialog = () => {
-    setPaywallOpen(false);
-    setLockedModel(null);
-  };
+  // Legacy paywall handlers removed
 
   const handleSearchInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.stopPropagation();
@@ -310,9 +310,11 @@ export function AgentModelSelector({
   const renderModelOption = (model: any, index: number) => {
     const isCustom = Boolean(model.isCustom) || 
       (isLocalMode() && customModels.some(m => m.id === model.id));
-    const accessible = isCustom ? true : (isLocalMode() || canAccessModel(model.id));
+  // All models accessible now
+  const accessible = true;
     const isHighlighted = index === highlightedIndex;
-    const isPremium = model.requiresSubscription;
+  // Premium distinction removed (retain flag if needed for future styling)
+  const isPremium = false;
     const isLowQuality = MODELS[model.id]?.lowQuality || false;
     const isRecommended = MODELS[model.id]?.recommended || false;
 
@@ -341,9 +343,7 @@ export function AgentModelSelector({
                       Recommended
                     </span>
                   )}
-                  {isPremium && !accessible && !isLocalMode() && (
-                    <Crown className="h-3.5 w-3.5 text-blue-500" />
-                  )}
+                  {/* Premium crown removed since all models are accessible */}
                   {isLocalMode() && isCustom && (
                     <>
                       <button
@@ -373,11 +373,7 @@ export function AgentModelSelector({
               </DropdownMenuItem>
             </div>
           </TooltipTrigger>
-          {!accessible && !isLocalMode() ? (
-            <TooltipContent side="left" className="text-xs max-w-xs">
-              <p>Requires subscription to access premium model</p>
-            </TooltipContent>
-          ) : isLowQuality ? (
+          {isLowQuality ? (
             <TooltipContent side="left" className="text-xs max-w-xs">
               <p>Not recommended for complex tasks</p>
             </TooltipContent>
@@ -503,20 +499,20 @@ export function AgentModelSelector({
               {shouldDisplayAll ? (
                 <div>
                   <div className="px-3 py-2 text-xs font-medium text-muted-foreground">
-                    Available Models
+                    All models are available. Usage charges only.
                   </div>
-                  {freeModels.map((model, index) => renderModelOption(model, index))}
-                  
-                  {premiumModels.length > 0 && (
+                  {freeModels.concat(premiumModels).map((model, index) => renderModelOption(model, index))}
+                  {/* Premium section removed as gating is disabled */}
+                  {false && premiumModels.length > 0 && (
                     <>
                       <div className="mt-4 border-t border-border pt-2">
                         <div className="px-3 py-1.5 text-xs font-medium text-blue-500 flex items-center">
                           <Crown className="h-3.5 w-3.5 mr-1.5" />
-                          {subscriptionStatus === 'active' ? 'Premium Models' : 'Additional Models'}
+                          All Models (Unified)
                         </div>
-                        <div className="relative overflow-hidden" style={{ maxHeight: subscriptionStatus === 'active' ? 'none' : '160px' }}>
-                          {(subscriptionStatus === 'active' ? premiumModels : premiumModels.slice(0, 3)).map((model, index) => {
-                            const canAccess = isLocalMode() || canAccessModel(model.id);
+                        <div className="relative overflow-hidden" style={{ maxHeight: 'none' }}>
+                          {premiumModels.map((model, index) => {
+                            const canAccess = true;
                             const isRecommended = model.recommended;
                             
                             return (
@@ -558,29 +554,7 @@ export function AgentModelSelector({
                                 </Tooltip>
                             );
                           })}
-                          {subscriptionStatus !== 'active' && (
-                            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-transparent flex items-end justify-center">
-                              <div className="w-full p-3">
-                                <div className="rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-200/70 dark:from-blue-950/40 dark:to-blue-900/30 shadow-sm border border-blue-200/50 dark:border-blue-800/50 p-3">
-                                  <div className="flex flex-col space-y-2">
-                                    <div className="flex items-center">
-                                      <Crown className="h-4 w-4 text-blue-500 mr-2 flex-shrink-0" />
-                                      <div>
-                                        <p className="text-sm font-medium">Unlock all models + higher limits</p>
-                                      </div>
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      className="w-full h-8 font-medium"
-                                      onClick={handleUpgradeClick}
-                                    >
-                                      Upgrade now
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
+                          {/* Upgrade overlay removed */}
                         </div>
                       </div>
                     </>
@@ -610,22 +584,7 @@ export function AgentModelSelector({
           mode={dialogMode}
         />
       )}
-      {paywallOpen && (
-        <PaywallDialog
-          open={true}
-          onDialogClose={closePaywallDialog}
-          title="Premium Model"
-          description={
-            lockedModel
-              ? `Subscribe to access ${enhancedModelOptions.find(
-                  (m) => m.id === lockedModel
-                )?.label}`
-              : 'Subscribe to access premium models with enhanced capabilities'
-          }
-          ctaText="Subscribe Now"
-          cancelText="Maybe Later"
-        />
-      )}
+  {/* Paywall dialog removed since all models are accessible */}
       <BillingModal
         open={billingModalOpen}
         onOpenChange={setBillingModalOpen}

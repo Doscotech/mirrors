@@ -144,28 +144,60 @@ async def run_agent_background(
     instance_active_key = f"active_run:{instance_id}:{agent_run_id}"
 
     async def check_for_stop_signal():
-        nonlocal stop_signal_received
-        if not pubsub: return
+        nonlocal stop_signal_received, pubsub
+        if not pubsub:
+            return
+        reconnect_attempts = 0
+        max_reconnect_attempts = 5
         try:
             while not stop_signal_received:
-                message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=0.5)
+                try:
+                    message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=0.5)
+                except Exception as e:
+                    # Handle transient Redis disconnects with exponential backoff
+                    if reconnect_attempts < max_reconnect_attempts:
+                        reconnect_attempts += 1
+                        wait = min(2 ** reconnect_attempts, 10)
+                        logger.warning(f"Redis pubsub disconnected for agent run {agent_run_id}; attempting reconnect {reconnect_attempts}/{max_reconnect_attempts} in {wait}s: {e}")
+                        await asyncio.sleep(wait)
+                        try:
+                            new_pubsub = await redis.create_pubsub()
+                            await new_pubsub.subscribe(instance_control_channel, global_control_channel)
+                            if pubsub:
+                                try:
+                                    pubsub.close()
+                                except Exception:
+                                    pass
+                            pubsub = new_pubsub
+                            logger.debug(f"Reconnected Redis pubsub for agent run {agent_run_id}")
+                            continue
+                        except Exception as re_sub_err:
+                            logger.error(f"Failed to resubscribe Redis pubsub: {re_sub_err}")
+                            continue
+                    else:
+                        logger.error(f"Max Redis pubsub reconnect attempts reached for agent run {agent_run_id}; stopping run")
+                        stop_signal_received = True
+                        break
                 if message and message.get("type") == "message":
                     data = message.get("data")
-                    if isinstance(data, bytes): data = data.decode('utf-8')
+                    if isinstance(data, bytes):
+                        data = data.decode('utf-8')
                     if data == "STOP":
                         logger.debug(f"Received STOP signal for agent run {agent_run_id} (Instance: {instance_id})")
                         stop_signal_received = True
                         break
                 # Periodically refresh the active run key TTL
-                if total_responses % 50 == 0: # Refresh every 50 responses or so
-                    try: await redis.expire(instance_active_key, redis.REDIS_KEY_TTL)
-                    except Exception as ttl_err: logger.warning(f"Failed to refresh TTL for {instance_active_key}: {ttl_err}")
-                await asyncio.sleep(0.1) # Short sleep to prevent tight loop
+                if total_responses % 50 == 0:  # Refresh every 50 responses or so
+                    try:
+                        await redis.expire(instance_active_key, redis.REDIS_KEY_TTL)
+                    except Exception as ttl_err:
+                        logger.warning(f"Failed to refresh TTL for {instance_active_key}: {ttl_err}")
+                await asyncio.sleep(0.1)  # Short sleep to prevent tight loop
         except asyncio.CancelledError:
             logger.debug(f"Stop signal checker cancelled for {agent_run_id} (Instance: {instance_id})")
         except Exception as e:
             logger.error(f"Error in stop signal checker for {agent_run_id}: {e}", exc_info=True)
-            stop_signal_received = True # Stop the run if the checker fails
+            stop_signal_received = True  # Stop the run if the checker fails
 
     trace = langfuse.trace(name="agent_run", id=agent_run_id, session_id=thread_id, metadata={"project_id": project_id, "instance_id": instance_id})
     try:

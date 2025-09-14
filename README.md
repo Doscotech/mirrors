@@ -141,6 +141,32 @@ Isolated Docker execution environments for each agent instance featuring browser
 ### 🗄️ Database & Storage
 Supabase-powered data layer handling authentication, user management, agent configurations, conversation history, file storage, workflow state, analytics, and real-time subscriptions for live agent monitoring.
 
+### 🔁 Resilient Messaging & Retry (New)
+The platform includes a structured retry mechanism for user messages to improve reliability during transient failures or backend issues:
+
+- Messages now support lineage tracking with two fields: `retry_of` (UUID of the original/root user message) and `attempt` (1-based retry counter across the entire chain).
+- An `idempotency_key` (optional) prevents accidental duplicate submissions (e.g. rapid double clicks or network replays). A partial unique index enforces uniqueness per `(thread_id, idempotency_key)`.
+- The backend computes the correct next `attempt` server‑side to avoid race conditions; the client simply supplies `retry_of` and a fresh `idempotency_key`.
+- On retry, users may optionally edit the original content before resubmitting; if unchanged, the root content is reused for lineage consistency.
+- Failed messages are now preserved in the UI (rather than removed) and display an inline `Retry` action plus attempt badges (e.g. Attempt 3).
+
+Data Model Additions (table `messages`):
+- `retry_of UUID NULL` – points to the root/original message ID for all retries
+- `attempt INT NOT NULL DEFAULT 1 CHECK (attempt >= 1)`
+- `idempotency_key TEXT NULL` with partial unique index `idx_messages_thread_id_idem` (only enforced when key is non-null)
+
+Frontend Behavior:
+- When a send fails (non-billing/limit error), the message's UI status becomes `failed` and remains visible.
+- Clicking Retry creates a new optimistic message, calls the backend `/threads/{id}/messages` endpoint with `retry_of`, then starts a new agent run.
+- React Query adds transient auto-retry (exponential backoff) for network/5xx errors distinct from logical failures.
+
+Future Enhancements (open for contribution):
+- Surfacing retry chains in a collapsible timeline UI
+- Agent run-level idempotency & replay diagnostics
+- Telemetry on retry success rates
+
+See `backend/supabase/migrations/*messages_retry_support.sql` for schema changes and `agent/handlers/threads.py:create_message` for the attempt computation logic.
+
 ## 🚀 Quick Start
 
 Get your Kortix platform running in minutes with our automated setup wizard:
@@ -184,6 +210,18 @@ Kortix can be self-hosted on your own infrastructure using our comprehensive set
 For advanced users who prefer manual configuration, see the [Self-Hosting Guide](./docs/SELF-HOSTING.md) for detailed manual setup instructions.
 
 The wizard will guide you through all necessary steps to get your Kortix platform up and running. For detailed instructions, troubleshooting tips, and advanced configuration options, see the [Self-Hosting Guide](./docs/SELF-HOSTING.md).
+
+### 🔒 Redis Security Hardening
+
+If your infrastructure scan reports Redis (port 6379) publicly exposed, follow the remediation steps in [Redis Security Hardening](./docs/SECURITY_REDIS.md). Summary:
+
+- Remove host port mapping or restrict to localhost / private network
+- Enable `protected-mode`, `bind 127.0.0.1 ::1`, and set a strong `REDIS_PASSWORD`
+- Optionally use ACLs + rename sensitive commands
+- Apply cloud / host firewall rules to limit inbound sources
+- Validate external access is blocked (telnet / nmap should fail)
+
+The full checklist with copy‑paste config examples lives in `docs/SECURITY_REDIS.md`.
 
 ## 🤝 Contributing
 

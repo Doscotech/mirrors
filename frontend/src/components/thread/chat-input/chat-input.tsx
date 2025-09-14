@@ -216,6 +216,42 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       }
     }, [autoFocus]);
 
+    // Listen for quoted text insertion events
+    useEffect(() => {
+      const handler = (e: Event) => {
+        const custom = e as CustomEvent<{ text: string }>;
+        const insertText = custom.detail?.text || '';
+        if (!insertText) return;
+        const target = textareaRef.current;
+        const currentVal = isControlled ? controlledValue || '' : uncontrolledValue;
+        if (target) {
+          const start = target.selectionStart ?? currentVal.length;
+          const end = target.selectionEnd ?? currentVal.length;
+          const newValue = currentVal.slice(0, start) + insertText + currentVal.slice(end);
+          if (isControlled) {
+            controlledOnChange(newValue);
+          } else {
+            setUncontrolledValue(newValue);
+          }
+          // Move cursor after inserted block
+          requestAnimationFrame(() => {
+            target.selectionStart = target.selectionEnd = start + insertText.length;
+            target.focus();
+          });
+        } else {
+          // Fallback append
+          const newValue = currentVal + (currentVal.endsWith('\n') ? '' : '\n') + insertText;
+          if (isControlled) {
+            controlledOnChange(newValue);
+          } else {
+            setUncontrolledValue(newValue);
+          }
+        }
+      };
+      window.addEventListener('xera-insert-text', handler as EventListener);
+      return () => window.removeEventListener('xera-insert-text', handler as EventListener);
+    }, [isControlled, controlledValue, uncontrolledValue, controlledOnChange]);
+
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (

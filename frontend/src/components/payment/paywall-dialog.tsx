@@ -111,9 +111,9 @@ export const PaywallDialog: React.FC<PaywallDialogProps> = ({
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-lg font-medium">Upgrade to unlock</h3>
+                <h3 className="text-lg font-medium">All models are already unlocked</h3>
                 <p className="text-muted-foreground">
-                  Get access to premium models and features
+                  Billing is usage-based. Optimize prompts to control cost.
                 </p>
               </div>
             </div>

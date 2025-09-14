@@ -25,8 +25,8 @@ import json
 # Initialize Stripe
 stripe.api_key = config.STRIPE_SECRET_KEY
 
-# Token price multiplier
-TOKEN_PRICE_MULTIPLIER = 1.5
+# Token price multiplier (set to 1.0 = no markup)
+TOKEN_PRICE_MULTIPLIER = 1.0
 
 # Minimum credits required to allow a new request when over subscription limit
 CREDIT_MIN_START_DOLLARS = 0.20
@@ -841,6 +841,13 @@ async def get_allowed_models_for_user(client, user_id: str):
 
 
 async def can_use_model(client, user_id: str, model_name: str):
+    # Universal override: allow all models regardless of subscription when enabled
+    if getattr(config, 'ALWAYS_ALLOW_ALL_MODELS', False):
+        return True, "All models enabled (usage-based billing only)", {
+            "price_id": "usage_only",
+            "plan_name": "Usage Only",
+            "minutes_limit": "no limit"
+        }
     if config.ENV_MODE == EnvMode.LOCAL:
         logger.debug("Running in local development mode - billing checks are disabled")
         return True, "Local development mode - billing disabled", {

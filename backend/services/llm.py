@@ -263,6 +263,12 @@ def _add_fallback_model(params: Dict[str, Any], model_name: str, messages: List[
     """Add fallback model to the parameters."""
     fallback_model = get_openrouter_fallback(model_name)
     if fallback_model:
+        # Only add OpenRouter fallback if we actually have an API key configured
+        if not config.OPENROUTER_API_KEY:
+            logger.debug(
+                f"Skipping OpenRouter fallback '{fallback_model}' for '{model_name}' - missing OPENROUTER_API_KEY"
+            )
+            return
         params["fallbacks"] = [{
             "model": fallback_model,
             "messages": messages,

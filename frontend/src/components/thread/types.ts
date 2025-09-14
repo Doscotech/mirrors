@@ -24,6 +24,21 @@ export interface UnifiedMessage {
     name: string;
     profile_image_url?: string;
   }; // Agent information from join
+  // Retry metadata (may be absent on older rows)
+  retry_of?: string | null;
+  attempt?: number; // 1 for original; >=2 for retries
+  // UI-only field to track transient state client-side
+  ui_status?: 'pending' | 'failed' | 'completed' | 'streaming';
+  // Optional reason to display for failures (client-side only for now)
+  ui_status_reason?:
+    | 'agent_start_failed'
+    | 'model_unavailable'
+    | 'message_create_failed'
+    | 'startup_timeout'
+    | 'retry_failed'
+    | 'unknown_error'
+    // Non-fatal annotation indicating agent startup is taking longer than expected
+    | 'slow_start';
 }
 
 // Helper type for parsed content - structure depends on message.type

@@ -2,9 +2,10 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Menu, Plus, Zap, Command } from 'lucide-react';
+import { Plus, LayoutDashboard, FolderKanban, UserCircle2, Bot, Sparkles, Menu } from 'lucide-react';
 
-import { NavAgents } from '@/components/sidebar/nav-agents';
+// NavAgents (thread history) removed per request to hide message/task history from sidebar
+// import { NavAgents } from '@/components/sidebar/nav-agents';
 import { NavUserWithTeams } from '@/components/sidebar/nav-user-with-teams';
 // Removed Enterprise CTA per request
 import {
@@ -148,68 +149,58 @@ export function SidebarLeft({
       </SidebarHeader>
       <SidebarContent className="[&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
         <SidebarGroup>
-          <Link href="/dashboard">
-            <SidebarMenuButton 
-              className={cn('touch-manipulation', {
-                'bg-accent text-accent-foreground font-medium': pathname === '/dashboard',
-              })} 
-              onClick={() => {
-                posthog.capture('new_task_clicked');
-                if (isMobile) setOpenMobile(false);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              <span className="flex items-center justify-between w-full">
-                New Task
-              </span>
-            </SidebarMenuButton>
-          </Link>
-          <Link href="/overview">
-            <SidebarMenuButton 
-              className={cn('touch-manipulation mt-1', {
-                'bg-accent text-accent-foreground font-medium': pathname === '/overview',
-              })} 
-              onClick={() => {
-                if (isMobile) setOpenMobile(false);
-              }}
-            >
-              <Zap className="h-4 w-4 mr-1" />
-              <span className="flex items-center justify-between w-full">
-                Overview
-              </span>
-            </SidebarMenuButton>
-          </Link>
-          <Link href="/tasks">
-            <SidebarMenuButton 
-              className={cn('touch-manipulation mt-1', {
-                'bg-accent text-accent-foreground font-medium': pathname === '/tasks',
-              })} 
-              onClick={() => {
-                if (isMobile) setOpenMobile(false);
-              }}
-            >
-              <Zap className="h-4 w-4 mr-1" />
-              <span className="flex items-center justify-between w-full">
-                Tasks
-              </span>
-            </SidebarMenuButton>
-          </Link>
-  <Link href="/agents?tab=marketplace">
-            <SidebarMenuButton 
-              className={cn('touch-manipulation mt-1', {
-                'bg-accent text-accent-foreground font-medium': pathname.startsWith('/agents'),
-              })} 
-              onClick={() => {
-                if (isMobile) setOpenMobile(false);
-              }}
-            >
-  <Command className="h-4 w-4 mr-1" />
-        <span className="flex items-center justify-between w-full">Command Center</span>
-            </SidebarMenuButton>
-          </Link>
-
+          <SidebarMenu>
+            {[
+              {
+                href: '/dashboard',
+                label: 'New Task',
+                icon: Plus,
+                match: (p: string) => p === '/dashboard',
+                onClick: () => posthog.capture('new_task_clicked'),
+              },
+              {
+                href: '/overview',
+                label: 'Overview',
+                icon: LayoutDashboard,
+                match: (p: string) => p === '/overview',
+              },
+              {
+                href: '/projects',
+                label: 'Projects',
+                icon: FolderKanban,
+                match: (p: string) => p.startsWith('/projects'),
+              },
+              {
+                href: '/agents?tab=marketplace',
+                label: 'Command Center',
+                icon: Bot,
+                match: (p: string) => p.startsWith('/agents'),
+              },
+              {
+                href: '/profile',
+                label: 'Profile',
+                icon: UserCircle2,
+                match: (p: string) => p.startsWith('/profile'),
+              },
+            ].map(item => (
+              <Link key={item.href} href={item.href}>
+                <SidebarMenuButton
+                  className={cn('touch-manipulation mt-1 first:mt-0', {
+                    'bg-accent text-accent-foreground font-medium': item.match(pathname),
+                  })}
+                  onClick={() => {
+                    item.onClick?.();
+                    if (isMobile) setOpenMobile(false);
+                  }}
+                >
+                  <item.icon className="h-4 w-4 mr-2" />
+                  <span className="flex items-center justify-between w-full">{item.label}</span>
+                </SidebarMenuButton>
+              </Link>
+            ))}
+          </SidebarMenu>
         </SidebarGroup>
-        <NavAgents />
+  {/* Thread / message history removed */}
       </SidebarContent>
   {/* Enterprise demo CTA removed per request */}
       <SidebarFooter>

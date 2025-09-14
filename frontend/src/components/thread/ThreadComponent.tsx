@@ -7,7 +7,7 @@ import React, {
   useState,
 } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BillingError, AgentRunLimitError } from '@/lib/api';
+import { BillingError, AgentRunLimitError, ModelUnavailableError } from '@/lib/api';
 import { toast } from 'sonner';
 import { ChatInput } from '@/components/thread/chat-input/chat-input';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -17,7 +17,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { isLocalMode } from '@/lib/config';
 import { ThreadContent } from '@/components/thread/content/ThreadContent';
 import { ThreadSkeleton } from '@/components/thread/content/ThreadSkeleton';
-import { useAddUserMessageMutation } from '@/hooks/react-query/threads/use-messages';
+import { useAddUserMessageMutation, useCreateMessageMutation } from '@/hooks/react-query/threads/use-messages';
 import {
   useStartAgentMutation,
   useStopAgentMutation,
@@ -25,9 +25,7 @@ import {
 import { useSharedSubscription } from '@/contexts/SubscriptionContext';
 import { SubscriptionStatus } from '@/components/thread/chat-input/_use-model-selection';
 
-import {
-  UnifiedMessage,
-} from '@/components/thread/types';
+import { UnifiedMessage } from '@/components/thread/types';
 import {
   ApiMessageType,
 } from '@/app/(dashboard)/projects/[projectId]/thread/_types';
@@ -50,6 +48,8 @@ import { threadKeys } from '@/hooks/react-query/threads/keys';
 import { useProjectRealtime } from '@/hooks/useProjectRealtime';
 import { handleGoogleSlidesUpload } from './tool-views/utils/presentation-utils';
 import { Examples } from '@/components/dashboard/examples';
+import { useSandboxViewStore } from '@/lib/stores/sandbox-view-store';
+import { useToolPanelPiPStore } from '@/lib/stores/tool-panel-pip-store';
 
 interface ThreadComponentProps {
   projectId: string;
@@ -62,6 +62,12 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
   const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+
+  // Simple UUID v4 validator to guard retry_of and other IDs before sending to backend
+  const isValidUUID = (value?: string | null): boolean => {
+    if (!value) return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  };
 
   // State
   const [newMessage, setNewMessage] = useState('');
@@ -99,6 +105,9 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
   const latestMessageRef = useRef<HTMLDivElement>(null);
   const initialLayoutAppliedRef = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // Watchdog timer ref for agent startup
+  const startupWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPendingUserMessageIdRef = useRef<string | null>(null);
 
   // Sidebar
   const { state: leftSidebarState, setOpen: setLeftSidebarOpen } = useSidebar();
@@ -141,6 +150,11 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
     userClosedPanelRef,
   } = useToolCalls(messages, setLeftSidebarOpen, agentStatus, compact);
 
+  // Treat side panel as visually closed when panel itself is popped out (PiP)
+  const { mode: toolPanelMode } = useToolPanelPiPStore();
+  // Side panel no longer consumes layout width; treat as open only in expanded mode
+  const effectiveSidePanelOpen = isSidePanelOpen && toolPanelMode === 'expanded';
+
   const {
     showBillingAlert,
     setShowBillingAlert,
@@ -162,7 +176,8 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
     userClosedPanelRef,
   });
 
-  const addUserMessageMutation = useAddUserMessageMutation();
+  const addUserMessageMutation = useAddUserMessageMutation(); // legacy direct Supabase path (kept for now for other codepaths)
+  const createMessageMutation = useCreateMessageMutation();
   const startAgentMutation = useStartAgentMutation();
   const stopAgentMutation = useStopAgentMutation();
   const { data: threadAgentData } = useThreadAgent(threadId);
@@ -412,6 +427,9 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
         metadata: '{}',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        attempt: 1,
+        retry_of: null,
+        ui_status: 'pending',
       };
 
       setMessages((prev) => [...prev, optimisticUserMessage]);
@@ -425,9 +443,11 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
       }, 100);
 
       try {
-        const messagePromise = addUserMessageMutation.mutateAsync({
+        // Use backend createMessage for attempt/idempotency logic
+        const idempotencyKey = `init-${threadId}-${Date.now()}`;
+        const messagePromise = createMessageMutation.mutateAsync({
           threadId,
-          message,
+          req: { content: message, idempotency_key: idempotencyKey, type: 'user' }
         });
 
         const agentPromise = startAgentMutation.mutateAsync({
@@ -446,9 +466,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
         if (results[0].status === 'rejected') {
           const reason = results[0].reason;
           console.error('Failed to send message:', reason);
-          throw new Error(
-            `Failed to send message: ${reason?.message || reason}`,
-          );
+          throw Object.assign(new Error(`Failed to send message: ${reason?.message || reason}`), { __failureReason: 'message_create_failed' });
         }
 
         if (results[1].status === 'rejected') {
@@ -491,12 +509,32 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
             return;
           }
 
-          throw new Error(`Failed to start agent: ${error?.message || error}`);
+          // Suppress explicit model unavailable surfacing; treat as generic start failure
+          if (error instanceof ModelUnavailableError) {
+            throw Object.assign(new Error(`Failed to start agent: ${error.detail?.message || error.message}`), { __failureReason: 'agent_start_failed' });
+          }
+          throw Object.assign(new Error(`Failed to start agent: ${error?.message || error}`), { __failureReason: 'agent_start_failed' });
         }
 
         const agentResult = results[1].value;
         setUserInitiatedRun(true);
         setAgentRunId(agentResult.agent_run_id);
+        // Record last pending user message id (optimistic id may be replaced later)
+        lastPendingUserMessageIdRef.current = optimisticUserMessage.message_id;
+        // Start startup watchdog (e.g., 10s)
+        if (startupWatchdogRef.current) clearTimeout(startupWatchdogRef.current);
+        // Arm a 15s slow-start watchdog that does NOT fail the message; just annotate reason
+        startupWatchdogRef.current = setTimeout(() => {
+          setMessages(prev => prev.map(m => {
+            if (m.message_id === lastPendingUserMessageIdRef.current && m.ui_status === 'pending') {
+              // Add non-fatal slow_start reason; keep status pending
+              if (m.ui_status_reason !== 'slow_start') {
+                return { ...m, ui_status_reason: 'slow_start' };
+              }
+            }
+            return m;
+          }));
+        }, 15000);
       } catch (err) {
         console.error('Error sending message or starting agent:', err);
         if (
@@ -505,9 +543,8 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
         ) {
           toast.error(err instanceof Error ? err.message : 'Operation failed');
         }
-        setMessages((prev) =>
-          prev.filter((m) => m.message_id !== optimisticUserMessage.message_id),
-        );
+  const reason = err?.__failureReason || 'agent_start_failed';
+        setMessages((prev) => prev.map(m => m.message_id === optimisticUserMessage.message_id ? { ...m, ui_status: 'failed', ui_status_reason: reason } : m));
       } finally {
         setIsSending(false);
       }
@@ -515,7 +552,8 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
     [
       threadId,
       project?.account_id,
-      addUserMessageMutation,
+  addUserMessageMutation,
+  createMessageMutation,
       startAgentMutation,
       setMessages,
       setBillingData,
@@ -523,6 +561,114 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
       setAgentRunId,
     ],
   );
+
+  // Retry handler
+  useEffect(() => {
+    const handler = async (e: Event) => {
+      const detail = (e as CustomEvent).detail as { messageId?: string; content?: string };
+      const originalId = detail?.messageId;
+      if (!originalId) return;
+
+      const original = messages.find(m => m.message_id === originalId);
+      if (!original) return;
+      if (original.ui_status !== 'failed') return;
+
+  const baseAttempt = original.attempt || 1;
+  // Determine a stable, valid UUID to use for retry chaining. Avoid propagating temporary IDs (temp-*) to backend.
+  let retryChainRoot: string | undefined = undefined;
+  if (isValidUUID(original.retry_of)) {
+    retryChainRoot = original.retry_of!;
+  } else if (isValidUUID(original.message_id)) {
+    retryChainRoot = original.message_id;
+  } else {
+    // No valid UUID available; leave undefined so backend treats as fresh chain.
+    retryChainRoot = undefined;
+  }
+  const idempotencyKey = `retry-${retryChainRoot || 'new'}-${Date.now()}`;
+
+      // Optimistic new retry message
+      let retryContent: string;
+      if (detail?.content && typeof detail.content === 'string') {
+        retryContent = detail.content;
+      } else if (typeof original.content === 'string') {
+        retryContent = original.content;
+      } else {
+        try {
+          // Attempt to extract nested content if stored JSON-like
+            // @ts-ignore
+          retryContent = (original.content as any)?.content || JSON.stringify(original.content);
+        } catch {
+          // Fallback to string coercion
+          retryContent = String(original.content);
+        }
+      }
+
+      const optimisticRetry: UnifiedMessage = {
+        message_id: `temp-retry-${Date.now()}`,
+        thread_id: threadId,
+        type: 'user',
+        is_llm_message: false,
+        content: retryContent,
+        metadata: '{}',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        attempt: baseAttempt + 1,
+        retry_of: retryChainRoot || null,
+        ui_status: 'pending'
+      };
+      setMessages(prev => [...prev, optimisticRetry]);
+
+      try {
+        // Use direct Supabase insert until dedicated API wiring available
+        // Reuse addUserMessageMutation by extending its API would require change; instead call REST backend if needed later.
+        // For now mimic initial send path: create DB row then start agent.
+        // Call backend createMessage to properly compute attempt and reuse content
+        await createMessageMutation.mutateAsync({
+          threadId,
+          req: {
+            content: typeof retryContent === 'string' ? retryContent : '',
+            retry_of: retryChainRoot,
+            idempotency_key: idempotencyKey,
+            type: 'user'
+          }
+        });
+
+        // Start agent run
+        try {
+          await startAgentMutation.mutateAsync({
+            threadId,
+            options: { agent_id: selectedAgentId },
+          });
+        } catch (agentErr: any) {
+          // Collapse model unavailable into generic failure
+          throw Object.assign(agentErr, { __failureReason: 'agent_start_failed' });
+        }
+
+        // Start slow-start watchdog for retry (same 15s logic, non-fatal)
+        lastPendingUserMessageIdRef.current = optimisticRetry.message_id;
+        if (startupWatchdogRef.current) clearTimeout(startupWatchdogRef.current);
+        startupWatchdogRef.current = setTimeout(() => {
+          setMessages(prev => prev.map(m => {
+            if (m.message_id === optimisticRetry.message_id && m.ui_status === 'pending') {
+              if (m.ui_status_reason !== 'slow_start') {
+                return { ...m, ui_status_reason: 'slow_start' };
+              }
+            }
+            return m;
+          }));
+        }, 15000);
+
+        setMessages(prev => prev.map(m => m.message_id === optimisticRetry.message_id ? { ...m, ui_status: 'completed' } : m));
+      } catch (err) {
+        console.error('Retry failed', err);
+        const reason = (err as any)?.__failureReason || 'retry_failed';
+        setMessages(prev => prev.map(m => m.message_id === optimisticRetry.message_id ? { ...m, ui_status: 'failed', ui_status_reason: reason } : m));
+        toast.error('Retry failed');
+      }
+    };
+    window.addEventListener('xera-message-retry', handler as EventListener);
+    return () => window.removeEventListener('xera-message-retry', handler as EventListener);
+  }, [messages, threadId, startAgentMutation, selectedAgentId, setMessages, createMessageMutation]);
 
   const handleStopAgent = useCallback(async () => {
     setAgentStatus('idle');
@@ -674,8 +820,39 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
     ) {
       setAgentStatus('idle');
       setAgentRunId(null);
+      if (startupWatchdogRef.current) {
+        clearTimeout(startupWatchdogRef.current);
+        startupWatchdogRef.current = null;
+      }
     }
   }, [streamHookStatus, agentStatus, setAgentStatus, setAgentRunId]);
+
+  // Cancel watchdog when streaming begins
+  useEffect(() => {
+    if (agentStatus === 'running') {
+      if (startupWatchdogRef.current) {
+        clearTimeout(startupWatchdogRef.current);
+        startupWatchdogRef.current = null;
+      }
+      // Clear slow_start reason on the pending message (if still pending)
+      setMessages(prev => prev.map(m => {
+        if (m.message_id === lastPendingUserMessageIdRef.current && m.ui_status === 'pending' && m.ui_status_reason === 'slow_start') {
+          const { ui_status_reason, ...rest } = m as any;
+          return { ...rest }; // remove reason
+        }
+        return m;
+      }));
+    }
+  }, [agentStatus]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (startupWatchdogRef.current) {
+        clearTimeout(startupWatchdogRef.current);
+      }
+    };
+  }, []);
 
   // SEO title update
   useEffect(() => {
@@ -715,6 +892,17 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
   }, [searchParams]);
 
   const hasCheckedUpgradeDialog = useRef(false);
+  // PiP auto-pop logic
+  const { mode: sandboxViewMode, setMode: setSandboxViewMode, userDismissedPip } = useSandboxViewStore();
+
+  // Auto-pop PiP when agent starts running and sandbox becomes available
+  useEffect(() => {
+    if (agentStatus === 'running' && project?.sandbox && !userDismissedPip) {
+      if (sandboxViewMode === 'docked') {
+        setSandboxViewMode('pip');
+      }
+    }
+  }, [agentStatus, project?.sandbox, userDismissedPip, sandboxViewMode, setSandboxViewMode]);
 
   useEffect(() => {
     if (
@@ -781,7 +969,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
   }, [messages, initialLoadCompleted]);
 
   if (!initialLoadCompleted || isLoading) {
-    return <ThreadSkeleton isSidePanelOpen={isSidePanelOpen} compact={compact} />;
+    return <ThreadSkeleton isSidePanelOpen={effectiveSidePanelOpen} compact={compact} />;
   }
 
   if (error) {
@@ -792,7 +980,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
         projectId={project?.id || ''}
         project={project}
         sandboxId={sandboxId}
-        isSidePanelOpen={isSidePanelOpen}
+  isSidePanelOpen={effectiveSidePanelOpen}
         onToggleSidePanel={toggleSidePanel}
         onViewFiles={handleOpenFileViewer}
         fileViewerOpen={fileViewerOpen}
@@ -835,7 +1023,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
           projectId={project?.id || ''}
           project={project}
           sandboxId={sandboxId}
-          isSidePanelOpen={isSidePanelOpen}
+          isSidePanelOpen={effectiveSidePanelOpen}
           onToggleSidePanel={toggleSidePanel}
           onProjectRenamed={handleProjectRenamed}
           onViewFiles={handleOpenFileViewer}
@@ -968,7 +1156,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
         projectId={project?.id || ''}
         project={project}
         sandboxId={sandboxId}
-        isSidePanelOpen={isSidePanelOpen}
+  isSidePanelOpen={effectiveSidePanelOpen}
         onToggleSidePanel={toggleSidePanel}
         onProjectRenamed={handleProjectRenamed}
         onViewFiles={handleOpenFileViewer}
@@ -1032,7 +1220,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
             leftSidebarState === 'expanded'
               ? 'left-[72px] md:left-[256px]'
               : 'left-[40px]',
-            isSidePanelOpen && !isMobile
+            effectiveSidePanelOpen && !isMobile
               ? 'right-[90%] sm:right-[450px] md:right-[500px] lg:right-[550px] xl:right-[650px]'
               : 'right-0',
             isMobile ? 'left-0 right-0' : '',

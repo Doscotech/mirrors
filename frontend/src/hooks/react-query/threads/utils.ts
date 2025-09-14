@@ -35,6 +35,37 @@ export type Thread = {
     is_public?: boolean;
     [key: string]: any;
   };
+
+  export interface ProjectDetailResponse {
+    project: {
+      project_id: string;
+      name: string;
+      description: string;
+      created_at: string;
+      updated_at?: string;
+      thread_count: number;
+      total_messages: number;
+      is_public?: boolean;
+    };
+    threads: Array<{
+      thread_id: string;
+      created_at: string;
+      updated_at?: string;
+      message_count: number;
+      metadata?: any;
+      is_public?: boolean;
+    }> | null;
+  }
+
+  export const getProjectDetail = async (projectId: string): Promise<ProjectDetailResponse> => {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+    const res = await fetch(`${API_URL}/projects/${projectId}?include_threads=true`, { headers });
+    if (!res.ok) throw new Error('Failed to fetch project detail');
+    return await res.json();
+  };
   
 
   export const getThread = async (threadId: string): Promise<Thread> => {
@@ -319,6 +350,36 @@ export const getPublicProjects = async (): Promise<Project[]> => {
       console.error(`Error fetching project ${projectId}:`, error);
       throw error;
     }
+  };
+
+  export type ProjectListItem = {
+    project_id: string;
+    name: string;
+    description: string;
+    created_at: string;
+    updated_at?: string;
+    thread_count?: number;
+    message_count?: number;
+    is_public?: boolean;
+    latest_thread_id?: string | null;
+  };
+
+  export const listProjects = async (q?: string): Promise<ProjectListItem[]> => {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+    const url = new URL(`${API_URL}/projects`);
+    if (q) url.searchParams.set('q', q);
+    const res = await fetch(url.toString(), { headers });
+    if (!res.ok) throw new Error('Failed to fetch projects');
+    const json = await res.json();
+    return (json.projects || []).map((p: any) => ({
+      ...p,
+      latest_thread_id: p.latest_thread_id || null,
+    }));
   };
 
 

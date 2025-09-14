@@ -125,13 +125,8 @@ export const useModelSelection = () => {
     return sortedModels;
   }, [modelsData, isLoadingModels, customModels]);
 
-  const availableModels = useMemo(() => {
-    return isLocalMode() 
-      ? MODEL_OPTIONS 
-      : MODEL_OPTIONS.filter(model => 
-          canAccessModel(subscriptionStatus, model.requiresSubscription)
-        );
-  }, [MODEL_OPTIONS, subscriptionStatus]);
+  // Universal access: expose all models
+  const availableModels = useMemo(() => MODEL_OPTIONS, [MODEL_OPTIONS]);
 
   // Validate model selection only after hydration and when subscription status changes
   useEffect(() => {
@@ -150,14 +145,7 @@ export const useModelSelection = () => {
       return;
     }
     
-    // For non-local mode, check if user still has access to the selected model
-    if (!isLocalMode()) {
-      const modelOption = MODEL_OPTIONS.find(m => m.id === selectedModel);
-      if (modelOption && !canAccessModel(subscriptionStatus, modelOption.requiresSubscription)) {
-        console.log('🔧 ModelSelection: User lost access to model, resetting to default');
-        resetToDefault(subscriptionStatus);
-      }
-    }
+    // Access gating removed; do not auto-reset premium selections
   }, [hasHydrated, selectedModel, subscriptionStatus, MODEL_OPTIONS, customModels, isLoadingModels, resetToDefault]);
 
   const handleModelChange = (modelId: string) => {
@@ -170,10 +158,7 @@ export const useModelSelection = () => {
       return;
     }
 
-    if (!isCustomModel && !isLocalMode() && 
-        !canAccessModel(subscriptionStatus, modelOption?.requiresSubscription ?? false)) {
-      return;
-    }
+    // Skip subscription gating (all models permitted)
     
     setSelectedModel(modelId);
   };
@@ -217,14 +202,8 @@ export const useModelSelection = () => {
     removeCustomModel,
     refreshCustomModels,
     getActualModelId,
-    canAccessModel: (modelId: string) => {
-      if (isLocalMode()) return true;
-      const model = MODEL_OPTIONS.find(m => m.id === modelId);
-      return model ? canAccessModel(subscriptionStatus, model.requiresSubscription) : false;
-    },
-    isSubscriptionRequired: (modelId: string) => {
-      return MODEL_OPTIONS.find(m => m.id === modelId)?.requiresSubscription || false;
-    },
+    canAccessModel: (_modelId: string) => true,
+    isSubscriptionRequired: (_modelId: string) => false,
     subscriptionStatus,
   };
 }; 

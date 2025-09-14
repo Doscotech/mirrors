@@ -129,7 +129,7 @@ async def log_requests_middleware(request: Request, call_next):
         raise
 
 # Define allowed origins based on environment
-allowed_origins = ["https://xera.cc", "http:localhost:3000"]
+allowed_origins = ["https://xera.cc", "http://localhost:3000"]
 allow_origin_regex = None
 
 # Add staging-specific origins
@@ -184,6 +184,9 @@ api_router.include_router(admin_api.router)
 
 from composio_integration import api as composio_api
 api_router.include_router(composio_api.router)
+
+from user import profile_api as user_profile_api
+api_router.include_router(user_profile_api.router)
 
 from google.google_slides_api import router as google_slides_router
 api_router.include_router(google_slides_router)

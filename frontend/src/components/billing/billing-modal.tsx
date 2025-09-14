@@ -234,7 +234,7 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Upgrade Your Plan</DialogTitle>
+                    <DialogTitle>Usage & Billing (All Models Included)</DialogTitle>
                 </DialogHeader>
 
                 <>
@@ -267,17 +267,26 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                                 </div>
                             </div>
                         </div>
-                    ) : subscriptionData && (
+                                        ) : subscriptionData && (
                         <div className="mb-6">
                             <div className="rounded-lg border bg-background p-4">
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm font-medium text-foreground/90">
                                         Agent Usage This Month
                                     </span>
-                                    <span className="text-sm font-medium">
-                                        ${subscriptionData.current_usage?.toFixed(2) || '0'} /{' '}
-                                        ${subscriptionData.cost_limit || '0'}
-                                    </span>
+                                                                        {(() => {
+                                                                            const fmt = (v: any) => {
+                                                                                if (v === null || v === undefined) return '0.00';
+                                                                                const n = typeof v === 'number' ? v : parseFloat(v);
+                                                                                if (Number.isNaN(n)) return '0.00';
+                                                                                return n.toFixed(2);
+                                                                            };
+                                                                            return (
+                                                                                <span className="text-sm font-medium">
+                                                                                    ${fmt(subscriptionData.current_usage)} / ${fmt(subscriptionData.cost_limit)}
+                                                                                </span>
+                                                                            );
+                                                                        })()}
                                 </div>
                             </div>
                         </div>

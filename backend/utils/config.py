@@ -43,27 +43,27 @@ class Configuration:
     
     # Subscription tier IDs - Production
     STRIPE_FREE_TIER_ID_PROD: str = 'price_1RILb4G6l1KZGqIrK4QLrx9i'
-    STRIPE_TIER_2_20_ID_PROD: str = 'price_1RILb4G6l1KZGqIrhomjgDnO'
-    STRIPE_TIER_6_50_ID_PROD: str = 'price_1RILb4G6l1KZGqIr5q0sybWn'
-    STRIPE_TIER_12_100_ID_PROD: str = 'price_1RILb4G6l1KZGqIr5Y20ZLHm'
-    STRIPE_TIER_25_200_ID_PROD: str = 'price_1RILb4G6l1KZGqIrGAD8rNjb'
-    STRIPE_TIER_50_400_ID_PROD: str = 'price_1RILb4G6l1KZGqIruNBUMTF1'
-    STRIPE_TIER_125_800_ID_PROD: str = 'price_1RILb3G6l1KZGqIrbJA766tN'
-    STRIPE_TIER_200_1000_ID_PROD: str = 'price_1RILb3G6l1KZGqIrmauYPOiN'
+    STRIPE_TIER_2_20_ID_PROD: str = 'price_1S6M51K1vBaPZ9xHerPEa3p8'
+    STRIPE_TIER_6_50_ID_PROD: str = 'price_1S6M52K1vBaPZ9xHBhr2RnO0'
+    STRIPE_TIER_12_100_ID_PROD: str = 'price_1S6M52K1vBaPZ9xHm660t7G4'
+    STRIPE_TIER_25_200_ID_PROD: str = 'price_1S6M53K1vBaPZ9xH886OSQ5N'
+    STRIPE_TIER_50_400_ID_PROD: str = 'price_1S6M53K1vBaPZ9xHq99ldQQ1'
+    STRIPE_TIER_125_800_ID_PROD: str = 'price_1S6M54K1vBaPZ9xHagEyH6Tf'
+    STRIPE_TIER_200_1000_ID_PROD: str = 'price_1S6M54K1vBaPZ9xH4eYoXVTl'
     
     # Yearly subscription tier IDs - Production (15% discount)
-    STRIPE_TIER_2_20_YEARLY_ID_PROD: str = 'price_1ReHB5G6l1KZGqIrD70I1xqM'
-    STRIPE_TIER_6_50_YEARLY_ID_PROD: str = 'price_1ReHAsG6l1KZGqIrlAog487C'
-    STRIPE_TIER_12_100_YEARLY_ID_PROD: str = 'price_1ReHAWG6l1KZGqIrBHer2PQc'
-    STRIPE_TIER_25_200_YEARLY_ID_PROD: str = 'price_1ReH9uG6l1KZGqIrsvMLHViC'
-    STRIPE_TIER_50_400_YEARLY_ID_PROD: str = 'price_1ReH9fG6l1KZGqIrsPtu5KIA'
-    STRIPE_TIER_125_800_YEARLY_ID_PROD: str = 'price_1ReH9GG6l1KZGqIrfgqaJyat'
-    STRIPE_TIER_200_1000_YEARLY_ID_PROD: str = 'price_1ReH8qG6l1KZGqIrK1akY90q'
+    STRIPE_TIER_2_20_YEARLY_ID_PROD: str = 'price_1S6M55K1vBaPZ9xHDuye26D9'
+    STRIPE_TIER_6_50_YEARLY_ID_PROD: str = 'price_1S6M55K1vBaPZ9xHLmodnbob'
+    STRIPE_TIER_12_100_YEARLY_ID_PROD: str = 'price_1S6M56K1vBaPZ9xHProhQhOg'
+    STRIPE_TIER_25_200_YEARLY_ID_PROD: str = 'price_1S6M56K1vBaPZ9xHGGlX7xal'
+    STRIPE_TIER_50_400_YEARLY_ID_PROD: str = 'price_1S6M57K1vBaPZ9xHYAu0ddnR'
+    STRIPE_TIER_125_800_YEARLY_ID_PROD: str = 'price_1S6M57K1vBaPZ9xHU8sOMrfv'
+    STRIPE_TIER_200_1000_YEARLY_ID_PROD: str = 'price_1S6M58K1vBaPZ9xH60mWcbKu'
 
     # Yearly commitment prices - Production (15% discount, monthly payments with 12-month commitment via schedules)
-    STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID_PROD: str = 'price_1RqtqiG6l1KZGqIrhjVPtE1s'  # $17/month
-    STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID_PROD: str = 'price_1Rqtr8G6l1KZGqIrQ0ql0qHi'  # $42.50/month
-    STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID_PROD: str = 'price_1RqtrUG6l1KZGqIrEb8hLsk3'  # $170/month
+    STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID_PROD: str = 'price_1S6M58K1vBaPZ9xH8vXWRAh8'  # $17/month
+    STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID_PROD: str = 'price_1S6M59K1vBaPZ9xHETcH87V0'  # $42.50/month
+    STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID_PROD: str = 'price_1S6M59K1vBaPZ9xH0gEhyXJ9'  # $170/month
 
     # Subscription tier IDs - Staging
     STRIPE_FREE_TIER_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrw14abxeL'
@@ -90,12 +90,12 @@ class Configuration:
     STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID_STAGING: str = 'price_1RqYHbG6l1KZGqIrAUVf8KpG'  # $170/month
     
     # Credit package price IDs - Production
-    STRIPE_CREDITS_10_PRICE_ID_PROD: str = 'price_1RxmQUG6l1KZGqIru453O1zW'
-    STRIPE_CREDITS_25_PRICE_ID_PROD: str = 'price_1RxmQlG6l1KZGqIr3hS5WtGg'
-    STRIPE_CREDITS_50_PRICE_ID_PROD: str = 'price_1RxmQvG6l1KZGqIrLbMZ3D6r'
-    STRIPE_CREDITS_100_PRICE_ID_PROD: str = 'price_1RxmR3G6l1KZGqIrpLwFCGac'
-    STRIPE_CREDITS_250_PRICE_ID_PROD: str = 'price_1RxmRAG6l1KZGqIrtBIMsZAj'
-    STRIPE_CREDITS_500_PRICE_ID_PROD: str = 'price_1RxmRGG6l1KZGqIrSyvl6w1G'
+    STRIPE_CREDITS_10_PRICE_ID_PROD: str = 'price_1S6M5AK1vBaPZ9xHzKWq6dEe'
+    STRIPE_CREDITS_25_PRICE_ID_PROD: str = 'price_1S6M5AK1vBaPZ9xH57JIJer7'
+    STRIPE_CREDITS_50_PRICE_ID_PROD: str = 'price_1S6M5AK1vBaPZ9xHw6sFhef3'
+    STRIPE_CREDITS_100_PRICE_ID_PROD: str = 'price_1S6M5BK1vBaPZ9xHxTjKtzPA'
+    STRIPE_CREDITS_250_PRICE_ID_PROD: str = 'price_1S6M5BK1vBaPZ9xHZsow43pM'
+    STRIPE_CREDITS_500_PRICE_ID_PROD: str = 'price_1S6M5CK1vBaPZ9xHSWok1lMo'
     
     # Credit package price IDs - Staging  
     STRIPE_CREDITS_10_PRICE_ID_STAGING: str = 'price_1RxXOvG6l1KZGqIrMqsiYQvk'
@@ -264,9 +264,9 @@ class Configuration:
     OPENROUTER_API_BASE: Optional[str] = "https://openrouter.ai/api/v1"
     OPENAI_COMPATIBLE_API_KEY: Optional[str] = None
     OPENAI_COMPATIBLE_API_BASE: Optional[str] = None
-    OR_SITE_URL: Optional[str] = "https://kortix.ai"
-    OR_APP_NAME: Optional[str] = "Kortix AI"    
-    
+    OR_SITE_URL: Optional[str] = "https://xera.cc"
+    OR_APP_NAME: Optional[str] = "Xera"
+
     # AWS Bedrock credentials
     AWS_ACCESS_KEY_ID: Optional[str] = None
     AWS_SECRET_ACCESS_KEY: Optional[str] = None
@@ -305,8 +305,14 @@ class Configuration:
     STRIPE_DEFAULT_TRIAL_DAYS: int = 14
     
     # Stripe Product IDs
-    STRIPE_PRODUCT_ID_PROD: str = 'prod_SCl7AQ2C8kK1CD'
+    # Live Stripe product (updated 2025-09-12 to align with newly provisioned Xera Subscription)
+    STRIPE_PRODUCT_ID_PROD: str = 'prod_T2QwISj1mP6YCj'
     STRIPE_PRODUCT_ID_STAGING: str = 'prod_SCgIj3G7yPOAWY'
+
+    # Billing / model access strategy
+    # When True, disables model-based gating so every user (including production) can access all models.
+    # Charging is usage-based only (minutes / tokens / credits) and not restricted by plan tiers.
+    ALWAYS_ALLOW_ALL_MODELS: bool = True
     
     # Sandbox configuration
     SANDBOX_IMAGE_NAME = "kortix/suna:0.1.3.12"
@@ -409,7 +415,7 @@ class Configuration:
         return self.STRIPE_PRODUCT_ID_PROD
     
     def _generate_admin_api_key(self) -> str:
-        """Generate a secure admin API key for Kortix administrative functions."""
+        """Generate a secure admin API key for Xera administrative functions."""
         # Generate 32 random bytes and encode as hex for a readable API key
         key_bytes = secrets.token_bytes(32)
         return key_bytes.hex()

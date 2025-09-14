@@ -4,7 +4,7 @@ import os
 
 
 def extract_agent_config(agent_data: Dict[str, Any], version_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Extract agent configuration with simplified logic for Suna vs custom agents."""
+    """Extract agent configuration with simplified logic for Xera vs custom agents."""
     agent_id = agent_data.get('agent_id', 'Unknown')
     metadata = agent_data.get('metadata', {})
     is_suna_default = metadata.get('is_suna_default', False)
@@ -226,13 +226,13 @@ def _get_default_agentpress_tools() -> Dict[str, bool]:
         "sb_presentation_outline_tool": True,
         "sb_presentation_tool": True,
 
-        "sb_sheets_tool": False,
+        "sb_sheets_tool": True,
         "sb_web_dev_tool": True,
         "browser_tool": True,
         "data_providers_tool": True,
         "agent_config_tool": True,
         "mcp_search_tool": True,
-        "credential_profile_tool": False,
+        "credential_profile_tool": True,
         "agent_creation_tool": True,
         "workflow_tool": True,
         "trigger_tool": True

@@ -96,6 +96,24 @@ export class NoAccessTokenAvailableError extends Error {
   name = 'NoAccessTokenAvailableError';
 }
 
+// Custom error for unavailable or invalid model selection
+export class ModelUnavailableError extends Error {
+  status: number;
+  detail: { message: string; model_name?: string; [key: string]: any };
+
+  constructor(
+    status: number,
+    detail: { message: string; model_name?: string; [key: string]: any },
+    message?: string,
+  ) {
+    super(message || detail.message || `Model Unavailable: ${status}`);
+    this.name = 'ModelUnavailableError';
+    this.status = status;
+    this.detail = detail;
+    Object.setPrototypeOf(this, ModelUnavailableError.prototype);
+  }
+}
+
 // Type Definitions (moved from potential separate file for clarity)
 export type Project = {
   id: string;
@@ -607,6 +625,41 @@ export const addUserMessage = async (
   }
 };
 
+// Generic message creation via backend (supports retry + idempotency)
+export interface CreateMessageRequest {
+  type?: 'user' | 'assistant';
+  content: string; // raw text content (backend will wrap)
+  retry_of?: string | null; // original/root message id
+  idempotency_key?: string | null;
+  is_llm_message?: boolean;
+}
+
+export const createMessage = async (threadId: string, req: CreateMessageRequest) => {
+  // We prefer calling backend FastAPI endpoint to leverage attempt + content reuse logic
+  const token = (await createClient().auth.getSession()).data.session?.access_token;
+  const body = {
+    type: req.type || 'user',
+    content: req.content,
+    retry_of: req.retry_of || null,
+    idempotency_key: req.idempotency_key || null,
+    is_llm_message: req.is_llm_message ?? true,
+  };
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '/api';
+  const resp = await fetch(`${baseUrl}/threads/${threadId}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Failed to create message (${resp.status}): ${text}`);
+  }
+  return resp.json();
+};
+
 export const getMessages = async (threadId: string): Promise<Message[]> => {
   const supabase = createClient();
 
@@ -745,11 +798,35 @@ export const startAgent = async (
           throw new AgentRunLimitError(response.status, detail);
       }
 
-      const errorText = await response
+      // Attempt to parse JSON error to inspect for model issues
+      let errorPayload: any = null;
+      try {
+        errorPayload = await response.clone().json();
+      } catch {
+        // fallback to text below
+      }
+      const errorText = errorPayload ? (errorPayload.detail || errorPayload.message || JSON.stringify(errorPayload)) : await response
         .text()
         .catch(() => 'No error details available');
+
+      const lower = (typeof errorText === 'string' ? errorText : '').toLowerCase();
+      const modelIndicators = [
+        'model not found',
+        'unknown model',
+        'invalid model',
+        'model unavailable',
+        'unsupported model',
+      ];
+      if (modelIndicators.some((p) => lower.includes(p))) {
+        throw new ModelUnavailableError(response.status, {
+          message: typeof errorText === 'string' ? errorText : 'Model unavailable',
+          model_name: finalOptions.model_name,
+          raw: errorPayload || errorText,
+        });
+      }
+
       console.error(
-        `[API] Error starting agent: ${response.status} ${response.statusText}`,
+        `[API] Error starting agent: ${response.status} ${response.statusText} -> ${errorText}`,
       );
       throw new Error(
         `Error starting agent: ${response.statusText} (${response.status})`,
@@ -759,7 +836,7 @@ export const startAgent = async (
     const result = await response.json();
     return result;
   } catch (error) {
-    if (error instanceof BillingError || error instanceof AgentRunLimitError) {
+    if (error instanceof BillingError || error instanceof AgentRunLimitError || error instanceof ModelUnavailableError) {
       throw error;
     }
 

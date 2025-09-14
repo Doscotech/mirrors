@@ -50,73 +50,74 @@ const PROD_TIERS: SubscriptionTiers = {
     name: 'Free',
   },
   TIER_2_20: {
-    priceId: 'price_1RILb4G6l1KZGqIrhomjgDnO',
+    // Updated 2025-09-12 to new live price
+    priceId: 'price_1S6M51K1vBaPZ9xHerPEa3p8',
     name: '2h/$20',
   },
   TIER_6_50: {
-    priceId: 'price_1RILb4G6l1KZGqIr5q0sybWn',
+    priceId: 'price_1S6M52K1vBaPZ9xHBhr2RnO0',
     name: '6h/$50',
   },
   TIER_12_100: {
-    priceId: 'price_1RILb4G6l1KZGqIr5Y20ZLHm',
+    priceId: 'price_1S6M52K1vBaPZ9xHm660t7G4',
     name: '12h/$100',
   },
   TIER_25_200: {
-  priceId: 'price_1S63qtK1vBaPZ9xHy8HTfS2q',
+  priceId: 'price_1S6M53K1vBaPZ9xH886OSQ5N',
     name: '25h/$200',
   },
   TIER_50_400: {
-    priceId: 'price_1RILb4G6l1KZGqIruNBUMTF1',
+    priceId: 'price_1S6M53K1vBaPZ9xHq99ldQQ1',
     name: '50h/$400',
   },
   TIER_125_800: {
-    priceId: 'price_1RILb3G6l1KZGqIrbJA766tN',
+    priceId: 'price_1S6M54K1vBaPZ9xHagEyH6Tf',
     name: '125h/$800',
   },
   TIER_200_1000: {
-  priceId: 'price_1S63OJK1vBaPZ9xHxOsRxkQJ',
+  priceId: 'price_1S6M54K1vBaPZ9xH4eYoXVTl',
     name: '200h/$1000',
   },
   // Legacy yearly plans with 15% discount (12x monthly price with 15% off)
   TIER_2_20_YEARLY: {
-    priceId: 'price_1ReHB5G6l1KZGqIrD70I1xqM',
-    name: '2h/$204/year (legacy)',
+    priceId: 'price_1S6M55K1vBaPZ9xHDuye26D9',
+    name: '2h/$204/year',
   },
   TIER_6_50_YEARLY: {
-    priceId: 'price_1ReHAsG6l1KZGqIrlAog487C',
-    name: '6h/$510/year (legacy)',
+    priceId: 'price_1S6M55K1vBaPZ9xHLmodnbob',
+    name: '6h/$510/year',
   },
   TIER_12_100_YEARLY: {
-    priceId: 'price_1ReHAWG6l1KZGqIrBHer2PQc',
-    name: '12h/$1020/year (legacy)',
+    priceId: 'price_1S6M56K1vBaPZ9xHProhQhOg',
+    name: '12h/$1020/year',
   },
   TIER_25_200_YEARLY: {
-    priceId: 'price_1ReH9uG6l1KZGqIrsvMLHViC',
-    name: '25h/$2040/year (legacy)',
+    priceId: 'price_1S6M56K1vBaPZ9xHGGlX7xal',
+    name: '25h/$2040/year',
   },
   TIER_50_400_YEARLY: {
-    priceId: 'price_1ReH9fG6l1KZGqIrsPtu5KIA',
-    name: '50h/$4080/year (legacy)',
+    priceId: 'price_1S6M57K1vBaPZ9xHYAu0ddnR',
+    name: '50h/$4080/year',
   },
   TIER_125_800_YEARLY: {
-    priceId: 'price_1ReH9GG6l1KZGqIrfgqaJyat',
-    name: '125h/$8160/year (legacy)',
+    priceId: 'price_1S6M57K1vBaPZ9xHU8sOMrfv',
+    name: '125h/$8160/year',
   },
   TIER_200_1000_YEARLY: {
-  priceId: 'price_1S63OeK1vBaPZ9xH2Pd8PTlp',
-    name: '200h/$10200/year (legacy)',
+  priceId: 'price_1S6M58K1vBaPZ9xH60mWcbKu',
+    name: '200h/$10200/year',
   },
   // Yearly commitment plans (15% discount, monthly payments with 12-month commitment)
   TIER_2_17_YEARLY_COMMITMENT: {
-    priceId: 'price_1RqtqiG6l1KZGqIrhjVPtE1s',
+    priceId: 'price_1S6M58K1vBaPZ9xH8vXWRAh8',
     name: '2h/$17/month (yearly)',
   },
   TIER_6_42_YEARLY_COMMITMENT: {
-    priceId: 'price_1Rqtr8G6l1KZGqIrQ0ql0qHi',
+    priceId: 'price_1S6M59K1vBaPZ9xHETcH87V0',
     name: '6h/$42.50/month (yearly)',
   },
   TIER_25_170_YEARLY_COMMITMENT: {
-    priceId: 'price_1RqtrUG6l1KZGqIrEb8hLsk3',
+    priceId: 'price_1S6M59K1vBaPZ9xH0gEhyXJ9',
     name: '25h/$170/month (yearly)',
   },
 } as const;

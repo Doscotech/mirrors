@@ -3,7 +3,7 @@ globs: backend/**/*
 alwaysApply: false
 ---
 
-# Backend Development Guidelines
+# Backend Development Guidelines (Xera)
 
 ## Python Standards & Best Practices
 

@@ -249,7 +249,21 @@ export function SiteHeader({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={onToggleSidePanel}
+                  onClick={() => {
+                    // Route toggle through unified tool panel store; always open in expanded mode on mobile tap
+                    try {
+                      const store = require('@/lib/stores/tool-panel-pip-store');
+                      if (store?.useToolPanelPiPStore) {
+                        const { setMode, mode } = store.useToolPanelPiPStore.getState();
+                        // Toggle: if already expanded collapse to tv, else expand
+                        setMode(mode === 'expanded' ? 'tv' : 'expanded');
+                      } else {
+                        onToggleSidePanel();
+                      }
+                    } catch {
+                      onToggleSidePanel();
+                    }
+                  }}
                   className="h-9 w-9 cursor-pointer"
                 >
                   <Monitor className="h-4 w-4" />

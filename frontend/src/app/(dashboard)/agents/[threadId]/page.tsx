@@ -1,15 +1,12 @@
 'use client';
 
 import React from 'react';
+import { useParams } from 'next/navigation';
 import { RedirectPage } from './redirect-page';
 
-interface ThreadPageProps {
-  params: { threadId: string };
-  // searchParams could be present; include for future-proofing
-  searchParams?: Record<string, string | string[] | undefined>;
-}
-
-export default function ThreadPage(props: ThreadPageProps) {
-  const { threadId } = props.params;
+export default function ThreadPage() {
+  // Using useParams inside a client component avoids PageProps generic inference issues
+  const params = useParams<{ threadId: string }>();
+  const threadId = params.threadId;
   return <RedirectPage threadId={threadId} />;
 }

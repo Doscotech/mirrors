@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:report": "mkdir -p reports && next lint -- --format json --output-file reports/eslint-report-$(date +\"%Y%m%d-%H%M%S\").json || true",
+    "build:log": "mkdir -p reports && DEBUG=next:* NEXT_TELEMETRY_DISABLED=1 next build 2>&1 | tee reports/next-build-$(date +\"%Y%m%d-%H%M%S\").log",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

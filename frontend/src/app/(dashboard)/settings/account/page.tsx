@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import Link from 'next/link';
 import EditPersonalAccountName from '@/components/basejump/edit-personal-account-name';
 import { createClient } from '@/lib/supabase/client';
 import { UsageRing } from '@/components/profile/UsageRing';
@@ -100,7 +101,7 @@ export default function AccountSettingsPage() {
 
         <section className="space-y-4">
           <h2 className="text-sm font-medium tracking-wide text-muted-foreground/80">Usage & Billing</h2>
-          <p className="text-[11px] text-muted-foreground/70 leading-relaxed">Detailed usage, spend history and billing status now live on the <a href="/overview" className="underline underline-offset-4 text-primary">Overview</a> dashboard widgets. This settings page focuses on editable profile information and upcoming triggers.</p>
+          <p className="text-[11px] text-muted-foreground/70 leading-relaxed">Detailed usage, spend history and billing status now live on the <Link href="/overview" className="underline underline-offset-4 text-primary">Overview</Link> dashboard widgets. This settings page focuses on editable profile information and upcoming triggers.</p>
         </section>
 
         <section className="space-y-4">

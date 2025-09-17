@@ -39,7 +39,9 @@ export function MiniCalendar({ month, selected, events = [], onSelect }: MiniCal
   return (
     <div className="text-[10px] select-none">
       <div className="grid grid-cols-7 gap-1 mb-1 text-muted-foreground/70">
-        {['S','M','T','W','T','F','S'].map(d => <div key={d} className="text-center py-1">{d}</div>)}
+        {['S','M','T','W','T','F','S'].map((d, i) => (
+          <div key={`${d}-${i}`} className="text-center py-1">{d}</div>
+        ))}
       </div>
       <div className="grid grid-cols-7 gap-1">
         {cells.map((d,i) => {

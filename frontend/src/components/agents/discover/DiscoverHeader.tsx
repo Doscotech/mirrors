@@ -7,6 +7,7 @@ interface DiscoverHeaderProps {
   onChange: (v: string) => void;
   onSubmit?: () => void;
   nav?: React.ReactNode;
+  right?: React.ReactNode;
   title?: string;
   subtitle?: string;
   placeholder?: string;
@@ -17,6 +18,7 @@ export const DiscoverHeader: React.FC<DiscoverHeaderProps> = ({
   onChange,
   onSubmit,
   nav,
+  right,
   title = 'Discover Agents',
   subtitle = 'Browse curated agents and templates by Xpathedge and the community.',
   placeholder = 'Search agents, tools, or tags'
@@ -26,6 +28,7 @@ export const DiscoverHeader: React.FC<DiscoverHeaderProps> = ({
       title={title}
       subtitle={subtitle}
       nav={nav}
+      right={right}
       search={{
         value,
         onChange,

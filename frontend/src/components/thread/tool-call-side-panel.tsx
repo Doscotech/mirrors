@@ -136,120 +136,23 @@ const getComputerTitle = (agentName?: string): string => {
 // Boot screen shown while the agent console is initializing
 export const BootScreen: React.FC<{ agentName?: string }> = ({ agentName }) => {
   const title = getComputerTitle(agentName);
-  const [dots, setDots] = React.useState('');
-  const [phase, setPhase] = React.useState<'login' | 'boot'>('login');
-
-  // animate fake password dots in login phase
-  const [pwdDots, setPwdDots] = React.useState('');
-
-  React.useEffect(() => {
-    const dotsId = setInterval(() => {
-      setDots((d) => (d.length >= 3 ? '' : d + '.'));
-    }, 500);
-    // brief login phase then proceed to boot
-    const phaseId = setTimeout(() => setPhase('boot'), 1400);
-    // password typing illusion during login
-    const pwdId = setInterval(() => {
-      setPwdDots((p) => (p.length >= 8 ? p : p + '•'));
-    }, 120);
-    return () => { clearInterval(dotsId); clearTimeout(phaseId); clearInterval(pwdId); };
-  }, []);
-
   return (
     <div className="relative flex-1 overflow-hidden">
-      {/* Ambient gradient backdrop */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1200px_600px_at_50%_-10%,rgba(59,130,246,0.10),transparent),radial-gradient(1200px_600px_at_50%_110%,rgba(168,85,247,0.10),transparent)] dark:bg-[radial-gradient(1200px_600px_at_50%_-10%,rgba(99,102,241,0.14),transparent),radial-gradient(1200px_600px_at_50%_110%,rgba(14,165,233,0.12),transparent)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom_right,rgba(255,255,255,0.6),rgba(255,255,255,0.2))] dark:bg-transparent mix-blend-overlay" />
-
-      {/* Center content */}
-      <div className="relative z-10 h-full w-full flex items-center justify-center p-8">
+      <div className="h-full w-full flex items-center justify-center p-8">
         <div className="w-full max-w-sm mx-auto flex flex-col items-center text-center">
-      {phase === 'login' ? (
-            <>
-              {/* Avatar card */}
-              <div className="relative h-24 w-24">
-        {/* Subtle rotating ring */}
-        <div className="absolute -inset-[2px] rounded-full opacity-20 xera-spin-slower" style={{ background: 'conic-gradient(from 180deg at 50% 50%, rgba(99,102,241,0.6) 0deg, rgba(34,211,238,0.6) 120deg, rgba(168,85,247,0.6) 240deg, rgba(99,102,241,0.6) 360deg)', WebkitMaskImage: 'radial-gradient(circle, transparent 66%, black 67%)', maskImage: 'radial-gradient(circle, transparent 66%, black 67%)' }} />
-                <div className="absolute inset-0 rounded-full border border-white/60 bg-white/70 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] dark:border-white/10 dark:bg-white/10" />
-                <div className="absolute inset-[2px] rounded-full bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/50 dark:to-zinc-900/30" />
-                <div className="relative z-10 h-full w-full flex items-center justify-center">
-                  <Computer className="h-10 w-10 text-zinc-700/80 dark:text-zinc-200/90" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <h3 className="text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                  {agentName || 'Xera'}
-                </h3>
-              </div>
-              {/* Faux password field with typing + caret */}
-              <div className="mt-3 w-64">
-                <div className="relative h-9 rounded-xl border border-white/60 bg-white/60 backdrop-blur-xl px-3 flex items-center justify-center dark:border-white/10 dark:bg-white/10">
-                  <span className="text-zinc-800/80 dark:text-zinc-200/90 tracking-widest select-none">{pwdDots}</span>
-                  <span className="ml-0.5 h-4 w-[1px] bg-zinc-800/60 dark:bg-zinc-200/80 xera-caret" />
-                  <div className="pointer-events-none absolute inset-0 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.7),inset_0_-1px_0_rgba(0,0,0,0.06)]" />
-                </div>
-                <div className="mt-2 text-xs text-zinc-600/80 dark:text-zinc-400/80">Authenticating{dots}</div>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Glassy emblem with animated halo */}
-              <div className="relative h-24 w-24">
-                {/* Animated conic halo */}
-                <div className="absolute -inset-[2px] rounded-2xl opacity-20 xera-spin-slower" style={{ background: 'conic-gradient(from 180deg at 50% 50%, rgba(99,102,241,0.6) 0deg, rgba(34,211,238,0.6) 120deg, rgba(168,85,247,0.6) 240deg, rgba(99,102,241,0.6) 360deg)', WebkitMaskImage: 'radial-gradient(circle, transparent 66%, black 67%)', maskImage: 'radial-gradient(circle, transparent 66%, black 67%)' }} />
-                {/* Glass tile */}
-                <div className="absolute inset-0 rounded-2xl border border-white/50 bg-white/70 backdrop-blur-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] dark:border-white/10 dark:bg-white/10" />
-                {/* Inner soft gradient */}
-                <div className="absolute inset-[2px] rounded-[18px] bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/50 dark:to-zinc-900/30" />
-                {/* Icon */}
-                <div className="relative z-10 h-full w-full flex items-center justify-center">
-                  <Computer className="h-10 w-10 text-zinc-700/80 dark:text-zinc-200/90" />
-                </div>
-                {/* Status pulse */}
-                <div className="absolute -bottom-1 right-1 h-3 w-3 rounded-full bg-emerald-500 shadow ring-2 ring-white/80 dark:ring-zinc-900 animate-pulse" />
-              </div>
-
-              {/* Title */}
-              <div className="mt-5 space-y-1">
-                <h3 className="text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{title}</h3>
-                <p className="text-sm text-zinc-600/90 dark:text-zinc-400/90">Powering on{dots}</p>
-              </div>
-              {/* Subtle status note */}
-              <div className="mt-3 text-[11px] text-zinc-600/80 dark:text-zinc-400/80 tracking-wide">
-                Initializing services • Loading tools • Starting sandbox
-              </div>
-            </>
-          )}
+          <div className="relative h-20 w-20 rounded-2xl border border-white/20 dark:border-white/10 bg-white/50 dark:bg-white/5 flex items-center justify-center">
+            <Computer className="h-8 w-8 text-zinc-700/80 dark:text-zinc-200/90" />
+          </div>
+          <div className="mt-4">
+            <h3 className="text-[16px] font-medium tracking-tight text-zinc-900 dark:text-zinc-100">{title}</h3>
+          </div>
+          <p className="mt-2 text-xs text-zinc-600/80 dark:text-zinc-400/80">Preparing console…</p>
         </div>
       </div>
-
-      {/* Local component styles for bespoke animations */}
-      <style jsx>{`
-        @keyframes xeraIndeterminate {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(300%); }
-        }
-        @keyframes xeraSpin {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes xeraCaretBlink {
-          0%, 49% { opacity: 1; }
-          50%, 100% { opacity: 0; }
-        }
-        .xera-spin-slow {
-          animation: xeraSpin 6s linear infinite;
-        }
-        .xera-spin-slower {
-          animation: xeraSpin 10s linear infinite;
-        }
-        .xera-caret { animation: xeraCaretBlink 1.2s step-end infinite; }
-        @media (prefers-reduced-motion: reduce) {
-          .xera-spin-slow, .xera-spin-slower, .xera-caret { animation: none; }
-        }
-      `}</style>
     </div>
   );
 };
+// End BootScreen
 
 // Reusable header component for the tool panel
 interface PanelHeaderProps {

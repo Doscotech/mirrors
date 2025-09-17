@@ -98,27 +98,9 @@ export default function AccountSettingsPage() {
           <AccountNameEditor />
         </section>
 
-        <section className="space-y-6">
+        <section className="space-y-4">
           <h2 className="text-sm font-medium tracking-wide text-muted-foreground/80">Usage & Billing</h2>
-          <div className="flex flex-col gap-6 md:flex-row md:items-start">
-            <UsageRing current={currentUsage} limit={costLimit} />
-            <div className="grid gap-4 sm:grid-cols-3 flex-1">
-              <StatCard label="Current" value={`$${Number(currentUsage||0).toFixed(2)}`} loading={subLoading} accent="primary" />
-              <StatCard label="Limit" value={`$${Number(costLimit||0).toFixed(2)}`} loading={subLoading} accent="success" />
-              <StatCard label="Status" value={subscription?.subscription?.cancel_at_period_end ? 'Cancelling' : 'Active'} loading={subLoading} accent="warning" />
-            </div>
-          </div>
-          <div>
-            <button
-              onClick={() => setShowUsageLogs(s => !s)}
-              className="h-8 px-3 text-xs rounded bg-gradient-to-r from-indigo-500 to-emerald-500 text-white shadow hover:opacity-90 transition"
-            >{showUsageLogs ? 'Hide Usage Logs' : 'Show Usage Logs'}</button>
-            {showUsageLogs && (
-              <div className="mt-4 border rounded-md p-4 bg-muted/30">
-                <UsageLogs accountId={subscription?.subscription?.account_id || ''} />
-              </div>
-            )}
-          </div>
+          <p className="text-[11px] text-muted-foreground/70 leading-relaxed">Detailed usage, spend history and billing status now live on the <a href="/overview" className="underline underline-offset-4 text-primary">Overview</a> dashboard widgets. This settings page focuses on editable profile information and upcoming triggers.</p>
         </section>
 
         <section className="space-y-4">

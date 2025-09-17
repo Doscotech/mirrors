@@ -843,7 +843,8 @@ async def get_allowed_models_for_user(client, user_id: str):
 async def can_use_model(client, user_id: str, model_name: str):
     # Universal override: allow all models regardless of subscription when enabled
     if getattr(config, 'ALWAYS_ALLOW_ALL_MODELS', False):
-        return True, "All models enabled (usage-based billing only)", {
+        # Return a simplified subscription info object making it clear gating is disabled
+        return True, "All models enabled (no plan gating)", {
             "price_id": "usage_only",
             "plan_name": "Usage Only",
             "minutes_limit": "no limit"
@@ -2087,48 +2088,41 @@ async def get_available_models(
 ):
     """Get the list of models available to the user based on their subscription tier."""
     try:
-        # Import the new model manager
+        # Import the model manager lazily to avoid circulars
         from models import model_manager
-        
-        # Get Supabase client
+
+        # Supabase client (needed for allowed models in non-local mode)
         db = DBConnection()
         client = await db.client
-        
-        # Check if we're in local development mode
+
+        # Local development short-circuit: return all enabled models without subscription gating
         if config.ENV_MODE == EnvMode.LOCAL:
             logger.debug("Running in local development mode - billing checks are disabled")
-            
-            # In local mode, return all enabled models
             all_models = model_manager.list_available_models(include_disabled=False)
             model_info = []
-            
             for model_data in all_models:
-                # Create clean model info for frontend
                 model_info.append({
                     "id": model_data["id"],
                     "display_name": model_data["name"],
                     "short_name": model_data.get("aliases", [model_data["name"]])[0] if model_data.get("aliases") else model_data["name"],
-                    "requires_subscription": False,  # Always false in local dev mode
-                    "input_cost_per_million_tokens": model_data["pricing"]["input_per_million"] if model_data["pricing"] else None,
-                    "output_cost_per_million_tokens": model_data["pricing"]["output_per_million"] if model_data["pricing"] else None,
+                    "requires_subscription": False,
+                    "is_available": True,
                     "context_window": model_data["context_window"],
                     "capabilities": model_data["capabilities"],
                     "recommended": model_data["recommended"],
-                    "priority": model_data["priority"]
+                    "priority": model_data["priority"],
+                    "input_cost_per_million_tokens": model_data["pricing"]["input_per_million"] if model_data["pricing"] else None,
+                    "output_cost_per_million_tokens": model_data["pricing"]["output_per_million"] if model_data["pricing"] else None,
+                    "max_tokens": model_data.get("max_output_tokens")
                 })
-            
             return {
                 "models": model_info,
                 "subscription_tier": "Local Development",
                 "total_models": len(model_info)
             }
-        
-        
-        # For non-local mode, use new model manager system
-        # Get subscription info for context
+
+        # Non-local path: gather subscription context
         subscription = await get_user_subscription(current_user_id)
-        
-        # Determine tier name from subscription
         tier_name = 'free'
         if subscription:
             price_id = None
@@ -2136,36 +2130,54 @@ async def get_available_models(
                 price_id = subscription['items']['data'][0]['price']['id']
             else:
                 price_id = subscription.get('price_id', config.STRIPE_FREE_TIER_ID)
-            
-            # Get tier info for this price_id
             tier_info = SUBSCRIPTION_TIERS.get(price_id)
             if tier_info:
                 tier_name = tier_info['name']
-        
-        # Get ALL enabled models for preview UI (don't filter by tier here)
-        all_models = model_manager.list_available_models(tier=None, include_disabled=False)
-        logger.debug(f"Found {len(all_models)} total models available")
+
+        # Fetch all enabled models (access filtering handled below / may be overridden)
+        try:
+            all_models = model_manager.list_available_models(include_disabled=False)
+        except Exception as mm_err:
+            logger.exception(f"Model manager list_available_models failed: {mm_err}")
+            raise HTTPException(status_code=500, detail=f"Model enumeration failed: {mm_err}")
+        logger.debug(f"Found {len(all_models)} total models available (override={getattr(config,'ALWAYS_ALLOW_ALL_MODELS', False)})")
         
         # Get allowed models for this specific user (for access checking)
-        allowed_models = await get_allowed_models_for_user(client, current_user_id)
+        try:
+            allowed_models = await get_allowed_models_for_user(client, current_user_id)
+        except Exception as am_err:
+            logger.exception(f"Error fetching allowed models for user {current_user_id}: {am_err}")
+            # Fall back to empty set instead of hard failure
+            allowed_models = set()
         logger.debug(f"User {current_user_id} allowed models: {allowed_models}")
         logger.debug(f"User tier: {tier_name}")
         
         # Create clean model info for frontend
         model_info = []
-        for model_data in all_models:
+        for idx, model_data in enumerate(all_models):
+            if not isinstance(model_data, dict):
+                logger.warning(f"Skipping non-dict model entry at index {idx}: {model_data}")
+                continue
+            missing_keys = [k for k in ["id","name","context_window","capabilities","recommended","priority"] if k not in model_data]
+            if missing_keys:
+                logger.warning(f"Model entry missing keys {missing_keys}: {model_data}")
+                continue
             model_id = model_data["id"]
             
             # Check if model is available with current subscription
-            is_available = model_id in allowed_models
+            # Defensive override: if ALWAYS_ALLOW_ALL_MODELS is set, mark everything available
+            if getattr(config, 'ALWAYS_ALLOW_ALL_MODELS', False):
+                is_available = True
+            else:
+                is_available = model_id in allowed_models
             
             # Get pricing with multiplier applied
             pricing_info = {}
-            if model_data["pricing"]:
+            if model_data.get("pricing"):
                 pricing_info = {
-                    "input_cost_per_million_tokens": model_data["pricing"]["input_per_million"] * TOKEN_PRICE_MULTIPLIER,
-                    "output_cost_per_million_tokens": model_data["pricing"]["output_per_million"] * TOKEN_PRICE_MULTIPLIER,
-                    "max_tokens": model_data["max_output_tokens"]
+                    "input_cost_per_million_tokens": (model_data["pricing"].get("input_per_million") or 0) * TOKEN_PRICE_MULTIPLIER if model_data["pricing"].get("input_per_million") is not None else None,
+                    "output_cost_per_million_tokens": (model_data["pricing"].get("output_per_million") or 0) * TOKEN_PRICE_MULTIPLIER if model_data["pricing"].get("output_per_million") is not None else None,
+                    "max_tokens": model_data.get("max_output_tokens")
                 }
             else:
                 pricing_info = {
@@ -2174,11 +2186,16 @@ async def get_available_models(
                     "max_tokens": None
                 }
 
+            # If override is active, ensure requires_subscription is False
+            requires_subscription = not model_data.get("tier_availability", []) or "free" not in model_data["tier_availability"]
+            if getattr(config, 'ALWAYS_ALLOW_ALL_MODELS', False):
+                requires_subscription = False
+
             model_info.append({
                 "id": model_id,
                 "display_name": model_data["name"],
                 "short_name": model_data.get("aliases", [model_data["name"]])[0] if model_data.get("aliases") else model_data["name"],
-                "requires_subscription": not model_data.get("tier_availability", []) or "free" not in model_data["tier_availability"],
+                "requires_subscription": requires_subscription,
                 "is_available": is_available,
                 "context_window": model_data["context_window"],
                 "capabilities": model_data["capabilities"],
@@ -2188,16 +2205,14 @@ async def get_available_models(
             })
         
         logger.debug(f"Returning {len(model_info)} models to user {current_user_id} (tier: {tier_name})")
-        if model_info:
-            model_names = [m["display_name"] for m in model_info]
-            logger.debug(f"Model names: {model_names}")
+        logger.debug(f"Compiled {len(model_info)} model entries (after filtering / validation)")
+        if not model_info:
+            logger.warning(f"No model info compiled for user {current_user_id}; returning empty list")
         
-        return {
-            "models": model_info,
-            "subscription_tier": tier_name,
-            "total_models": len(model_info)
-        }
-        
+        # If override is active, surface a synthetic tier label to clarify UI state
+        effective_tier = "All Models" if getattr(config, 'ALWAYS_ALLOW_ALL_MODELS', False) else tier_name
+        return {"models": model_info, "subscription_tier": effective_tier, "total_models": len(model_info)}
+
     except Exception as e:
         logger.error(f"Error getting available models: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting available models: {str(e)}")

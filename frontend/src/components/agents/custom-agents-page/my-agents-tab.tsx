@@ -179,7 +179,20 @@ export const MyAgentsTab = ({
         value={agentsSearchQuery}
         onChange={setAgentsSearchQuery}
         onSubmit={() => { /* pagination reset handled upstream */ }}
-  nav={<TabsNavigation activeTab={'my-agents'} onTabChange={(tab) => onTabChange?.(tab)} />}
+        nav={<TabsNavigation activeTab={'my-agents'} onTabChange={(tab) => onTabChange?.(tab)} />}
+        right={(
+          <button
+            onClick={onCreateAgent}
+            className="inline-flex items-center gap-2 rounded-xl border bg-background/70 px-3.5 py-2.5 text-sm hover:bg-background/90 transition"
+            title="Create agent"
+            aria-label="Create agent"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            <span className="hidden sm:inline">New Agent</span>
+          </button>
+        )}
         title="My Agents"
         subtitle="Manage your personal and team agents. Create, edit, and publish templates."
         placeholder="Search my agents"

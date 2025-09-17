@@ -16,6 +16,39 @@ import { getProjects } from '@/lib/api';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useMemo } from 'react';
+// New modular widgets
+import dynamic from 'next/dynamic';
+import { AccountWidget } from '@/components/dashboard/widgets/AccountWidget';
+import { UsageWidget } from '@/components/dashboard/widgets/UsageWidget';
+import { BillingWidget } from '@/components/dashboard/widgets/BillingWidget';
+// Dynamically loaded (lower priority) widgets
+const AgentsWidget = dynamic(() => import('@/components/dashboard/widgets/AgentsWidget').then(m => ({ default: m.AgentsWidget })), {
+  loading: () => <div className="h-32 rounded-md border bg-muted/20 animate-pulse" />,
+  ssr: false,
+});
+const ProjectsWidget = dynamic(() => import('@/components/dashboard/widgets/ProjectsWidget').then(m => ({ default: m.ProjectsWidget })), {
+  loading: () => <div className="h-32 rounded-md border bg-muted/20 animate-pulse" />,
+  ssr: false,
+});
+const TeamsWidget = dynamic(() => import('@/components/dashboard/widgets/TeamsWidget').then(m => ({ default: m.TeamsWidget })), {
+  loading: () => <div className="h-32 rounded-md border bg-muted/20 animate-pulse" />,
+  ssr: false,
+});
+
+// Simple section wrapper for grouped layout semantics & consistent spacing
+function SectionGroup({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <div className="px-1">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground/70">{title}</h2>
+        {description && <p className="text-[11px] text-muted-foreground/70 mt-0.5">{description}</p>}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function OverviewPage() {
   // Accounts (personal + teams)
@@ -89,171 +122,18 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 px-4 md:px-6 pb-8">
-        {/* Account */}
-        <Card className="backdrop-blur bg-card/80">
-          <CardHeader>
-            <CardTitle>Account</CardTitle>
-            <CardDescription>Your identity and teams</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {accountsLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-5 w-40" />
-                <Skeleton className="h-4 w-56" />
-                <Skeleton className="h-4 w-28" />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="text-sm">Signed in as</div>
-                <div className="text-base font-medium">{personalAccount?.name || personalAccount?.slug || '—'}</div>
-                <div className="text-sm text-muted-foreground">Teams: {teamAccounts.length}</div>
-                <div className="pt-2">
-                  <Link href="/settings" className="text-xs text-primary underline underline-offset-4">Manage settings</Link>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Usage */}
-  <Card className="backdrop-blur bg-card/80">
-          <CardHeader>
-            <CardTitle>Usage</CardTitle>
-            <CardDescription>Current period</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {subscriptionLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-5 w-28" />
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-4 w-44" />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-baseline gap-2">
-                  <div className="text-lg font-semibold">${usedUsd.toFixed(2)}</div>
-                  <div className="text-sm text-muted-foreground">of {limitUsd > 0 ? `$${limitUsd.toFixed(2)}` : 'unlimited'}</div>
-                </div>
-                {limitUsd > 0 && (
-                  <Progress value={usagePct} className="h-2" />
-                )}
-                <div className="text-xs text-muted-foreground">
-                  Plan: {subscriptionData?.plan_name || 'Free'}
-                </div>
-                <div>
-                  <Link href="/model-pricing" className="text-xs text-primary underline underline-offset-4">View model pricing</Link>
-                </div>
-                {/* Sparkline */}
-                {sparkData.values && (
-                  <div className="mt-3">
-                    <Sparkline values={sparkData.values} max={sparkData.max} height={40} />
-                    <div className="text-[11px] text-muted-foreground mt-1">Last 14 days</div>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Billing */}
-        <Card className="backdrop-blur bg-card/80">
-          <CardHeader>
-            <CardTitle>Billing</CardTitle>
-            <CardDescription>Subscription status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {billingLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-5 w-24" />
-                <Skeleton className="h-4 w-56" />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="text-sm">{billingStatus?.message || '—'}</div>
-                <div className="text-xs text-muted-foreground">Can run jobs: {billingStatus?.can_run ? 'Yes' : 'No'}</div>
-                <div className="pt-2">
-                  <Link href="/settings" className="text-xs text-primary underline underline-offset-4">Manage billing</Link>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Agents */}
-        <Card className="backdrop-blur bg-card/80">
-          <CardHeader>
-            <CardTitle>Agents</CardTitle>
-            <CardDescription>Your custom assistants</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {agentsLoading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : agentCount > 0 ? (
-              <div className="flex items-baseline gap-3">
-                <div className="text-2xl font-semibold">{agentCount}</div>
-                <Link href="/agents?tab=my-agents" className="text-xs text-primary underline underline-offset-4">View all</Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="text-sm text-muted-foreground">No agents yet.</div>
-                <div className="flex gap-2">
-                  <Link href="/agents?tab=my-agents">
-                    <Button size="sm">Create your first agent</Button>
-                  </Link>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Projects */}
-        <Card className="backdrop-blur bg-card/80">
-          <CardHeader>
-            <CardTitle>Projects</CardTitle>
-            <CardDescription>Workspaces and threads</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {projectsLoading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (projects?.length ?? 0) > 0 ? (
-              <div className="space-y-2">
-                <div className="flex items-baseline gap-3">
-                  <div className="text-2xl font-semibold">{projects?.length ?? 0}</div>
-                  <Link href="/projects" className="text-xs text-primary underline underline-offset-4">Open projects</Link>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="text-sm text-muted-foreground">No projects yet.</div>
-                <div className="flex gap-2">
-                  <Link href="/projects">
-                    <Button size="sm">Create your first project</Button>
-                  </Link>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Teams */}
-        <Card className="backdrop-blur bg-card/80">
-          <CardHeader>
-            <CardTitle>Teams</CardTitle>
-            <CardDescription>Collaborators and orgs</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {accountsLoading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="flex items-baseline gap-3">
-                <div className="text-2xl font-semibold">{teamAccounts.length}</div>
-                <Link href={firstTeamSlug ? `/${firstTeamSlug}/settings` : '/settings'} className="text-xs text-primary underline underline-offset-4">Manage team</Link>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Grouped layout: Account & Teams / Resources */}
+      <div className="space-y-10 px-4 md:px-6 pb-10">
+        <SectionGroup title="Account & Teams" description="Identity, membership and billing context.">
+          <AccountWidget />
+          <BillingWidget />
+          <TeamsWidget />
+        </SectionGroup>
+        <SectionGroup title="Resources" description="Your usage, agents and projects.">
+          <UsageWidget />
+          <AgentsWidget />
+          <ProjectsWidget />
+        </SectionGroup>
       </div>
     </div>
     </BackgroundAALChecker>
@@ -261,19 +141,5 @@ export default function OverviewPage() {
 }
 
 // Minimal inline sparkline component (no extra deps)
-function Sparkline({ values, max, height = 40 }: { values: number[]; max: number; height?: number }) {
-  const width = 140;
-  const n = values.length || 1;
-  const step = n > 1 ? width / (n - 1) : width;
-  const points = values.map((v, i) => {
-    const x = i * step;
-    const y = height - (v / (max || 1)) * height; // invert for SVG coordinate
-    return `${x},${isFinite(y) ? y : height}`;
-  }).join(' ');
-
-  return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="block text-primary">
-      <polyline fill="none" stroke="currentColor" strokeWidth="2" points={points} strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
-  );
-}
+// Legacy Sparkline retained for backward compatibility (now unused after widget extraction)
+function Sparkline() { return null; }

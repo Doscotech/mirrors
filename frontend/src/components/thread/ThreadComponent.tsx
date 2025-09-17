@@ -595,8 +595,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
       } else {
         try {
           // Attempt to extract nested content if stored JSON-like
-            // @ts-ignore
-          retryContent = (original.content as any)?.content || JSON.stringify(original.content);
+            retryContent = (original.content as any)?.content || JSON.stringify(original.content);
         } catch {
           // Fallback to string coercion
           retryContent = String(original.content);

@@ -3,8 +3,13 @@
 import React from 'react';
 import { RedirectPage } from './redirect-page';
 
-// Accept params directly (Next.js supplies plain object) to avoid experimental React.use promise unwrap
-export default function ThreadPage({ params }: { params: { threadId: string } }) {
-  const { threadId } = params;
+interface ThreadPageProps {
+  params: { threadId: string };
+  // searchParams could be present; include for future-proofing
+  searchParams?: Record<string, string | string[] | undefined>;
+}
+
+export default function ThreadPage(props: ThreadPageProps) {
+  const { threadId } = props.params;
   return <RedirectPage threadId={threadId} />;
 }

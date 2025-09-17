@@ -7,6 +7,7 @@ import GoogleSignIn from '@/components/GoogleSignIn';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useState, useEffect, Suspense } from 'react';
 import { signIn, signUp, forgotPassword } from './actions';
+import { createClient } from '@/lib/supabase/client';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -41,6 +42,22 @@ function LoginContent() {
   const message = searchParams.get('message');
 
   const isSignUp = mode === 'signup';
+  // Phone auth state (now inline under social providers)
+  const [phone, setPhone] = useState('');
+  const [phoneStage, setPhoneStage] = useState<'enter' | 'code'>('enter');
+  const [otpCode, setOtpCode] = useState('');
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [phoneFlowVisible, setPhoneFlowVisible] = useState(false);
+  const resendActive = resendCooldown === 0;
+  // Cooldown timer
+  useEffect(()=>{
+    if(resendCooldown <= 0) return;
+    const t = setInterval(()=> setResendCooldown(c=> c>0 ? c-1 : 0),1000);
+    return ()=> clearInterval(t);
+  },[resendCooldown]);
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [mounted, setMounted] = useState(false);
 
@@ -264,6 +281,57 @@ function LoginContent() {
     );
   }
 
+  const normalizePhone = (p: string) => p.replace(/[^+\d]/g,'');
+
+  const handleSendPhoneCode = async () => {
+    setPhoneError(null);
+    const normalized = normalizePhone(phone);
+    if(!/^\+?[1-9]\d{7,14}$/.test(normalized)) {
+      setPhoneError('Enter a valid phone number in international format, e.g. +15551234567');
+      return;
+    }
+    setSendingOtp(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({ phone: normalized, options: { channel: 'sms' }});
+      if(error) {
+        setPhoneError(error.message || 'Failed to send code');
+        return;
+      }
+      setPhone(normalized);
+      setPhoneStage('code');
+      setResendCooldown(30);
+    } catch(e:any) {
+      setPhoneError(e.message || 'Unexpected error');
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleVerifyPhoneCode = async () => {
+    setPhoneError(null);
+    if(!otpCode || otpCode.length < 4) {
+      setPhoneError('Enter the code you received');
+      return;
+    }
+    setVerifyingOtp(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.verifyOtp({ phone, token: otpCode, type: 'sms' });
+      if(error) {
+        setPhoneError(error.message || 'Invalid code');
+        return;
+      }
+      // On success redirect similar to email flow
+      const target = returnUrl || '/dashboard';
+      window.location.href = target;
+    } catch(e:any) {
+      setPhoneError(e.message || 'Verification failed');
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
   return (
       <div className="min-h-screen bg-background relative">
         <div className="absolute top-6 left-6 z-10">
@@ -292,15 +360,84 @@ function LoginContent() {
             <div className="space-y-3 mb-4">
               <GoogleSignIn returnUrl={returnUrl || undefined} />
               <GitHubSignIn returnUrl={returnUrl || undefined} />
+              {/* Phone sign in / sign up section */}
+              {!phoneFlowVisible && (
+                <button
+                  type="button"
+                  onClick={() => { setPhoneFlowVisible(true); setPhoneStage('enter'); }}
+                  className="w-full h-10 rounded-lg border border-border bg-background hover:bg-accent text-sm font-medium transition-colors"
+                >Continue with Phone</button>
+              )}
+              {phoneFlowVisible && (
+                <div className="rounded-lg border border-border/60 p-4 space-y-4 bg-background/50">
+                  {phoneStage === 'enter' && (
+                    <div className="space-y-3">
+                      <Input
+                        id="phoneNumber"
+                        type="tel"
+                        placeholder="Phone number (e.g. +15551234567)"
+                        value={phone}
+                        onChange={e=> setPhone(e.target.value)}
+                        className="h-10 rounded-lg"
+                        autoComplete="tel"
+                      />
+                      {phoneError && <div className="text-xs text-destructive">{phoneError}</div>}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSendPhoneCode}
+                          disabled={sendingOtp}
+                          className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 text-sm font-medium"
+                        >{sendingOtp ? 'Sending…' : (isSignUp ? 'Send sign-up code' : 'Send login code')}</button>
+                        <button
+                          type="button"
+                          onClick={()=> { setPhoneFlowVisible(false); setPhone(''); setPhoneError(null); }}
+                          className="h-10 px-3 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent"
+                        >Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                  {phoneStage === 'code' && (
+                    <div className="space-y-3">
+                      <div className="text-xs text-muted-foreground">Code sent to {phone}. Enter it below to {isSignUp ? 'create your account' : 'sign in'}.</div>
+                      <Input
+                        id="otpCode"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={8}
+                        placeholder="Enter code"
+                        value={otpCode}
+                        onChange={e=> setOtpCode(e.target.value.replace(/[^0-9]/g,''))}
+                        className="h-10 rounded-lg tracking-widest text-center"
+                      />
+                      {phoneError && <div className="text-xs text-destructive">{phoneError}</div>}
+                      <button
+                        type="button"
+                        onClick={handleVerifyPhoneCode}
+                        disabled={verifyingOtp || otpCode.length < 4}
+                        className="w-full h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 text-sm font-medium"
+                      >{verifyingOtp ? 'Verifying…' : 'Verify & Continue'}</button>
+                      <div className="flex justify-between items-center text-[11px] text-muted-foreground mt-1">
+                        <button
+                          type="button"
+                          onClick={()=> resendActive && handleSendPhoneCode()}
+                          disabled={!resendActive || sendingOtp}
+                          className="underline disabled:no-underline disabled:opacity-40"
+                        >{resendActive ? 'Resend code' : `Resend in ${resendCooldown}s`}</button>
+                        <button type="button" onClick={()=> { setPhoneStage('enter'); setOtpCode(''); setPhoneError(null); }} className="hover:underline">Change number</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-background text-muted-foreground">
-                  or email
-                </span>
+                <span className="px-2 bg-background text-muted-foreground">or email</span>
               </div>
             </div>
             <form className="space-y-3">
@@ -320,6 +457,16 @@ function LoginContent() {
                 className="h-10 rounded-lg"
                 required
               />
+              {isSignUp && (
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="Phone number (optional)"
+                  className="h-10 rounded-lg"
+                  pattern="^[+0-9()\-\s]{7,20}$"
+                />
+              )}
               {isSignUp && (
                 <Input
                   id="confirmPassword"

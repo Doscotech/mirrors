@@ -177,10 +177,10 @@ export function SidebarLeft({
                 match: (p: string) => p.startsWith('/agents'),
               },
               {
-                href: '/profile',
+                href: '/settings/account',
                 label: 'Profile',
                 icon: UserCircle2,
-                match: (p: string) => p.startsWith('/profile'),
+                match: (p: string) => p.startsWith('/settings/account'),
               },
             ].map(item => (
               <Link key={item.href} href={item.href}>

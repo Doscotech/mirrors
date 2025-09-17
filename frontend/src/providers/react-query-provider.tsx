@@ -86,9 +86,9 @@ export function ReactQueryProvider({
       <HydrationBoundary state={dehydratedState}>
         {children}
         <NetworkRetryIndicator queryClient={queryClient} />
-        {isLocal && (
+        {isLocal ? (
           <ReactQueryDevtools initialIsOpen={false} />
-        )}
+        ) : null}
       </HydrationBoundary>
     </QueryClientProvider>
   );
@@ -110,8 +110,12 @@ const NetworkRetryIndicator: React.FC<{ queryClient: QueryClient }> = ({ queryCl
     const unsubM = queryClient.getMutationCache().subscribe(update);
     update();
     return () => {
-      unsub && unsub();
-      unsubM && unsubM();
+      if (typeof unsub === 'function') {
+        unsub();
+      }
+      if (typeof unsubM === 'function') {
+        unsubM();
+      }
     };
   }, [queryClient]);
 
@@ -123,3 +127,5 @@ const NetworkRetryIndicator: React.FC<{ queryClient: QueryClient }> = ({ queryCl
     </div>
   );
 };
+
+// File end: ReactQueryProvider exports named; no unused expressions.

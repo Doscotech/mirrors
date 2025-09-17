@@ -295,7 +295,7 @@ export function NavUserWithTeams({
                   Usage & Billing
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/profile">
+                  <Link href="/settings/account">
                     <User className="h-4 w-4" />
                     Profile & Settings
                   </Link>

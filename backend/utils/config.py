@@ -313,6 +313,13 @@ class Configuration:
     # When True, disables model-based gating so every user (including production) can access all models.
     # Charging is usage-based only (minutes / tokens / credits) and not restricted by plan tiers.
     ALWAYS_ALLOW_ALL_MODELS: bool = True
+
+    # Optional runtime validation of Stripe price IDs. When VALIDATE_STRIPE_PRICES is true and a
+    # STRIPE_SECRET_KEY is present, we will fetch each configured price from Stripe at startup
+    # and log any that are missing/invalid. If STRICT_STRIPE_PRICE_VALIDATION is also true the
+    # application will raise instead of just logging.
+    VALIDATE_STRIPE_PRICES: bool = False
+    STRICT_STRIPE_PRICE_VALIDATION: bool = False
     
     # Sandbox configuration
     SANDBOX_IMAGE_NAME = "kortix/suna:0.1.3.12"
@@ -445,6 +452,15 @@ class Configuration:
         
         # Perform validation
         self._validate()
+
+        # Optionally validate Stripe price IDs against live Stripe API
+        if self.VALIDATE_STRIPE_PRICES and self.STRIPE_SECRET_KEY:
+            try:
+                self._validate_stripe_prices()
+            except Exception as e:
+                if self.STRICT_STRIPE_PRICE_VALIDATION:
+                    raise
+                logger.error(f"Stripe price validation encountered an error (continuing): {e}")
         
     def _load_from_env(self):
         """Load configuration values from environment variables."""
@@ -493,6 +509,80 @@ class Configuration:
             error_msg = f"Missing required configuration fields: {', '.join(missing_fields)}"
             logger.error(error_msg)
             raise ValueError(error_msg)
+
+    def _validate_stripe_prices(self):
+        """Validate that all configured Stripe price IDs exist and belong to the expected product.
+
+        This is a best-effort validation to catch misconfigured / outdated price IDs early.
+        It logs warnings for any failures unless STRICT_STRIPE_PRICE_VALIDATION is true, in which
+        case the exception will be raised by caller.
+        """
+        try:
+            import stripe  # local import to avoid cost if not validating
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"Stripe SDK not available for price validation: {e}")
+            return
+
+        if not self.STRIPE_SECRET_KEY:
+            logger.warning("Cannot validate Stripe prices: STRIPE_SECRET_KEY is not set.")
+            return
+        stripe.api_key = self.STRIPE_SECRET_KEY
+
+        # Build the list of price IDs relevant to the current environment
+        price_ids = [
+            # Monthly
+            self.STRIPE_FREE_TIER_ID,
+            self.STRIPE_TIER_2_20_ID,
+            self.STRIPE_TIER_6_50_ID,
+            self.STRIPE_TIER_12_100_ID,
+            self.STRIPE_TIER_25_200_ID,
+            self.STRIPE_TIER_50_400_ID,
+            self.STRIPE_TIER_125_800_ID,
+            self.STRIPE_TIER_200_1000_ID,
+            # Yearly
+            self.STRIPE_TIER_2_20_YEARLY_ID,
+            self.STRIPE_TIER_6_50_YEARLY_ID,
+            self.STRIPE_TIER_12_100_YEARLY_ID,
+            self.STRIPE_TIER_25_200_YEARLY_ID,
+            self.STRIPE_TIER_50_400_YEARLY_ID,
+            self.STRIPE_TIER_125_800_YEARLY_ID,
+            self.STRIPE_TIER_200_1000_YEARLY_ID,
+            # Yearly commitment
+            self.STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID,
+            self.STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID,
+            self.STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID,
+            # Credit package prices
+            self.STRIPE_CREDITS_10_PRICE_ID,
+            self.STRIPE_CREDITS_25_PRICE_ID,
+            self.STRIPE_CREDITS_50_PRICE_ID,
+            self.STRIPE_CREDITS_100_PRICE_ID,
+            self.STRIPE_CREDITS_250_PRICE_ID,
+            self.STRIPE_CREDITS_500_PRICE_ID,
+        ]
+
+        validated = 0
+        errors: list[str] = []
+        seen = set()
+        duplicates = []
+        for pid in price_ids:
+            if not pid:
+                continue
+            if pid in seen:
+                duplicates.append(pid)
+            seen.add(pid)
+            try:
+                stripe.Price.retrieve(pid)
+                validated += 1
+            except Exception as e:  # pragma: no cover (network dependent)
+                msg = f"Invalid or inaccessible Stripe price ID '{pid}': {e}"
+                errors.append(msg)
+                logger.warning(msg)
+
+        logger.info(f"Stripe price validation summary: validated={validated}, errors={len(errors)}, duplicates={len(duplicates)} env={self.ENV_MODE.value}")
+        if duplicates:
+            logger.warning(f"Duplicate price IDs detected: {duplicates}")
+        if errors and self.STRICT_STRIPE_PRICE_VALIDATION:
+            raise ValueError(f"Stripe price validation failed for {len(errors)} price IDs")
     
     def get(self, key: str, default: Any = None) -> Any:
         """Get a configuration value with an optional default."""

@@ -151,7 +151,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
   } = useToolCalls(messages, setLeftSidebarOpen, agentStatus, compact);
 
   // Treat side panel as visually closed when panel itself is popped out (PiP)
-  const { mode: toolPanelMode } = useToolPanelPiPStore();
+  const { mode: toolPanelMode, setMode: setPanelMode } = useToolPanelPiPStore();
   // Side panel no longer consumes layout width; treat as open only in expanded mode
   const effectiveSidePanelOpen = isSidePanelOpen && toolPanelMode === 'expanded';
 
@@ -1117,6 +1117,10 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
               toolCallIndex={currentToolIndex}
               showToolPreview={!isSidePanelOpen && toolCalls.length > 0}
               onExpandToolPreview={() => {
+                // On mobile, ensure the panel is in expanded mode so the Drawer opens
+                if (isMobile) {
+                  setPanelMode('expanded');
+                }
                 setIsSidePanelOpen(true);
                 userClosedPanelRef.current = false;
               }}
@@ -1254,6 +1258,10 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
               toolCallIndex={currentToolIndex}
               showToolPreview={!isSidePanelOpen && toolCalls.length > 0}
               onExpandToolPreview={() => {
+                // On mobile, ensure the panel is in expanded mode so the Drawer opens
+                if (isMobile) {
+                  setPanelMode('expanded');
+                }
                 setIsSidePanelOpen(true);
                 userClosedPanelRef.current = false;
               }}

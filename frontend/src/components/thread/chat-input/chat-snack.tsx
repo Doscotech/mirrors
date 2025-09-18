@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,8 @@ export const ChatSnack: React.FC<ChatSnackProps> = ({
     isVisible = false,
 }) => {
     const [currentView, setCurrentView] = React.useState(0);
+    const [isInteracting, setIsInteracting] = React.useState(false);
+    const prefersReducedMotion = useReducedMotion();
 
     // Determine what notifications we have - match exact rendering conditions
     const notifications = [];
@@ -70,14 +73,15 @@ export const ChatSnack: React.FC<ChatSnackProps> = ({
 
     // Auto-cycle through notifications
     React.useEffect(() => {
-        if (!hasMultiple || !isVisible) return;
+        if (!hasMultiple || !isVisible || prefersReducedMotion) return;
+        if (isInteracting) return; // Pause cycling during interaction
 
         const interval = setInterval(() => {
             setCurrentView((prev) => (prev + 1) % totalNotifications);
         }, 20000);
 
         return () => clearInterval(interval);
-    }, [hasMultiple, isVisible, totalNotifications, currentView]); // Reset timer when currentView changes
+    }, [hasMultiple, isVisible, totalNotifications, currentView, isInteracting, prefersReducedMotion]);
 
     if (!isVisible || totalNotifications === 0) return null;
 
@@ -173,6 +177,10 @@ export const ChatSnack: React.FC<ChatSnackProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
+                    onMouseEnter={() => setIsInteracting(true)}
+                    onMouseLeave={() => setIsInteracting(false)}
+                    onTouchStart={() => setIsInteracting(true)}
+                    onTouchEnd={() => setIsInteracting(false)}
                 >
                     {renderContent()}
                 </motion.div>

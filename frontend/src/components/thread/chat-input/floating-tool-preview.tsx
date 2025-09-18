@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { memo, useMemo } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { CircleDashed, Maximize2 } from 'lucide-react';
 import { getToolIcon, getUserFriendlyToolName } from '@/components/thread/utils';
 import { cn } from '@/lib/utils';
@@ -60,7 +60,7 @@ const getToolResultStatus = (toolCall: any): boolean => {
   return success !== undefined ? success : (toolCall?.toolResult?.isSuccess ?? true);
 };
 
-export const FloatingToolPreview: React.FC<FloatingToolPreviewProps> = ({
+const FloatingToolPreviewInner: React.FC<FloatingToolPreviewProps> = ({
   toolCalls,
   currentIndex,
   onExpand,
@@ -71,9 +71,11 @@ export const FloatingToolPreview: React.FC<FloatingToolPreviewProps> = ({
   indicatorTotal = 1,
   onIndicatorClick,
 }) => {
+  const prefersReducedMotion = useReducedMotion();
   const [isExpanding, setIsExpanding] = React.useState(false);
-  const currentToolCall = toolCalls[currentIndex];
   const totalCalls = toolCalls.length;
+  const safeIndex = totalCalls > 0 ? Math.min(Math.max(0, currentIndex), totalCalls - 1) : 0;
+  const currentToolCall = useMemo(() => (totalCalls > 0 ? toolCalls[safeIndex] : undefined), [toolCalls, safeIndex, totalCalls]);
 
   React.useEffect(() => {
     if (isVisible) {
@@ -102,21 +104,19 @@ export const FloatingToolPreview: React.FC<FloatingToolPreviewProps> = ({
           layoutId={FLOATING_LAYOUT_ID}
           layout
           transition={{
-            layout: {
-              type: "spring",
-              stiffness: 300,
-              damping: 30
-            }
+            layout: prefersReducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }
           }}
           className="-mb-4 w-full"
           style={{ pointerEvents: 'auto' }}
         >
           <motion.div
             layoutId={CONTENT_LAYOUT_ID}
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            className="bg-card border border-border rounded-3xl p-2 w-full cursor-pointer group"
+            whileHover={prefersReducedMotion ? undefined : { scale: 1.01 }}
+            whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
+            className="bg-card border border-border rounded-3xl p-2 w-full cursor-pointer group will-change-transform min-h-[64px]"
             onClick={handleClick}
+            role="button"
+            aria-label="Open tool panel"
             style={{ opacity: isExpanding ? 0 : 1 }}
           >
             <div className="flex items-center gap-3">
@@ -194,7 +194,7 @@ export const FloatingToolPreview: React.FC<FloatingToolPreviewProps> = ({
                 </button>
               )}
 
-              <Button value='ghost' className="bg-transparent hover:bg-transparent flex-shrink-0" style={{ opacity: isExpanding ? 0 : 1 }}>
+              <Button variant="ghost" className="bg-transparent hover:bg-transparent flex-shrink-0" style={{ opacity: isExpanding ? 0 : 1 }}>
                 <Maximize2 className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
               </Button>
             </div>
@@ -203,4 +203,6 @@ export const FloatingToolPreview: React.FC<FloatingToolPreviewProps> = ({
       )}
     </AnimatePresence>
   );
-}; 
+};
+
+export const FloatingToolPreview = memo(FloatingToolPreviewInner);

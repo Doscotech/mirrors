@@ -7,6 +7,7 @@ import { ParsedContent } from '@/components/thread/types';
 import { extractToolName } from '@/components/thread/tool-views/xml-parser';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { extractAskData } from '@/components/thread/tool-views/ask-tool/_utils';
+import { useToolPanelPiPStore } from '@/lib/stores/tool-panel-pip-store';
 
 interface UseToolCallsReturn {
   toolCalls: ToolCallInput[];
@@ -90,6 +91,7 @@ export function useToolCalls(
   const userClosedPanelRef = useRef(false);
   const userNavigatedRef = useRef(false); // Track if user manually navigated
   const isMobile = useIsMobile();
+  const { setMode: setPanelMode } = useToolPanelPiPStore();
 
   const toggleSidePanel = useCallback(() => {
     setIsSidePanelOpen((prevIsOpen) => {
@@ -268,6 +270,10 @@ export function useToolCalls(
     const toolIndex = assistantMessageToToolIndex.current.get(clickedAssistantMessageId);
 
     if (toolIndex !== undefined) {
+      // On mobile, force expanded mode so the Drawer opens
+      if (isMobile) {
+        setPanelMode('expanded');
+      }
       setExternalNavIndex(toolIndex);
       setCurrentToolIndex(toolIndex);
       setIsSidePanelOpen(true);
@@ -290,6 +296,9 @@ export function useToolCalls(
         
         // Check if we have a tool call at this index
         if (messageIndex !== -1 && messageIndex < toolCalls.length) {
+          if (isMobile) {
+            setPanelMode('expanded');
+          }
           setExternalNavIndex(messageIndex);
           setCurrentToolIndex(messageIndex);
           setIsSidePanelOpen(true);

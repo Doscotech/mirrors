@@ -245,6 +245,47 @@ export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
       return () => window.removeEventListener('resize', adjustHeight);
     }, [value]);
 
+    useEffect(() => {
+      const handler = (event: Event) => {
+        const custom = event as CustomEvent<{ text: string }>;
+        const insertText = custom.detail?.text ?? '';
+        if (!insertText) return;
+
+        const target = textareaRef.current;
+        const currentVal = isControlled ? controlledValue ?? '' : uncontrolledValue;
+
+        if (target) {
+          const start = target.selectionStart ?? currentVal.length;
+          const end = target.selectionEnd ?? currentVal.length;
+          const newValue = `${currentVal.slice(0, start)}${insertText}${currentVal.slice(end)}`;
+
+          if (isControlled) {
+            controlledOnChange?.(newValue);
+          } else {
+            setUncontrolledValue(newValue);
+          }
+
+          requestAnimationFrame(() => {
+            if (!textareaRef.current) return;
+            textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + insertText.length;
+            textareaRef.current.focus();
+          });
+        } else {
+          const needsNewline = currentVal.length > 0 && !currentVal.endsWith('\n');
+          const newValue = needsNewline ? `${currentVal}\n${insertText}` : `${currentVal}${insertText}`;
+
+          if (isControlled) {
+            controlledOnChange?.(newValue);
+          } else {
+            setUncontrolledValue(newValue);
+          }
+        }
+      };
+
+      window.addEventListener('xera-insert-text', handler as EventListener);
+      return () => window.removeEventListener('xera-insert-text', handler as EventListener);
+    }, [isControlled, controlledValue, uncontrolledValue, controlledOnChange]);
+
 
 
     useEffect(() => {
@@ -421,20 +462,27 @@ export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
 
     const renderTextArea = useMemo(() => (
       <div className="flex flex-col gap-1 px-2">
-        <Textarea
-          ref={textareaRef}
-          value={value}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-          placeholder={placeholder}
+        <div
           className={cn(
-            'w-full bg-transparent dark:bg-transparent border-none shadow-none focus-visible:ring-0 px-0.5 pb-6 pt-4 !text-[15px] min-h-[36px] max-h-[200px] overflow-y-auto resize-none',
-            isDraggingOver ? 'opacity-40' : '',
+            'rounded-2xl border border-border/40 bg-card/80 dark:bg-muted/50 backdrop-blur-xl shadow-sm transition-all duration-200 focus-within:shadow-lg focus-within:border-primary/40',
+            isDraggingOver && 'border-primary/50 shadow-primary/20',
           )}
-          disabled={loading || (disabled && !isAgentRunning)}
-          rows={1}
-        />
+        >
+          <Textarea
+            ref={textareaRef}
+            value={value}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            placeholder={placeholder}
+            className={cn(
+              'w-full resize-none bg-transparent border-none focus-visible:ring-0 px-4 pt-4 pb-6 text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground/70',
+              isDraggingOver && 'opacity-70',
+            )}
+            disabled={loading || (disabled && !isAgentRunning)}
+            rows={1}
+          />
+        </div>
       </div>
     ), [value, handleChange, handleKeyDown, handlePaste, placeholder, isDraggingOver, loading, disabled, isAgentRunning]);
 
@@ -553,7 +601,13 @@ export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
             }}
           >
             <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
-              <CardContent className={`w-full p-1.5 pb-2 ${bgColor} border rounded-3xl`}>
+              <CardContent
+                className={cn(
+                  'w-full p-2 pb-3 border border-border/30 rounded-3xl shadow-xl bg-card/75 dark:bg-muted/60 backdrop-blur-2xl transition-all duration-300',
+                  bgColor,
+                  isDraggingOver && 'border-primary/40 shadow-primary/30',
+                )}
+              >
                 <AttachmentGroup
                   files={uploadedFiles || []}
                   sandboxId={sandboxId}

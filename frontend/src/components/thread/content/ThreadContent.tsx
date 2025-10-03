@@ -21,7 +21,7 @@ import { StreamingText } from './StreamingText';
 import { HIDE_STREAMING_XML_TAGS } from '@/components/thread/utils';
 import { MessageActionMenu } from '@/components/thread/message-actions/MessageActionMenu';
 import { toast } from 'sonner';
-import { useCreateAgentKnowledgeBaseEntry } from '@/hooks/react-query/knowledge-base/use-knowledge-base-queries';
+import { cn } from '@/lib/utils';
 
 // Helper to derive plain text from message.content (stored JSON string or raw)
 function extractPlainText(raw: any): string {
@@ -447,34 +447,10 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     const contentRef = useRef<HTMLDivElement>(null);
     const [shouldJustifyToTop, setShouldJustifyToTop] = useState(false);
     const { session } = useAuth();
-    // Knowledge base create mutation
-    const createKbEntry = useCreateAgentKnowledgeBaseEntry();
 
-    // Helper to resolve active agent id for KB actions
-    const resolveAgentId = () => {
-        // Prefer explicit agentData id
-        if (agentData?.agent_id) return agentData.agent_id;
-        // Fallback: last assistant message agent_id
-        const lastAssistant = [...messages].reverse().find(m => m.type === 'assistant' && m.agent_id);
-        if (lastAssistant?.agent_id) return lastAssistant.agent_id;
-        return undefined;
-    };
-
+    // Knowledge base feature temporarily disabled - hook not available
     const handleAddToKnowledgeBase = async (rawContent: string | undefined) => {
-        if (!rawContent) return toast.error('Nothing to add');
-        const agentId = resolveAgentId();
-        if (!agentId) {
-            toast.error('No agent context for knowledge base');
-            return;
-        }
-        const plain = extractPlainText(rawContent).trim();
-        if (!plain) return toast.error('Empty content');
-        const title = plain.split('\n').find(l => l.trim().length > 0)?.slice(0,80) || 'Entry';
-        try {
-            await createKbEntry.mutateAsync({ agentId, data: { name: title, content: plain } });
-        } catch (e: any) {
-            // toast handled in hook onError, but keep silent catch
-        }
+        toast.error('Knowledge base feature is temporarily unavailable');
     };
 
     // React Query file preloader

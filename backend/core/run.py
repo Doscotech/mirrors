@@ -617,7 +617,7 @@ class AgentRunner:
             logger.debug("Registering Suna-specific tools...")
             self._register_suna_specific_tools(disabled_tools)
         else:
-            logger.debug("Not a Suna agent, skipping Suna-specific tool registration")
+            logger.debug("Not a Xera agent, skipping Xera-specific tool registration")
     
     def _get_enabled_methods_for_tool(self, tool_name: str) -> Optional[List[str]]:
         if not self.config.agent_config or 'agentpress_tools' not in self.config.agent_config:
@@ -648,11 +648,11 @@ class AgentRunner:
                 if enabled_methods is not None:
                     # Register only enabled methods
                     self.thread_manager.add_tool(AgentCreationTool, function_names=enabled_methods, thread_manager=self.thread_manager, db_connection=db, account_id=self.account_id)
-                    logger.debug(f"Registered agent_creation_tool for Suna with methods: {enabled_methods}")
+                    logger.debug(f"Registered agent_creation_tool for Xera with methods: {enabled_methods}")
                 else:
                     # Register all methods (backward compatibility)
                     self.thread_manager.add_tool(AgentCreationTool, thread_manager=self.thread_manager, db_connection=db, account_id=self.account_id)
-                    logger.debug("Registered agent_creation_tool for Suna (all methods)")
+                    logger.debug("Registered agent_creation_tool for Xera (all methods)")
             else:
                 logger.warning("Could not register agent_creation_tool: account_id not available")
     

@@ -7,7 +7,7 @@ import { Sparkles, CreditCard, Zap, Shield, ArrowRight, CheckCircle, Loader2, Cl
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { useTrialStatus, useStartTrial } from '@/hooks/react-query/billing/use-trial-status';
+import { useTrialStatus, useStartTrialWithoutPayment } from '@/hooks/react-query/billing/use-trial-status';
 import { useSubscription } from '@/hooks/react-query/use-billing-v2';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KortixLogo } from '@/components/sidebar/kortix-logo';
@@ -24,7 +24,7 @@ export default function ActivateTrialPage() {
   const { user } = useAuth();
   const { data: subscription, isLoading: isLoadingSubscription } = useSubscription(!!user);
   const { data: trialStatus, isLoading: isLoadingTrial } = useTrialStatus(!!user);
-  const startTrialMutation = useStartTrial();
+  const startTrialMutation = useStartTrialWithoutPayment();
   const { data: maintenanceNotice, isLoading: maintenanceLoading } = useMaintenanceNoticeQuery();
 
   useEffect(() => {
@@ -48,17 +48,14 @@ export default function ActivateTrialPage() {
 
   const handleStartTrial = async () => {
     try {
-      const result = await startTrialMutation.mutateAsync({
-        success_url: `${window.location.origin}/dashboard?trial=started`,
-        cancel_url: `${window.location.origin}/activate-trial`,
-      });
+      const result = await startTrialMutation.mutateAsync();
       
-      if (result.checkout_url) {
-        window.location.href = result.checkout_url;
-      }
+      // No redirect to Stripe - trial is activated immediately
+      // Redirect to dashboard after successful activation
+      router.push('/dashboard?trial=started');
     } catch (error: any) {
       console.error('Failed to start trial:', error);
-      toast.error(error?.message || 'Failed to start trial. Please try again.');
+      // Error is already handled by the hook's onError
     }
   };
 
@@ -111,7 +108,7 @@ export default function ActivateTrialPage() {
           <div>
             <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
               <KortixLogo/>
-              <span>Welcome to Suna</span>
+              <span>Welcome to Xera</span>
             </CardTitle>
             <CardDescription className="mt-2">
               Start your journey with a 7-day free trial
@@ -147,10 +144,10 @@ export default function ActivateTrialPage() {
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-primary mt-0.5" />
               <div className="space-y-1">
-                <p className="font-medium">No charge during trial</p>
+                <p className="font-medium">No payment required</p>
                 <p className="text-sm text-muted-foreground">
-                  Your card will only be charged after 7 days if you don't cancel. 
-                  You can cancel anytime from your billing settings.
+                  Start your free trial immediately without entering any payment details. 
+                  No credit card needed.
                 </p>
               </div>
             </div>
@@ -165,11 +162,11 @@ export default function ActivateTrialPage() {
               {startTrialMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Starting trial...
+                  Activating trial...
                 </>
               ) : (
                 <>
-                  <CreditCard className="h-4 w-4" />
+                  <Sparkles className="h-4 w-4" />
                   Start 7-Day Free Trial
                   <ArrowRight className="h-4 w-4" />
                 </>

@@ -512,7 +512,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
         }
 
         if (recentAssistantWithAgent?.agents?.name) {
-            const isSunaAgent = recentAssistantWithAgent.agents.name === 'Suna' || isSunaDefaultAgent;
+            const isSunaAgent = recentAssistantWithAgent.agents.name === 'Xera' || isSunaDefaultAgent;
             // Use modern icon system for agent display  
             const avatar = !isSunaDefaultAgent ? (
                 <>

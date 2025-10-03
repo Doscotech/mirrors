@@ -8,7 +8,7 @@ Usage:
     # 🚀 MAIN COMMANDS
     python manage_suna_agents.py install-all          # Install Xera for all users who don't have it
     python manage_suna_agents.py stats                # Show Xera agent statistics
-    python manage_suna_agents.py install-user <id>    # Install Suna for specific user
+    python manage_suna_agents.py install-user <id>    # Install Xera for specific user
 
 Examples:
     python manage_suna_agents.py install-all
@@ -54,7 +54,7 @@ class SunaAgentManager:
                     print(f"   - User {detail['account_id']}: {detail.get('error', 'Unknown error')}")
         
         if result['installed_count'] > 0:
-            print(f"\n✅ Successfully installed Suna for {result['installed_count']} users")
+            print(f"\n✅ Successfully installed Xera for {result['installed_count']} users")
             
     async def update_config_info(self):
         """Show information about Xera configuration (no sync needed)"""
@@ -131,12 +131,12 @@ async def main():
     subparsers.add_parser('config-info', help='Show information about Xera configuration')
 
     # User-specific commands
-    install_user_parser = subparsers.add_parser('install-user', help='Install Suna agent for specific user')
-    install_user_parser.add_argument('account_id', help='Account ID to install Suna for')
-    
-    replace_user_parser = subparsers.add_parser('replace-user', help='Replace Suna agent for specific user (if corrupted)')
-    replace_user_parser.add_argument('account_id', help='Account ID to replace Suna for')
-    
+    install_user_parser = subparsers.add_parser('install-user', help='Install Xera agent for specific user')
+    install_user_parser.add_argument('account_id', help='Account ID to install Xera for')
+
+    replace_user_parser = subparsers.add_parser('replace-user', help='Replace Xera agent for specific user (if corrupted)')
+    replace_user_parser.add_argument('account_id', help='Account ID to replace Xera for')
+
     # Legacy commands (deprecated but still functional)
     subparsers.add_parser('sync', help='[DEPRECATED] No longer needed - config is always current')
     subparsers.add_parser('update-all', help='[DEPRECATED] No longer needed - config is always current')

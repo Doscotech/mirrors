@@ -136,6 +136,127 @@ class TrialService:
             logger.error(f"[TRIAL CANCEL] Stripe error cancelling subscription: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to cancel subscription: {str(e)}")
 
+    async def start_trial_without_payment(self, account_id: str) -> Dict:
+        """
+        Start a trial without requiring payment details.
+        Grants trial credits directly to the account.
+        """
+        db = DBConnection()
+        client = await db.client
+        
+        logger.info(f"[TRIAL NO-PAYMENT] Trial activation attempt for account {account_id}")
+        
+        if not TRIAL_ENABLED:
+            logger.warning(f"[TRIAL NO-PAYMENT] Trial attempt rejected - trials disabled for account {account_id}")
+            raise HTTPException(status_code=400, detail="Trials are not currently enabled")
+        
+        # Check trial history
+        trial_history_result = await client.from_('trial_history')\
+            .select('id, started_at, ended_at, converted_to_paid')\
+            .eq('account_id', account_id)\
+            .execute()
+        
+        if trial_history_result.data and len(trial_history_result.data) > 0:
+            history = trial_history_result.data[0]
+            logger.warning(f"[TRIAL NO-PAYMENT] Trial attempt rejected - account {account_id} already used trial. "
+                         f"Started: {history.get('started_at')}, Ended: {history.get('ended_at')}")
+            raise HTTPException(
+                status_code=403,
+                detail="This account has already used its trial. Each account is limited to one free trial."
+            )
+        
+        # Check current trial status
+        account_result = await client.from_('credit_accounts')\
+            .select('trial_status, tier, stripe_subscription_id, balance')\
+            .eq('account_id', account_id)\
+            .execute()
+        
+        if account_result.data:
+            account_data = account_result.data[0]
+            existing_trial_status = account_data.get('trial_status')
+            
+            if existing_trial_status and existing_trial_status != 'none':
+                logger.warning(f"[TRIAL NO-PAYMENT] Trial attempt rejected - account {account_id} has trial_status: {existing_trial_status}")
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Account has trial status: {existing_trial_status}. Each account is limited to one free trial."
+                )
+        
+        # Check credit ledger for existing trials
+        ledger_check = await client.from_('credit_ledger')\
+            .select('id, description')\
+            .eq('account_id', account_id)\
+            .or_(
+                'description.ilike.%trial credits%,'
+                'description.ilike.%free trial%,'
+                'description.ilike.%day trial%,'
+                'type.eq.trial_grant'
+            )\
+            .execute()
+        
+        if ledger_check.data:
+            has_actual_trial = False
+            for entry in ledger_check.data:
+                desc = entry.get('description', '').lower()
+                if 'trial credits' in desc or 'free trial' in desc or 'day trial' in desc:
+                    has_actual_trial = True
+                    break
+            
+            if has_actual_trial:
+                logger.warning(f"[TRIAL NO-PAYMENT] Trial attempt rejected - account {account_id} has trial-related ledger entries")
+                raise HTTPException(
+                    status_code=403,
+                    detail="Trial history detected. Each account is limited to one free trial."
+                )
+        
+        try:
+            # Calculate trial end date
+            from datetime import timedelta
+            trial_ends_at = datetime.now(timezone.utc) + timedelta(days=TRIAL_DURATION_DAYS)
+            
+            # Get current balance
+            current_balance = account_result.data[0].get('balance', 0.00) if account_result.data else 0.00
+            new_balance = float(current_balance) + float(TRIAL_CREDITS)
+            
+            # Update credit account with trial status
+            await client.from_('credit_accounts').update({
+                'trial_status': 'active',
+                'tier': TRIAL_TIER,
+                'trial_ends_at': trial_ends_at.isoformat(),
+                'balance': new_balance
+            }).eq('account_id', account_id).execute()
+            
+            # Grant trial credits
+            await credit_manager.add_credits(
+                account_id=account_id,
+                amount=TRIAL_CREDITS,
+                description=f'{TRIAL_DURATION_DAYS}-day trial credits (no payment required)',
+                transaction_type='trial_grant'
+            )
+            
+            # Create trial history record
+            await client.from_('trial_history').insert({
+                'account_id': account_id,
+                'started_at': datetime.now(timezone.utc).isoformat(),
+                'ended_at': None,
+                'converted_to_paid': False,
+                'note': 'Trial started without payment details'
+            }).execute()
+            
+            logger.info(f"[TRIAL NO-PAYMENT SUCCESS] Trial activated for account {account_id} with ${TRIAL_CREDITS} credits until {trial_ends_at}")
+            
+            return {
+                'success': True,
+                'message': f'{TRIAL_DURATION_DAYS}-day trial started successfully',
+                'credits_granted': TRIAL_CREDITS,
+                'trial_ends_at': trial_ends_at.isoformat(),
+                'tier': TRIAL_TIER
+            }
+            
+        except Exception as e:
+            logger.error(f"[TRIAL NO-PAYMENT ERROR] Failed to activate trial for account {account_id}: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to start trial: {str(e)}")
+
     async def start_trial(self, account_id: str, success_url: str, cancel_url: str) -> Dict:
         db = DBConnection()
         client = await db.client

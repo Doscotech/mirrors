@@ -3,14 +3,10 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog } from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Clock,
   X,
   Trash2,
-  Power,
-  PowerOff,
   ExternalLink,
   Edit2,
   Activity,
@@ -56,6 +52,8 @@ const SCHEDULE_PRESETS = [
   { cron: '0 9 * * 1', name: 'Weekly on Monday', icon: <Repeat className="h-4 w-4" /> },
   { cron: '0 9 1 * *', name: 'Monthly on 1st', icon: <CalendarIcon className="h-4 w-4" /> },
 ];
+
+const SECTION_CLASS = 'rounded-2xl border border-border/40 bg-background/60 px-5 py-5 shadow-[0_22px_48px_-32px_rgba(15,23,42,0.55)] backdrop-blur-lg';
 
 const getScheduleDisplay = (cron?: string) => {
   if (!cron) return { name: 'Not configured', icon: <Clock className="h-4 w-4" /> };
@@ -150,185 +148,212 @@ export function SimplifiedTriggerDetailPanel({ trigger, onClose }: SimplifiedTri
   };
 
   return (
-    <div className={"h-full bg-background flex flex-col w-full sm:w-[440px] xl:w-2xl"}>
-      {/* Header */}
-      <div className="px-8 py-6 border-b">
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-medium text-foreground">{trigger.name}</h1>
-              <Badge
-                variant={trigger.is_active ? "highlight" : "secondary"}
-                className="text-xs"
-              >
-                {trigger.is_active ? "Active" : "Inactive"}
-              </Badge>
+    <div className="flex h-full w-full flex-col overflow-hidden p-6">
+      <div className="relative overflow-hidden rounded-[28px] border border-border/50 bg-gradient-to-br from-background/95 via-background/80 to-background/60 p-6 shadow-[0_30px_70px_-32px_rgba(15,23,42,0.6)]">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-transparent opacity-70" />
+        <div className="relative flex flex-col gap-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                  {trigger.name}
+                </h1>
+                <Badge
+                  variant={trigger.is_active ? 'highlight' : 'secondary'}
+                  className="text-[11px]"
+                >
+                  {trigger.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+              </div>
+              {trigger.description && (
+                <p className="max-w-xl text-sm text-muted-foreground/90 leading-relaxed">
+                  {trigger.description}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground/70">
+                <span className="rounded-full border border-border/40 bg-background/70 px-3 py-1 font-medium uppercase tracking-wide">
+                  {trigger.trigger_type}
+                </span>
+                {trigger.provider_id && (
+                  <span className="rounded-full border border-border/40 bg-background/70 px-3 py-1 font-medium uppercase tracking-wide">
+                    {trigger.provider_id}
+                  </span>
+                )}
+                {isScheduled && scheduleDisplay?.name && (
+                  <span className="rounded-full border border-border/40 bg-primary/10 px-3 py-1 font-medium uppercase tracking-wide text-primary">
+                    {scheduleDisplay.name}
+                  </span>
+                )}
+              </div>
             </div>
-            {trigger.description && (
-              <p className="text-muted-foreground text-sm leading-relaxed">{trigger.description}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowEditDialog(true)}
-              className="hover:bg-muted"
-            >
-              <Edit2 className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowDeleteDialog(true)}
-              disabled={isLoading}
-              className="hover:bg-destructive/10 hover:border-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 hover:bg-muted"
-              onClick={onClose}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="flex gap-3">
-          <Button
-            size="sm"
-            variant={trigger.is_active ? "outline" : "default"}
-            onClick={handleToggle}
-            disabled={isLoading}
-            className={cn(
-              "flex-1",
-              trigger.is_active
-                ? "hover:bg-muted"
-                : "bg-primary hover:bg-primary/90 text-primary-foreground"
-            )}
-          >
-            {trigger.is_active ? (
-              <>
-                <Pause className="h-4 w-4 mr-2" />
-                Disable
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4 mr-2" />
-                Enable
-              </>
-            )}
-          </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowEditDialog(true)}
+                className="rounded-xl border-border/40 bg-background/60 px-4 py-2 text-sm font-medium transition-colors hover:border-border/60 hover:bg-muted/40"
+              >
+                <Edit2 className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isLoading}
+                className="rounded-xl border-border/40 bg-background/60 px-3 py-2 text-sm font-medium transition-colors hover:border-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-xl border border-transparent text-muted-foreground transition-colors hover:border-border/60 hover:bg-muted/30"
+                onClick={onClose}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button
+              size="sm"
+              variant={trigger.is_active ? 'outline' : 'default'}
+              onClick={handleToggle}
+              disabled={isLoading}
+              className={cn(
+                'flex-1 rounded-xl border-border/40 px-4 py-2 text-sm font-medium shadow-[0_16px_32px_-28px_rgba(15,23,42,0.45)] transition-all',
+                trigger.is_active
+                  ? 'bg-background/70 text-foreground hover:bg-muted/40'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90'
+              )}
+            >
+              {trigger.is_active ? (
+                <>
+                  <Pause className="mr-2 h-4 w-4" />
+                  Disable trigger
+                </>
+              ) : (
+                <>
+                  <Play className="mr-2 h-4 w-4" />
+                  Enable trigger
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8">
-        {/* Schedule Info */}
-        {isScheduled && (
-          <div className="border rounded-lg p-6 bg-card">
+      <div className="flex-1 overflow-hidden">
+        <div className="flex h-full flex-col gap-5 overflow-y-auto pr-2">
+          {isScheduled && (
+            <section className={SECTION_CLASS}>
+              <div className="flex items-start gap-4">
+                <div className="rounded-xl border border-border/30 bg-primary/10 p-3 text-primary shadow-[0_12px_24px_-22px_rgba(14,116,144,0.55)]">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground/80">Schedule</h3>
+                  <p className="mt-1 text-base font-medium text-foreground">{scheduleDisplay.name}</p>
+                  <p className="mt-2 text-xs text-muted-foreground/80">
+                    Configure cadence in the trigger settings to adjust frequency or timing.
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <section className={SECTION_CLASS}>
             <div className="flex items-start gap-4">
-              <div className="p-2 rounded-lg bg-muted">
-                <Clock className="h-5 w-5 text-muted-foreground" />
+              <div className="rounded-xl border border-border/30 bg-muted/40 p-3 text-muted-foreground">
+                {trigger.config?.execution_type === 'agent' ? (
+                  <Sparkles className="h-5 w-5" />
+                ) : (
+                  <Activity className="h-5 w-5" />
+                )}
               </div>
               <div className="flex-1">
-                <h3 className="font-medium text-foreground mb-1">Schedule</h3>
-                <p className="text-sm text-muted-foreground">{scheduleDisplay.name}</p>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground/80">
+                  {trigger.config?.execution_type === 'agent' ? 'Agent instructions' : 'Workflow execution'}
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground/90">
+                  {trigger.config?.execution_type === 'agent'
+                    ? 'Custom prompt sent to the assigned agent whenever this trigger runs.'
+                    : `Runs workflow: ${workflowName || 'Unknown workflow'}`}
+                </p>
+
+                {trigger.config?.execution_type === 'agent' && trigger.config.agent_prompt && (
+                  <div className="mt-4 rounded-2xl border border-border/30 bg-background/70 p-4 shadow-inner">
+                    <p className="whitespace-pre-wrap text-sm font-mono leading-relaxed text-foreground/90">
+                      {trigger.config.agent_prompt}
+                    </p>
+                  </div>
+                )}
+
+                {trigger.config?.execution_type === 'workflow' && trigger.config.workflow_input && (
+                  <div className="mt-4 rounded-2xl border border-border/30 bg-background/70 p-4 shadow-inner">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground/80">
+                      Workflow input
+                    </p>
+                    <pre className="max-h-48 overflow-auto text-xs font-mono text-foreground/90">
+                      {JSON.stringify(trigger.config.workflow_input, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
+          </section>
 
-        {/* Execution Details */}
-        <div className="border rounded-lg p-6 bg-card">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="p-2 rounded-lg bg-muted">
-              {trigger.config?.execution_type === 'agent' ? (
-                <Sparkles className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <Activity className="h-5 w-5 text-muted-foreground" />
-              )}
-            </div>
-            <div className="flex-1">
-              <h3 className="font-medium text-foreground mb-1">
-                {trigger.config?.execution_type === 'agent' ? 'Agent Instructions' : 'Workflow Execution'}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {trigger.config?.execution_type === 'agent'
-                  ? 'Custom prompt for the agent'
-                  : `Runs workflow: ${workflowName || 'Unknown'}`
-                }
-              </p>
-            </div>
-          </div>
-
-          {trigger.config?.execution_type === 'agent' && trigger.config.agent_prompt && (
-            <div className="mt-4 p-4 rounded-lg bg-muted border">
-              <p className="text-sm font-mono text-foreground whitespace-pre-wrap leading-relaxed">
-                {trigger.config.agent_prompt}
-              </p>
-            </div>
-          )}
-
-          {trigger.config?.execution_type === 'workflow' && trigger.config.workflow_input && (
-            <div className="mt-4 p-4 rounded-lg bg-muted border">
-              <p className="text-xs text-muted-foreground mb-2 font-medium">Workflow Input:</p>
-              <pre className="text-xs font-mono text-foreground overflow-x-auto">
-                {JSON.stringify(trigger.config.workflow_input, null, 2)}
-              </pre>
-            </div>
-          )}
-        </div>
-
-        {/* Agent Info */}
-        <div className="border rounded-lg p-6 bg-card">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <AgentAvatar
-                agentId={trigger.agent_id}
-                size={40}
-                fallbackName={trigger.agent_name}
-              />
-              <div>
-                <h3 className="font-medium text-foreground">{trigger.agent_name || 'Unknown Agent'}</h3>
-                <p className="text-sm text-muted-foreground">Assigned Agent</p>
+          <section className={SECTION_CLASS}>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <AgentAvatar
+                  agentId={trigger.agent_id}
+                  size={44}
+                  fallbackName={trigger.agent_name}
+                />
+                <div>
+                  <h3 className="text-base font-semibold text-foreground">{trigger.agent_name || 'Unknown Agent'}</h3>
+                  <p className="text-sm text-muted-foreground/80">Assigned agent</p>
+                </div>
               </div>
+              <Link
+                href={`/agents/config/${trigger.agent_id}`}
+                className="rounded-xl border border-border/40 bg-background/70 p-2 text-muted-foreground transition-all hover:border-border/60 hover:bg-primary/10 hover:text-primary"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Link>
             </div>
-            <Link
-              href={`/agents/config/${trigger.agent_id}`}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
-            >
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </Link>
-          </div>
-        </div>
+          </section>
 
-        {/* Technical Details */}
-        <div className="border rounded-lg p-6 bg-card">
-          <h3 className="font-medium text-foreground mb-4">Technical Details</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b last:border-b-0">
-              <span className="text-sm text-muted-foreground">Type</span>
-              <span className="text-sm font-mono text-foreground">{trigger.trigger_type}</span>
+          <section className={SECTION_CLASS}>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground/80">Technical details</h3>
+            <div className="mt-4 space-y-3">
+              {[{
+                label: 'Type',
+                value: trigger.trigger_type
+              }, {
+                label: 'Provider',
+                value: trigger.provider_id
+              }, {
+                label: 'Created',
+                value: new Date(trigger.created_at).toLocaleDateString()
+              }, {
+                label: 'Last updated',
+                value: new Date(trigger.updated_at).toLocaleDateString()
+              }].map(({ label, value }) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between rounded-xl border border-border/20 bg-background/50 px-4 py-3 text-sm"
+                >
+                  <span className="text-muted-foreground/80">{label}</span>
+                  <span className="font-mono text-foreground/90">{value || '—'}</span>
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between items-center py-2 border-b last:border-b-0">
-              <span className="text-sm text-muted-foreground">Provider</span>
-              <span className="text-sm font-mono text-foreground">{trigger.provider_id}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b last:border-b-0">
-              <span className="text-sm text-muted-foreground">Created</span>
-              <span className="text-sm text-foreground">{new Date(trigger.created_at).toLocaleDateString()}</span>
-            </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="text-sm text-muted-foreground">Last Updated</span>
-              <span className="text-sm text-foreground">{new Date(trigger.updated_at).toLocaleDateString()}</span>
-            </div>
-          </div>
+          </section>
         </div>
       </div>
 
@@ -346,7 +371,7 @@ export function SimplifiedTriggerDetailPanel({ trigger, onClose }: SimplifiedTri
 
       {/* Delete Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="bg-background border">
+        <AlertDialogContent className="border border-border/60 bg-background/95 backdrop-blur">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-foreground font-medium">Delete Task</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">

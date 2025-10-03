@@ -934,4 +934,31 @@ async def create_trial_checkout(
         raise
     except Exception as e:
         logger.error(f"[TRIAL API ERROR] Unexpected error in trial checkout for account {account_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="An error occurred while processing your request") 
+        raise HTTPException(status_code=500, detail="An error occurred while processing your request")
+
+@router.post("/trial/start-without-payment")
+async def start_trial_without_payment(
+    account_id: str = Depends(verify_and_get_user_id_from_jwt)
+) -> Dict:
+    """
+    Start a trial without requiring payment details.
+    Grants trial credits directly to the account.
+    Security: Each account can only have ONE trial ever.
+    """
+    logger.info(f"[TRIAL API NO-PAYMENT] Trial start request (no payment) from account {account_id}")
+    
+    try:
+        result = await trial_service.start_trial_without_payment(account_id=account_id)
+        logger.info(f"[TRIAL API NO-PAYMENT SUCCESS] Trial activated for account {account_id}")
+        return result
+        
+    except HTTPException as e:
+        if e.status_code == 403:
+            logger.warning(f"[TRIAL API NO-PAYMENT SECURITY] Forbidden trial attempt for account {account_id}: {e.detail}")
+        else:
+            logger.info(f"[TRIAL API NO-PAYMENT] Trial start failed for account {account_id}: {e.detail}")
+        raise
+    except Exception as e:
+        logger.error(f"[TRIAL API NO-PAYMENT ERROR] Unexpected error activating trial for account {account_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="An error occurred while processing your request")
+ 

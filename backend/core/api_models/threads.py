@@ -27,3 +27,5 @@ class MessageCreateRequest(BaseModel):
     type: str
     content: str
     is_llm_message: bool = True
+    retry_of: Optional[str] = None  # Original root user message id to retry
+    idempotency_key: Optional[str] = None  # Prevent duplicate inserts on rapid retries

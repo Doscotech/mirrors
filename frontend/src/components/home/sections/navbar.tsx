@@ -116,7 +116,7 @@ export function Navbar() {
             'mx-auto max-w-7xl rounded-2xl transition-all duration-300 xl:px-0',
             hasScrolled
               ? 'px-2 md:px-2 border border-border backdrop-blur-lg bg-background/75'
-              : 'shadow-none px-3 md:px-7 bg-transparent',
+              : 'shadow-none px-3 md:px-7 bg-transparent border-none',
           )}
         >
           <div className="flex h-[56px] items-center p-2 md:p-4">

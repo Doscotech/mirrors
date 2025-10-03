@@ -689,8 +689,8 @@ class TriggerTool(AgentBuilderBaseTool):
                     description=f"{slug}"
                 )
             except Exception as e:
-                logger.error(f"Failed to create Suna trigger: {e}")
-                return self.fail_response(f"Failed to create Suna trigger: {str(e)}")
+                logger.error(f"Failed to create Xera trigger: {e}")
+                return self.fail_response(f"Failed to create Xera trigger: {str(e)}")
 
             # Sync triggers to version config
             try:

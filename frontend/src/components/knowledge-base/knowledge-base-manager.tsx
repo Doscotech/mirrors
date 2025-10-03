@@ -44,8 +44,12 @@ import { KBDeleteConfirmDialog } from './kb-delete-confirm-dialog';
 import { useKnowledgeFolders, type Folder, type Entry } from '@/hooks/react-query/knowledge-base/use-folders';
 import { FileNameValidator } from '@/lib/validation';
 import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+
+const PANEL_CLASS = 'rounded-3xl border border-border/60 bg-card/80/70 shadow-[0px_18px_48px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl';
+const SUBTLE_PANEL_CLASS = 'rounded-2xl border border-border/40 bg-muted/20';
 
 interface TreeItem {
     id: string;
@@ -831,72 +835,70 @@ export function KnowledgeBaseManager({
 
     if (foldersLoading || (enableAssignments && assignmentsLoading)) {
         return (
-            <div className="space-y-4">
+            <div className="space-y-6">
                 {showHeader && (
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <Skeleton className="h-6 w-32 mb-2" />
-                            <Skeleton className="h-4 w-48" />
+                    <div className={cn(PANEL_CLASS, 'px-6 py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between')}>
+                        <div className="flex flex-col gap-2">
+                            <Skeleton className="h-6 w-40" />
+                            <Skeleton className="h-4 w-56" />
                         </div>
-                        <Skeleton className="h-8 w-24" />
+                        <Skeleton className="h-9 w-32 rounded-2xl" />
                     </div>
                 )}
-                <div className="space-y-3">
-                    {/* Folder skeletons */}
-                    <div className="flex items-center gap-3 p-4 rounded-lg border border-border/30">
-                        <Skeleton className="h-4 w-4" /> {/* Chevron */}
-                        <Skeleton className="h-10 w-10 rounded-lg" /> {/* Folder icon */}
-                        <div className="flex-1 space-y-2">
-                            <Skeleton className="h-4 w-32" /> {/* Folder name */}
-                            <Skeleton className="h-3 w-20" /> {/* File count */}
-                        </div>
-                        {enableAssignments && <Skeleton className="h-5 w-9 rounded-full" />} {/* Assignment switch */}
-                        <Skeleton className="h-6 w-6" /> {/* Actions */}
-                    </div>
-                    
-                    {/* File skeletons (indented) */}
-                    <div className="ml-6 space-y-2">
-                        <div className="flex items-center gap-3 p-3 rounded-lg border border-border/20">
-                            <Skeleton className="h-9 w-9 rounded-lg" /> {/* File icon */}
-                            <div className="flex-1 space-y-1">
-                                <Skeleton className="h-4 w-40" /> {/* Filename */}
-                                <Skeleton className="h-3 w-24" /> {/* File size */}
-                            </div>
-                            {enableAssignments && <Skeleton className="h-5 w-9 rounded-full" />} {/* Assignment switch */}
-                            <Skeleton className="h-6 w-6" /> {/* Actions */}
-                        </div>
-                        <div className="flex items-center gap-3 p-3 rounded-lg border border-border/20">
-                            <Skeleton className="h-9 w-9 rounded-lg" />
-                            <div className="flex-1 space-y-1">
-                                <Skeleton className="h-4 w-36" />
-                                <Skeleton className="h-3 w-20" />
-                            </div>
-                            {enableAssignments && <Skeleton className="h-5 w-9 rounded-full" />}
-                            <Skeleton className="h-6 w-6" />
-                        </div>
-                    </div>
 
-                    {/* Another folder */}
-                    <div className="flex items-center gap-3 p-4 rounded-lg border border-border/30">
+                <div className={cn(PANEL_CLASS, 'px-4 sm:px-6 py-6 space-y-4')}>
+                    <div className="flex items-center gap-3 p-4 rounded-2xl border border-border/30 bg-card/60">
                         <Skeleton className="h-4 w-4" />
-                        <Skeleton className="h-10 w-10 rounded-lg" />
+                        <Skeleton className="h-10 w-10 rounded-2xl" />
                         <div className="flex-1 space-y-2">
-                            <Skeleton className="h-4 w-28" />
-                            <Skeleton className="h-3 w-16" />
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-3 w-28" />
                         </div>
-                        {enableAssignments && <Skeleton className="h-5 w-9 rounded-full" />}
-                        <Skeleton className="h-6 w-6" />
+                        {enableAssignments && <Skeleton className="h-5 w-10 rounded-full" />}
+                        <Skeleton className="h-6 w-6 rounded-lg" />
                     </div>
 
-                    <div className="ml-6 space-y-2">
-                        <div className="flex items-center gap-3 p-3 rounded-lg border border-border/20">
-                            <Skeleton className="h-9 w-9 rounded-lg" />
-                            <div className="flex-1 space-y-1">
+                    <div className="ml-6 space-y-3">
+                        <div className="flex items-center gap-3 p-4 rounded-2xl border border-border/20 bg-card/50">
+                            <Skeleton className="h-9 w-9 rounded-2xl" />
+                            <div className="flex-1 space-y-2">
                                 <Skeleton className="h-4 w-44" />
                                 <Skeleton className="h-3 w-28" />
                             </div>
-                            {enableAssignments && <Skeleton className="h-5 w-9 rounded-full" />}
-                            <Skeleton className="h-6 w-6" />
+                            {enableAssignments && <Skeleton className="h-5 w-10 rounded-full" />}
+                            <Skeleton className="h-6 w-6 rounded-lg" />
+                        </div>
+                        <div className="flex items-center gap-3 p-4 rounded-2xl border border-border/20 bg-card/50">
+                            <Skeleton className="h-9 w-9 rounded-2xl" />
+                            <div className="flex-1 space-y-2">
+                                <Skeleton className="h-4 w-36" />
+                                <Skeleton className="h-3 w-24" />
+                            </div>
+                            {enableAssignments && <Skeleton className="h-5 w-10 rounded-full" />}
+                            <Skeleton className="h-6 w-6 rounded-lg" />
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-4 rounded-2xl border border-border/30 bg-card/60">
+                        <Skeleton className="h-4 w-4" />
+                        <Skeleton className="h-10 w-10 rounded-2xl" />
+                        <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-36" />
+                            <Skeleton className="h-3 w-24" />
+                        </div>
+                        {enableAssignments && <Skeleton className="h-5 w-10 rounded-full" />}
+                        <Skeleton className="h-6 w-6 rounded-lg" />
+                    </div>
+
+                    <div className="ml-6 space-y-3">
+                        <div className="flex items-center gap-3 p-4 rounded-2xl border border-border/20 bg-card/50">
+                            <Skeleton className="h-9 w-9 rounded-2xl" />
+                            <div className="flex-1 space-y-2">
+                                <Skeleton className="h-4 w-48" />
+                                <Skeleton className="h-3 w-32" />
+                            </div>
+                            {enableAssignments && <Skeleton className="h-5 w-10 rounded-full" />}
+                            <Skeleton className="h-6 w-6 rounded-lg" />
                         </div>
                     </div>
                 </div>
@@ -909,12 +911,11 @@ export function KnowledgeBaseManager({
         : "Start building your knowledge base by creating folders and uploading files.";
 
     return (
-        <div className="space-y-4">
-            {/* Header Section */}
+        <div className="space-y-6">
             {showHeader && (
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h3 className="text-lg font-semibold">{headerTitle}</h3>
+                <div className={cn(PANEL_CLASS, 'px-6 py-5 flex flex-col gap-5 md:flex-row md:items-center md:justify-between')}>
+                    <div className="space-y-1.5">
+                        <h3 className="text-lg font-semibold text-foreground">{headerTitle}</h3>
                         <p className="text-sm text-muted-foreground">
                             {enableAssignments ? `Manage ${agentName}'s knowledge sources and access` : headerDescription}
                         </p>
@@ -928,7 +929,7 @@ export function KnowledgeBaseManager({
                             }
                         }}
                         trigger={
-                            <Button size="sm" className="gap-2">
+                            <Button size="sm" className="gap-2 rounded-xl shadow-[0_12px_24px_-18px_rgba(15,23,42,0.5)]">
                                 <PlusIcon className="h-4 w-4" />
                                 Add Knowledge
                             </Button>
@@ -937,105 +938,99 @@ export function KnowledgeBaseManager({
                 </div>
             )}
 
-            {/* Recent Files Section */}
             {showRecentFiles && recentFiles.length > 0 && (
-                <div className="mb-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-medium text-foreground">
-                            Recently Added
-                        </h3>
-                        <span className="text-xs text-muted-foreground">
+                <div className={cn(PANEL_CLASS, 'px-6 py-5 space-y-6')}>
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-base font-semibold text-foreground">Recently Added</h3>
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground/80">
                             {recentFiles.length} files
                         </span>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 mb-8">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                         {recentFiles.slice(0, 6).map((file) => {
                             const fileInfo = getFileTypeInfo(file.filename);
                             return (
-                                <div
+                                <button
+                                    type="button"
                                     key={file.entry_id}
-                                    className="group cursor-pointer"
+                                    className="group relative flex flex-col items-center gap-3 rounded-2xl border border-border/40 bg-card/80 px-4 py-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-border/70 hover:shadow-[0_16px_32px_-24px_rgba(15,23,42,0.65)]"
                                     onClick={() => setFilePreviewModal({
                                         isOpen: true,
-                                        file: file,
+                                        file,
                                     })}
                                 >
-                                    <div className="relative bg-muted/20 border border-border/50 rounded-lg p-4 transition-all duration-200 hover:bg-muted/30 hover:border-border">
-                                        <div className="flex flex-col items-center space-y-3">
-                                            <div className="relative">
-                                                <div className="w-12 h-12 bg-muted/80 rounded-lg flex items-center justify-center">
-                                                    <FileIcon className="h-6 w-6 text-foreground/60" />
-                                                </div>
-                                                <div className="absolute -bottom-1 -right-1 bg-background border border-border rounded px-1 py-0.5">
-                                                    <span className="text-[8px] font-medium text-muted-foreground uppercase">
-                                                        {fileInfo.extension.slice(0, 3)}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="text-center space-y-1 w-full">
-                                                <p className="text-xs font-medium text-foreground truncate" title={file.filename}>
-                                                    {file.filename.length > 12 ? `${file.filename.slice(0, 12)}...` : file.filename}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {formatDate(file.created_at)}
-                                                </p>
-                                            </div>
+                                    <div className="relative">
+                                        <div className="w-12 h-12 rounded-xl border border-border/50 bg-gradient-to-br from-muted/50 to-background flex items-center justify-center">
+                                            <FileIcon className="h-6 w-6 text-foreground/70" />
+                                        </div>
+                                        <div className="absolute -bottom-1 -right-1 rounded-md border border-border/60 bg-background/90 px-1.5 py-0.5">
+                                            <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">
+                                                {fileInfo.extension.slice(0, 3)}
+                                            </span>
                                         </div>
                                     </div>
-                                </div>
+                                    <div className="space-y-1 text-center w-full">
+                                        <p className="text-xs font-medium text-foreground truncate" title={file.filename}>
+                                            {file.filename.length > 18 ? `${file.filename.slice(0, 18)}…` : file.filename}
+                                        </p>
+                                        <p className="text-[11px] text-muted-foreground">
+                                            {formatDate(file.created_at)}
+                                        </p>
+                                    </div>
+                                </button>
                             );
                         })}
                     </div>
                 </div>
             )}
 
-            {/* Main Content */}
-            <div 
-                className="space-y-4"
-                style={{ maxHeight }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => e.preventDefault()}
-            >
-                {treeData.length === 0 ? (
-                    emptyStateContent ? emptyStateContent : (
-                        <div className="text-center py-12 px-6 bg-muted/30 rounded-xl border-2 border-dashed border-border">
-                            <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4 border">
-                                <FolderIcon className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                            <h4 className="text-sm font-semibold text-foreground mb-2">
-                                {enableAssignments ? "No knowledge base content available" : "Start Building Your Knowledge Base"}
-                            </h4>
-                            <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-                                {emptyStateMessage || defaultEmptyMessage}
-                            </p>
-                            <UnifiedKbEntryModal
-                                folders={folders}
-                                onUploadComplete={() => {
-                                    refetchFolders();
-                                    if (enableAssignments) {
-                                        loadAssignments();
+            <div className={cn(PANEL_CLASS, 'px-3 sm:px-5 md:px-6 py-6')}>
+                <div
+                    className="space-y-4"
+                    style={{ maxHeight }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => e.preventDefault()}
+                >
+                    {treeData.length === 0 ? (
+                        emptyStateContent ? emptyStateContent : (
+                            <div className="text-center py-12 px-6 border border-dashed border-border/50 rounded-3xl bg-card/60 backdrop-blur-lg">
+                                <div className="mx-auto w-12 h-12 bg-muted/40 rounded-full flex items-center justify-center mb-4 border border-border/60">
+                                    <FolderIcon className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                                <h4 className="text-sm font-semibold text-foreground mb-2">
+                                    {enableAssignments ? "No knowledge base content available" : "Start Building Your Knowledge Base"}
+                                </h4>
+                                <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+                                    {emptyStateMessage || defaultEmptyMessage}
+                                </p>
+                                <UnifiedKbEntryModal
+                                    folders={folders}
+                                    onUploadComplete={() => {
+                                        refetchFolders();
+                                        if (enableAssignments) {
+                                            loadAssignments();
+                                        }
+                                    }}
+                                    trigger={
+                                        <Button size="sm" className="gap-2 rounded-xl shadow-[0_12px_24px_-18px_rgba(15,23,42,0.5)]">
+                                            <PlusIcon className="h-4 w-4" />
+                                            Add Knowledge
+                                        </Button>
                                     }
-                                }}
-                                trigger={
-                                    <Button size="sm" className="gap-2">
-                                        <PlusIcon className="h-4 w-4" />
-                                        Add Knowledge
-                                    </Button>
-                                }
-                            />
-                        </div>
-                    )
-                ) : (
-                    <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                    >
-                        <SortableContext
-                            items={[]}
-                            strategy={verticalListSortingStrategy}
+                                />
+                            </div>
+                        )
+                    ) : (
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
                         >
+                            <SortableContext
+                                items={treeData.map((item) => item.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
                             <div className="space-y-3">
                                 {treeData.map((item) => {
                                     // Build assignments for assignment mode
@@ -1101,41 +1096,42 @@ export function KnowledgeBaseManager({
                                     );
                                 })}
                             </div>
-                        </SortableContext>
+                            </SortableContext>
 
-                        <DragOverlay>
-                            {activeId ? (() => {
-                                const findActiveItem = (items: TreeItem[]): TreeItem | null => {
-                                    for (const item of items) {
-                                        if (item.id === activeId) return item;
-                                        if (item.children) {
-                                            const found = findActiveItem(item.children);
-                                            if (found) return found;
+                            <DragOverlay>
+                                {activeId ? (() => {
+                                    const findActiveItem = (items: TreeItem[]): TreeItem | null => {
+                                        for (const item of items) {
+                                            if (item.id === activeId) return item;
+                                            if (item.children) {
+                                                const found = findActiveItem(item.children);
+                                                if (found) return found;
+                                            }
                                         }
-                                    }
-                                    return null;
-                                };
+                                        return null;
+                                    };
 
-                                const activeItem = findActiveItem(treeData);
+                                    const activeItem = findActiveItem(treeData);
 
-                                if (activeItem?.type === 'file') {
-                                    return <FileDragOverlay item={activeItem} />;
-                                } else {
-                                    return (
-                                        <div className="bg-background border rounded-lg p-3">
-                                            <div className="flex items-center gap-2">
-                                                <FolderIcon className="h-4 w-4" />
-                                                <span className="font-medium text-sm">
-                                                    {activeItem?.name}
-                                                </span>
+                                    if (activeItem?.type === 'file') {
+                                        return <FileDragOverlay item={activeItem} />;
+                                    } else {
+                                        return (
+                                            <div className="bg-background border rounded-lg p-3">
+                                                <div className="flex items-center gap-2">
+                                                    <FolderIcon className="h-4 w-4" />
+                                                    <span className="font-medium text-sm">
+                                                        {activeItem?.name}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                }
-                            })() : null}
-                        </DragOverlay>
-                    </DndContext>
-                )}
+                                        );
+                                    }
+                                })() : null}
+                            </DragOverlay>
+                        </DndContext>
+                    )}
+                </div>
             </div>
 
             {/* Modals */}

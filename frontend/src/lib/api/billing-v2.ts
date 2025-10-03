@@ -296,6 +296,21 @@ export const billingApiV2 = {
     );
     if (response.error) throw response.error;
     return response.data!;
+  },
+
+  async startTrialWithoutPayment() {
+    const response = await backendApi.post<{
+      success: boolean;
+      message: string;
+      credits_granted: number;
+      trial_ends_at: string;
+      tier: string;
+    }>(
+      '/billing/trial/start-without-payment',
+      {}
+    );
+    if (response.error) throw response.error;
+    return response.data!;
   }
 };
 
@@ -320,4 +335,5 @@ export const getTrialStatus = () => billingApiV2.getTrialStatus();
 export const startTrial = (request: TrialStartRequest) => billingApiV2.startTrial(request);
 export const createTrialCheckout = (request: TrialCheckoutRequest) => 
   billingApiV2.createTrialCheckout(request);
-export const cancelTrial = () => billingApiV2.cancelTrial(); 
+export const cancelTrial = () => billingApiV2.cancelTrial();
+export const startTrialWithoutPayment = () => billingApiV2.startTrialWithoutPayment(); 

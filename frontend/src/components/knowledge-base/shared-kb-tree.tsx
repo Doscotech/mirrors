@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 import {
     FolderIcon,
     FileIcon,
@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
     useDroppable,
-    DragOverlay,
     useDraggable,
 } from '@dnd-kit/core';
 
@@ -208,17 +207,21 @@ export function SharedTreeItem({
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     };
 
+    const fileIndentation = Math.max(level, 1) * 24 + 24;
+
     return (
         <div ref={combinedRef} style={style} className="select-none my-2">
             {item.type === 'folder' ? (
                 <div>
                     {/* Folder Row - Using div instead of button to avoid nesting */}
                     <div
-                        className={`group flex items-center w-full text-sm h-auto px-4 py-4 rounded-lg transition-all duration-200 cursor-pointer border border-transparent ${(isOver && enableDnd) || isDragOverNative
-                            ? 'bg-primary/5 border-primary/20 border-dashed'
-                            : 'hover:bg-muted/30 hover:border-border/50'
-                            }`}
-
+                        className={cn(
+                            'group relative flex w-full items-center gap-4 rounded-2xl border px-5 py-4 text-sm transition-all duration-300 cursor-pointer backdrop-blur-lg',
+                            itemIsMoving
+                                ? 'cursor-not-allowed border-border/40 bg-muted/20 opacity-60'
+                                : 'border-border/50 bg-card/80 shadow-[0_18px_36px_-28px_rgba(15,23,42,0.6)] hover:-translate-y-0.5 hover:border-border/60 hover:shadow-[0_24px_48px_-32px_rgba(15,23,42,0.65)]',
+                            ((isOver && enableDnd) || isDragOverNative) && 'border-dashed border-primary/40 bg-primary/10 ring-1 ring-primary/30 hover:shadow-none'
+                        )}
                         onClick={() => onExpand(item.id)}
                         onDragOver={handleNativeDragOver}
                         onDragLeave={handleNativeDragLeave}
@@ -231,12 +234,12 @@ export function SharedTreeItem({
                         }
 
                         {/* Folder Icon */}
-                        <div className="w-10 h-10 mr-4 bg-muted border border-border/50 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-muted/80 transition-all duration-200">
-                            <FolderIcon className="h-5 w-5 text-foreground/70" />
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-gradient-to-br from-muted/40 via-muted/20 to-background text-foreground/70 shadow-[0_16px_32px_-36px_rgba(15,23,42,0.8)] transition-all duration-300 group-hover:border-border/40 group-hover:shadow-[0_14px_32px_-24px_rgba(15,23,42,0.6)]">
+                            <FolderIcon className="h-5 w-5" />
                         </div>
 
                         {/* Folder Name */}
-                        <div className="flex-1 text-left min-w-0">
+                        <div className="min-w-0 flex-1 text-left">
                             {enableEdit && editingFolder === item.id ? (
                                 <div>
                                     <Input
@@ -266,22 +269,20 @@ export function SharedTreeItem({
                                 </div>
                             ) : (
                                 <div className="space-y-1">
-                                    <div className="font-semibold text-foreground truncate text-sm">{item.name}</div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="truncate text-sm font-semibold text-foreground">{item.name}</div>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground/80">
                                         {uploadStatus?.isUploading ? (
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1.5 text-primary">
                                                 <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                                                <span className="text-xs text-muted-foreground">
+                                                <span>
                                                     Uploading {uploadStatus.currentFile}... ({uploadStatus.completedFiles || 0}/{uploadStatus.totalFiles || 0})
                                                 </span>
                                             </div>
                                         ) : (
                                             <>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {item.data?.entry_count || 0} files
-                                                </span>
-                                                <span className="text-xs text-muted-foreground/50">•</span>
-                                                <span className="text-xs text-muted-foreground">
+                                                <span>{item.data?.entry_count || 0} files</span>
+                                                <span className="text-muted-foreground/50">•</span>
+                                                <span>
                                                     Click to {item.expanded ? 'collapse' : 'expand'}
                                                 </span>
                                             </>
@@ -293,7 +294,7 @@ export function SharedTreeItem({
 
                         {/* Assignment Switch */}
                         {enableAssignment && (
-                            <div className="relative shrink-0">
+                            <div className="relative shrink-0 rounded-full border border-border/30 bg-background/60 px-3 py-2 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.5)]">
                                 <Switch
                                     checked={assignments?.[item.id] || false}
                                     onCheckedChange={() => onToggleAssignment?.(item.id)}
@@ -318,7 +319,7 @@ export function SharedTreeItem({
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <button
-                                        className="h-6 w-6 p-0 ml-2 shrink-0 inline-flex items-center justify-center rounded-lg hover:bg-accent"
+                                        className="ml-2 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-xl border border-transparent transition-colors hover:border-border/40 hover:bg-muted/30"
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <MoreVerticalIcon className="h-3.5 w-3.5" />
@@ -356,7 +357,10 @@ export function SharedTreeItem({
                     {item.expanded && (
                         <div className="flex flex-col">
                             {isLoadingEntries ? (
-                                <div className="flex items-center gap-3 px-4 py-4 text-sm text-muted-foreground bg-muted/20 rounded-lg mx-4 mb-2" style={{ paddingLeft: `${level * 20 + 32}px` }}>
+                                <div
+                                    className="mx-4 mb-2 flex items-center gap-3 rounded-2xl border border-border/40 bg-card/70 px-5 py-4 text-sm text-muted-foreground/80 backdrop-blur-md"
+                                    style={{ paddingLeft: `${Math.max(level + 1, 1) * 24 + 24}px` }}
+                                >
                                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
                                     <span>Loading files...</span>
                                 </div>
@@ -388,7 +392,10 @@ export function SharedTreeItem({
                                     />
                                 ))
                             ) : (
-                                <div className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground bg-muted/10 rounded-lg mx-4 mb-2" style={{ paddingLeft: `${level * 20 + 32}px` }}>
+                                <div
+                                    className="mx-4 mb-2 flex items-center gap-2 rounded-2xl border border-dashed border-border/40 bg-muted/10 px-5 py-4 text-sm text-muted-foreground/80 backdrop-blur"
+                                    style={{ paddingLeft: `${Math.max(level + 1, 1) * 24 + 24}px` }}
+                                >
                                     <span>No files in this folder</span>
                                 </div>
                             )}
@@ -398,14 +405,16 @@ export function SharedTreeItem({
             ) : (
                 /* File Row - Using div instead of button to avoid nesting */
                 <div
-                    ref={combinedRef}
-                    className={`group flex items-center w-full text-sm h-auto px-4 py-3 rounded-lg transition-all duration-200 border border-transparent ${itemIsMoving
-                            ? 'opacity-60 cursor-not-allowed bg-muted/30'
-                            : 'hover:bg-muted/30 hover:border-border/50 cursor-pointer'
-                        } ${isDragging ? 'opacity-50' : ''}`}
+                    className={cn(
+                        'group relative flex w-full items-center gap-4 rounded-2xl border px-5 py-4 text-sm transition-all duration-300 cursor-pointer backdrop-blur-lg',
+                        itemIsMoving
+                            ? 'cursor-not-allowed border-border/40 bg-muted/20 opacity-60'
+                            : 'border-border/40 bg-background/70 shadow-[0_18px_32px_-28px_rgba(15,23,42,0.55)] hover:-translate-y-0.5 hover:border-border/60 hover:shadow-[0_22px_44px_-32px_rgba(15,23,42,0.6)]',
+                        isDragging && 'opacity-40 shadow-none'
+                    )}
                     style={{
-                        paddingLeft: ``,
-                        ...style
+                        paddingLeft: `${fileIndentation}px`,
+                        ...style,
                     }}
                     onClick={() => {
                         // Don't allow clicks when moving
@@ -418,7 +427,7 @@ export function SharedTreeItem({
                     {/* Drag Handle - Only visible on hover and only when DND is enabled for files */}
                     {enableDnd && item.type === 'file' && !itemIsMoving && (
                         <div
-                            className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-1 ml-1"
+                            className="ml-1 rounded-lg border border-transparent p-1 opacity-0 transition-all duration-200 group-hover:border-border/40 group-hover:bg-muted/30 group-hover:opacity-100"
                             {...attributes}
                             {...listeners}
                         >
@@ -426,29 +435,25 @@ export function SharedTreeItem({
                         </div>
                     )}
                     {/* File Icon */}
-                    <div className="w-9 h-9 mr-3 bg-muted/50 border border-border/50 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-muted transition-all duration-200">
-                        <FileIcon className="h-4 w-4 text-foreground/70" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-gradient-to-br from-muted/50 via-muted/20 to-background text-foreground/70 shadow-[0_14px_28px_-32px_rgba(15,23,42,0.7)] transition-all duration-300 group-hover:border-border/40 group-hover:shadow-[0_18px_36px_-30px_rgba(15,23,42,0.65)]">
+                        <FileIcon className="h-4 w-4" />
                     </div>
 
 
                     {/* File Details */}
-                    <div className="flex-1 text-left min-w-0 space-y-1">
-                        <div className="font-semibold text-foreground truncate text-sm">{item.name}</div>
-                        <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1 space-y-1 text-left">
+                        <div className="truncate text-sm font-semibold text-foreground">{item.name}</div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground/80">
                             {itemIsMoving ? (
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 text-primary">
                                     <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                                    <span className="text-xs text-muted-foreground">Moving...</span>
+                                    <span>Moving...</span>
                                 </div>
                             ) : (
                                 <>
-                                    <span className="text-xs text-muted-foreground">
-                                        {formatFileSize(item.data?.file_size || 0)}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground/50">•</span>
-                                    <span className="text-xs text-muted-foreground">
-                                        Click to edit summary
-                                    </span>
+                                    <span>{formatFileSize(item.data?.file_size || 0)}</span>
+                                    <span className="text-muted-foreground/50">•</span>
+                                    <span>Click to edit summary</span>
                                 </>
                             )}
                         </div>
@@ -456,12 +461,14 @@ export function SharedTreeItem({
 
                     {/* Assignment Switch for Files */}
                     {enableAssignment && (
-                        <Switch
-                            checked={assignments?.[item.id] || false}
-                            onCheckedChange={() => onToggleAssignment?.(item.id)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="shrink-0"
-                        />
+                        <div className="rounded-full border border-border/30 bg-background/60 px-3 py-2 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.5)]">
+                            <Switch
+                                checked={assignments?.[item.id] || false}
+                                onCheckedChange={() => onToggleAssignment?.(item.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="shrink-0"
+                            />
+                        </div>
                     )}
 
 
@@ -471,7 +478,7 @@ export function SharedTreeItem({
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <button
-                                    className="h-6 w-6 p-0 ml-2 shrink-0 inline-flex items-center justify-center rounded-lg hover:bg-accent"
+                                    className="ml-2 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-xl border border-transparent transition-colors hover:border-border/40 hover:bg-muted/30"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <MoreVerticalIcon className="h-3.5 w-3.5" />
@@ -517,16 +524,16 @@ export function FileDragOverlay({ item }: { item: TreeItem }) {
     };
 
     return (
-        <div className="flex items-center w-full text-sm h-8 px-3 py-5 rounded-md bg-accent text-accent-foreground border shadow-lg">
+        <div className="flex w-full items-center gap-4 rounded-2xl border border-border/40 bg-background/80 px-5 py-4 text-sm text-foreground shadow-[0_24px_48px_-28px_rgba(15,23,42,0.55)] backdrop-blur-xl">
             {/* File Icon */}
-            <div className="w-8 h-8 mr-3 bg-background border border-border rounded-md flex items-center justify-center shrink-0">
-                <FileIcon className="h-4 w-4 text-foreground/60" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-gradient-to-br from-muted/50 via-muted/20 to-background text-foreground/70">
+                <FileIcon className="h-4 w-4" />
             </div>
 
             {/* File Details */}
-            <div className="flex-1 text-left min-w-0">
-                <div className="font-medium truncate">{item.name}</div>
-                <div className="text-xs text-muted-foreground">
+            <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">{item.name}</div>
+                <div className="text-xs text-muted-foreground/80">
                     {formatFileSize(item.data?.file_size || 0)}
                 </div>
             </div>

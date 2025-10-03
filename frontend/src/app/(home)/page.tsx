@@ -17,8 +17,6 @@ import { FAQSection } from '@/components/home/sections/faq-section';
 import { AgentShowcaseSection } from '@/components/home/sections/agent-showcase-section';
 import { ResponsiveMockupSection } from '@/components/home/sections/responsive-mockup-section';
 import { DeliverablesSection } from '@/components/home/sections/deliverables-section';
-import { CapabilitiesSection } from '@/components/home/sections/capabilities-section';
-import { OpenSourceSection } from '@/components/home/sections/open-source-section';
 
 export default function Home() {
   return (
@@ -28,9 +26,7 @@ export default function Home() {
         <main className="flex flex-col items-center justify-center min-h-screen w-full">
           <div className="w-full divide-y divide-border">
             <HeroSection />
-            <CapabilitiesSection />
             <BentoSection />
-            <OpenSourceSection />
             <PricingSection />
             <TestimonialSection />
             <FAQSection />

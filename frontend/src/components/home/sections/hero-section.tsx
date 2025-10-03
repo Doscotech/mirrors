@@ -11,10 +11,20 @@ import { BillingErrorAlert } from '@/components/billing/usage-limit-alert';
 import { useBillingError } from '@/hooks/useBillingError';
 import { useAccounts } from '@/hooks/use-accounts';
 import { BillingModal } from '@/components/billing/billing-modal';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { UnicornBackground } from './unicorn-background';
 import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 // Xera typography uses global utilities defined in globals.css
+
+const USE_CASES = [
+  'Creating Professional Documents',
+  'Graphic Design & Visuals',
+  'Building Stunning Presentations',
+  'Research',
+  'Data Analysis',
+  'Managed Workflows',
+  'Autonomous Work',
+];
 
 export function HeroSection() {
   const { hero } = siteConfig;
@@ -24,9 +34,18 @@ export function HeroSection() {
   const { data: accounts } = useAccounts({ enabled: !!user });
   const personalAccount = accounts?.find((account) => account.personal_account);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [currentUseCaseIndex, setCurrentUseCaseIndex] = useState(0);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentUseCaseIndex((prev) => (prev + 1) % USE_CASES.length);
+    }, 3000); // Change every 3 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const [isShortScreen, setIsShortScreen] = useState(false);
@@ -107,9 +126,24 @@ export function HeroSection() {
               transition={{ duration: 0.6, ease: "easeOut" }}
               style={{ willChange: "opacity, filter", transform: "translateZ(0)" }}
             >
-              Xera for
+              Xera
               <br />
-              <span className="xera-accent xera-accent-lg xera-accent-primary ml-1">Autonomous Work</span>
+              for
+              <br />
+              <span className="relative inline-flex items-center justify-center min-h-[1.2em] w-full">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={currentUseCaseIndex}
+                    className="xera-accent xera-accent-lg xera-accent-primary absolute whitespace-nowrap"
+                    initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, y: -20, filter: "blur(8px)" }}
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                  >
+                    {USE_CASES[currentUseCaseIndex]}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
             </motion.h1>
 
             <motion.p

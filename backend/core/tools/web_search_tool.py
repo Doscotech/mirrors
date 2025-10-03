@@ -161,7 +161,7 @@ class SandboxWebSearchTool(SandboxToolsBase):
     @usage_example('''
         <function_calls>
         <invoke name="scrape_webpage">
-        <parameter name="urls">https://www.kortix.ai/,https://github.com/kortix-ai/suna</parameter>
+        <parameter name="urls">https://www.xera.cc/</parameter>
         </invoke>
         </function_calls>
         

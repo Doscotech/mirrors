@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getTrialStatus, startTrial } from '@/lib/api/billing-v2';
+import { getTrialStatus, startTrial, startTrialWithoutPayment } from '@/lib/api/billing-v2';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -27,6 +27,27 @@ export function useStartTrial() {
         toast.error('You have already used your free trial');
       } else {
         toast.error('Failed to start trial. Please try again.');
+      }
+    },
+  });
+}
+
+export function useStartTrialWithoutPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: startTrialWithoutPayment,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['trial-status'] });
+      queryClient.invalidateQueries({ queryKey: ['billing-status'] });
+      queryClient.invalidateQueries({ queryKey: ['credit-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['billing', 'subscription'] });
+      toast.success(`Trial started! You received $${data.credits_granted} in credits`);
+    },
+    onError: (error: any) => {
+      if (error?.message?.includes('already used')) {
+        toast.error('You have already used your free trial');
+      } else {
+        toast.error(error?.message || 'Failed to start trial. Please try again.');
       }
     },
   });

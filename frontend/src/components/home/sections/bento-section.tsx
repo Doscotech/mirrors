@@ -9,21 +9,21 @@ export function BentoSection() {
     {
       id: 1,
       content: <FirstBentoAnimation />,
-      title: 'Design with conversation',
+      title: 'Describe your needs',
       description:
         'Simply describe what you need your agent to accomplish, and Xera will build it for you.',
     },
     {
       id: 2,
       content: <SecondBentoAnimation />,
-      title: 'Integrate everything',
+      title: 'Connect 100s of tools',
       description:
         'Connect to your favorite tools and services with our extensive library of integrations.',
     },
     {
       id: 3,
       content: <ThirdBentoAnimation />,
-      title: 'Automate intelligently',
+      title: 'Deploy and personalize',
       description:
         'Watch your agent handle complex tasks and workflows with advanced AI reasoning.',
     },

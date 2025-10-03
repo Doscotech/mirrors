@@ -30,12 +30,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { TriggerProvider, ScheduleTriggerConfig } from '../types';
 import { useAgentWorkflows } from '@/hooks/react-query/agents/use-agent-workflows';
-import { AgentSelectionDropdown } from '@/components/agents/agent-selection-dropdown';
+import { AgentSelector } from '@/components/agents/agent-selector';
 
 interface SimplifiedScheduleConfigProps {
   provider: TriggerProvider;
@@ -54,6 +53,7 @@ interface SimplifiedScheduleConfigProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave?: (data: { name: string; description: string; config: ScheduleTriggerConfig; is_active: boolean }) => void;
+  isEditMode?: boolean;
 }
 
 interface SchedulePreset {
@@ -316,7 +316,8 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
   onAgentSelect,
   open,
   onOpenChange,
-  onSave
+  onSave,
+  isEditMode = false
 }) => {
   const [currentStep, setCurrentStep] = useState<'setup' | 'schedule' | 'execute'>('setup');
   const [selectedPreset, setSelectedPreset] = useState<string>('');
@@ -333,7 +334,7 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
   const [selectedMonthDays, setSelectedMonthDays] = useState<string[]>(['1']);
 
   // One-time schedule state
-  const [oneTimeDate, setOneTimeDate] = useState<Date | undefined>(new Date());
+  const [oneTimeDate, setOneTimeDate] = useState<Date | undefined>(undefined);
   const [oneTimeHour, setOneTimeHour] = useState<string>('9');
   const [oneTimeMinute, setOneTimeMinute] = useState<string>('0');
 
@@ -347,11 +348,7 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
   }, [config.cron_expression]);
 
   // Update cron when recurring settings change
-  useEffect(() => {
-    if (!selectedPreset) { // Only auto-generate if no preset is selected
-      handleRecurringScheduleChange();
-    }
-  }, [scheduleType, selectedHour, selectedMinute, selectedWeekdays, selectedMonthDays]);
+  // Removed auto-generation to prevent interference with preset selections
 
   // Update cron when one-time settings change
   useEffect(() => {
@@ -359,6 +356,13 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
       handleOneTimeScheduleChange();
     }
   }, [oneTimeDate, oneTimeHour, oneTimeMinute]);
+
+  // Initialize recurring schedule on component mount if no preset is selected
+  useEffect(() => {
+    if (!selectedPreset && !config.cron_expression) {
+      handleRecurringScheduleChange();
+    }
+  }, []);
 
   const handlePresetSelect = (presetId: string) => {
     const allPresets = [...QUICK_PRESETS, ...RECURRING_PRESETS];
@@ -387,17 +391,17 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
   };
 
   const generateCronFromRecurring = () => {
-    const minute = selectedMinute;
-    const hour = selectedHour;
+    const minute = selectedMinute || '0';
+    const hour = selectedHour || '9';
 
     switch (scheduleType) {
       case 'daily':
         return `${minute} ${hour} * * *`;
       case 'weekly':
-        const weekdays = selectedWeekdays.join(',');
+        const weekdays = selectedWeekdays.length > 0 ? selectedWeekdays.join(',') : '1';
         return `${minute} ${hour} * * ${weekdays}`;
       case 'monthly':
-        const monthDays = selectedMonthDays.join(',');
+        const monthDays = selectedMonthDays.length > 0 ? selectedMonthDays.join(',') : '1';
         return `${minute} ${hour} ${monthDays} * *`;
       default:
         return `${minute} ${hour} * * *`;
@@ -406,26 +410,46 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
 
   const handleRecurringScheduleChange = () => {
     const cronExpression = generateCronFromRecurring();
+    console.log('Generated cron expression:', cronExpression, {
+      scheduleType,
+      selectedHour,
+      selectedMinute,
+      selectedWeekdays,
+      selectedMonthDays
+    });
     onChange({
       ...config,
       cron_expression: cronExpression,
       timezone: timezone
     });
-    setSelectedPreset(''); // Clear preset selection when using custom recurring
+    // Only clear preset if we're generating a different cron than what's currently set
+    if (cronExpression !== config.cron_expression) {
+      setSelectedPreset(''); // Clear preset selection when using custom recurring
+    }
   };
 
   const handleWeekdayToggle = (weekday: string) => {
     const newWeekdays = selectedWeekdays.includes(weekday)
       ? selectedWeekdays.filter(w => w !== weekday)
       : [...selectedWeekdays, weekday].sort();
-    setSelectedWeekdays(newWeekdays);
+    
+    // Prevent deselecting all weekdays (must have at least one)
+    if (newWeekdays.length > 0) {
+      setSelectedWeekdays(newWeekdays);
+      setTimeout(() => handleRecurringScheduleChange(), 0);
+    }
   };
 
   const handleMonthDayToggle = (day: string) => {
     const newDays = selectedMonthDays.includes(day)
       ? selectedMonthDays.filter(d => d !== day)
       : [...selectedMonthDays, day].sort((a, b) => parseInt(a) - parseInt(b));
-    setSelectedMonthDays(newDays);
+    
+    // Prevent deselecting all month days (must have at least one)
+    if (newDays.length > 0) {
+      setSelectedMonthDays(newDays);
+      setTimeout(() => handleRecurringScheduleChange(), 0);
+    }
   };
 
   const generateCronFromOneTime = () => {
@@ -480,7 +504,7 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
     <div className="flex flex-col h-full max-h-[90vh]">
       <div className="shrink-0 px-6 py-4 border-b">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold">Create Scheduled Task</h2>
+          <h2 className="text-lg font-semibold">{isEditMode ? 'Edit Scheduled Task' : 'Create Scheduled Task'}</h2>
         </div>
       </div>
       <ProgressStepper currentStep={currentStep} />
@@ -512,7 +536,7 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
                       </div>
                       <div className="space-y-2">
                         <Label>Agent</Label>
-                        <AgentSelectionDropdown
+                        <AgentSelector
                           selectedAgentId={selectedAgent}
                           onAgentSelect={onAgentSelect}
                           placeholder="Choose an agent to handle this task"
@@ -658,7 +682,18 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
                           {/* Schedule Type */}
                           <div className="space-y-2">
                             <Label className="text-sm">How often should this run?</Label>
-                            <Select value={scheduleType} onValueChange={(value: 'daily' | 'weekly' | 'monthly') => setScheduleType(value)}>
+                            <Select value={scheduleType} onValueChange={(value: 'daily' | 'weekly' | 'monthly') => {
+                              setScheduleType(value);
+                              // Set appropriate defaults for the schedule type
+                              if (value === 'weekly' && selectedWeekdays.length === 5) {
+                                // If switching to weekly and currently have weekdays selected, set to just Monday
+                                setSelectedWeekdays(['1']);
+                              } else if (value === 'monthly' && selectedMonthDays.length !== 1) {
+                                // If switching to monthly, set to first day of month
+                                setSelectedMonthDays(['1']);
+                              }
+                              setTimeout(() => handleRecurringScheduleChange(), 0);
+                            }}>
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
@@ -674,7 +709,10 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
                           <div className="space-y-2">
                             <Label className="text-sm">What time should it run?</Label>
                             <div className="flex gap-2 items-center">
-                              <Select value={selectedHour} onValueChange={setSelectedHour}>
+                              <Select value={selectedHour} onValueChange={(value) => {
+                                setSelectedHour(value);
+                                setTimeout(() => handleRecurringScheduleChange(), 0);
+                              }}>
                                 <SelectTrigger className="w-20">
                                   <SelectValue />
                                 </SelectTrigger>
@@ -687,7 +725,10 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
                                 </SelectContent>
                               </Select>
                               <span className="text-muted-foreground">:</span>
-                              <Select value={selectedMinute} onValueChange={setSelectedMinute}>
+                              <Select value={selectedMinute} onValueChange={(value) => {
+                                setSelectedMinute(value);
+                                setTimeout(() => handleRecurringScheduleChange(), 0);
+                              }}>
                                 <SelectTrigger className="w-20">
                                   <SelectValue />
                                 </SelectTrigger>
@@ -1137,7 +1178,7 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
                     }
                     size="sm"
                   >
-                    Create Scheduled Task
+                    {isEditMode ? 'Update Scheduled Task' : 'Create Scheduled Task'}
                     <Sparkles className="h-3 w-3 ml-2" />
                   </Button>
                 </div>
@@ -1149,20 +1190,15 @@ export const SimplifiedScheduleConfig: React.FC<SimplifiedScheduleConfigProps> =
     </div>
   );
 
-  // If open is true, render as standalone dialog
-  if (open) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-          <VisuallyHidden>
-            <DialogTitle>Create Scheduled Task</DialogTitle>
-          </VisuallyHidden>
-          {renderContent()}
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  // Otherwise, just return the content (for use inside TriggerConfigDialog)
-  return renderContent();
+  // Always render as dialog
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+        <VisuallyHidden>
+          <DialogTitle>{isEditMode ? 'Edit Scheduled Task' : 'Create Scheduled Task'}</DialogTitle>
+        </VisuallyHidden>
+        {renderContent()}
+      </DialogContent>
+    </Dialog>
+  );
 };

@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { AgentModelSelector } from '@/components/agents/config/model-selector';
-import { useModelSelection } from '@/components/thread/chat-input/_use-model-selection-new';
-import { AgentSelectionDropdown } from '@/components/agents/agent-selection-dropdown';
+import { useModelSelection } from '@/hooks/use-model-selection';
+import { AgentSelector } from '@/components/agents/agent-selector';
 import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 
 interface ModelSelectorBarProps {
@@ -20,7 +20,7 @@ export const ModelSelectorBar: React.FC<ModelSelectorBarProps> = ({ className })
         <div className="py-2 flex items-center gap-2">
           {/* Agent selector moved here to sit next to model selector */}
           <div className="min-w-[200px]">
-            <AgentSelectionDropdown
+            <AgentSelector
               selectedAgentId={selectedAgentId}
               onAgentSelect={(id) => setSelectedAgent(id)}
               variant="compact"

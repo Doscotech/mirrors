@@ -7,7 +7,12 @@ import React, {
   useState,
 } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BillingError, AgentRunLimitError, ModelUnavailableError } from '@/lib/api';
+import {
+  BillingError,
+  AgentRunLimitError,
+  ProjectLimitError,
+  ModelUnavailableError,
+} from '@/lib/api';
 import { toast } from 'sonner';
 import { ChatInput } from '@/components/thread/chat-input/chat-input';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -23,7 +28,7 @@ import {
   useStopAgentMutation,
 } from '@/hooks/react-query/threads/use-agent-run';
 import { useSharedSubscription } from '@/contexts/SubscriptionContext';
-import { SubscriptionStatus } from '@/components/thread/chat-input/_use-model-selection';
+export type SubscriptionStatus = 'no_subscription' | 'active';
 
 import { UnifiedMessage } from '@/components/thread/types';
 import {
@@ -108,6 +113,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
   // Watchdog timer ref for agent startup
   const startupWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPendingUserMessageIdRef = useRef<string | null>(null);
+  const lastStreamStartedRef = useRef<string | null>(null); // Track last runId we started streaming for
 
   // Sidebar
   const { state: leftSidebarState, setOpen: setLeftSidebarOpen } = useSidebar();
@@ -413,7 +419,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
   const handleSubmitMessage = useCallback(
     async (
       message: string,
-      options?: { model_name?: string; enable_thinking?: boolean },
+      options?: { model_name?: string },
     ) => {
       if (!message.trim()) return;
       setIsSending(true);
@@ -509,11 +515,47 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
             return;
           }
 
+          if (error instanceof ProjectLimitError) {
+            setBillingData({
+              currentUsage:
+                typeof error.detail.current_count === 'number'
+                  ? error.detail.current_count
+                  : undefined,
+              limit:
+                typeof error.detail.limit === 'number'
+                  ? error.detail.limit
+                  : undefined,
+              message:
+                error.detail.message ||
+                `You've reached your project limit (${error.detail.current_count}/${error.detail.limit}). Please upgrade to create more projects.`,
+              accountId: null,
+            });
+            setShowBillingAlert(true);
+
+            setMessages((prev) =>
+              prev.filter(
+                (m) => m.message_id !== optimisticUserMessage.message_id,
+              ),
+            );
+            return;
+          }
+
           // Suppress explicit model unavailable surfacing; treat as generic start failure
           if (error instanceof ModelUnavailableError) {
-            throw Object.assign(new Error(`Failed to start agent: ${error.detail?.message || error.message}`), { __failureReason: 'agent_start_failed' });
+            throw Object.assign(
+              new Error(
+                `Failed to start agent: ${
+                  error.detail?.message || error.message
+                }`,
+              ),
+              { __failureReason: 'agent_start_failed' },
+            );
           }
-          throw Object.assign(new Error(`Failed to start agent: ${error?.message || error}`), { __failureReason: 'agent_start_failed' });
+
+          throw Object.assign(
+            new Error(`Failed to start agent: ${error?.message || error}`),
+            { __failureReason: 'agent_start_failed' },
+          );
         }
 
         const agentResult = results[1].value;
@@ -543,8 +585,14 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
         ) {
           toast.error(err instanceof Error ? err.message : 'Operation failed');
         }
-  const reason = err?.__failureReason || 'agent_start_failed';
-        setMessages((prev) => prev.map(m => m.message_id === optimisticUserMessage.message_id ? { ...m, ui_status: 'failed', ui_status_reason: reason } : m));
+        const reason = (err as any)?.__failureReason || 'agent_start_failed';
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.message_id === optimisticUserMessage.message_id
+              ? { ...m, ui_status: 'failed', ui_status_reason: reason }
+              : m,
+          ),
+        );
       } finally {
         setIsSending(false);
       }
@@ -552,8 +600,8 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
     [
       threadId,
       project?.account_id,
-  addUserMessageMutation,
-  createMessageMutation,
+      addUserMessageMutation,
+      createMessageMutation,
       startAgentMutation,
       setMessages,
       setBillingData,
@@ -783,9 +831,16 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
   ]);
 
   useEffect(() => {
+    // Prevent duplicate streaming calls for the same runId
+    if (agentRunId && lastStreamStartedRef.current === agentRunId) {
+      return;
+    }
+
     // Start streaming if user initiated a run (don't wait for initialLoadCompleted for first-time users)
     if (agentRunId && agentRunId !== currentHookRunId && userInitiatedRun) {
+      console.log(`[ThreadComponent] Starting user-initiated stream for runId: ${agentRunId}`);
       startStreaming(agentRunId);
+      lastStreamStartedRef.current = agentRunId; // Track that we started this runId
       setUserInitiatedRun(false); // Reset flag after starting
       return;
     }
@@ -798,7 +853,9 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
       !userInitiatedRun &&
       agentStatus === 'running'
     ) {
+      console.log(`[ThreadComponent] Starting auto stream for runId: ${agentRunId}`);
       startStreaming(agentRunId);
+      lastStreamStartedRef.current = agentRunId; // Track that we started this runId
     }
   }, [
     agentRunId,
@@ -819,12 +876,19 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
     ) {
       setAgentStatus('idle');
       setAgentRunId(null);
+      // Reset the stream tracking ref when stream completes
+      lastStreamStartedRef.current = null;
       if (startupWatchdogRef.current) {
         clearTimeout(startupWatchdogRef.current);
         startupWatchdogRef.current = null;
       }
     }
   }, [streamHookStatus, agentStatus, setAgentStatus, setAgentRunId]);
+
+  // Reset stream tracking ref when threadId changes  
+  useEffect(() => {
+    lastStreamStartedRef.current = null;
+  }, [threadId]);
 
   // Cancel watchdog when streaming begins
   useEffect(() => {
@@ -834,15 +898,21 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
         startupWatchdogRef.current = null;
       }
       // Clear slow_start reason on the pending message (if still pending)
-      setMessages(prev => prev.map(m => {
-        if (m.message_id === lastPendingUserMessageIdRef.current && m.ui_status === 'pending' && m.ui_status_reason === 'slow_start') {
-          const { ui_status_reason, ...rest } = m as any;
-          return { ...rest }; // remove reason
-        }
-        return m;
-      }));
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (
+            m.message_id === lastPendingUserMessageIdRef.current &&
+            m.ui_status === 'pending' &&
+            m.ui_status_reason === 'slow_start'
+          ) {
+            const { ui_status_reason, ...rest } = m as any;
+            return { ...rest }; // remove reason
+          }
+          return m;
+        }),
+      );
     }
-  }, [agentStatus]);
+  }, [agentStatus, setMessages]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Check, Search, AlertTriangle, Crown, Plus, Edit, Trash, KeyRound, ChevronDown } from 'lucide-react';
+import { Check, Search, AlertTriangle, Crown, Cpu, Plus, Edit, Trash, KeyRound } from 'lucide-react';
+import { ModelProviderIcon } from '@/lib/model-provider-icons';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -16,11 +19,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-// Use the unified (new) model selection hook directly
-import { useModelSelection } from '@/components/thread/chat-input/_use-model-selection-new';
-import { MODELS, DEFAULT_FREE_MODEL_ID, DEFAULT_PREMIUM_MODEL_ID } from '@/components/thread/chat-input/_use-model-selection';
-import { formatModelName, getPrefixedModelId } from '@/lib/stores/model-store';
-import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-billing';
+import { useModelSelection } from '@/hooks/use-model-selection';
+import { formatModelName } from '@/lib/stores/model-store';
 import { isLocalMode } from '@/lib/config';
 import { CustomModelDialog, CustomModelFormData } from '@/components/thread/chat-input/custom-model-dialog';
 import { BillingModal } from '@/components/billing/billing-modal';
@@ -55,9 +55,9 @@ export function AgentModelSelector({
     customModels: storeCustomModels,
     addCustomModel: storeAddCustomModel,
     updateCustomModel: storeUpdateCustomModel,
-    removeCustomModel: storeRemoveCustomModel 
+    removeCustomModel: storeRemoveCustomModel,
+    modelsData // Now available directly from the hook
   } = useModelSelection();
-  const { data: modelsData } = useAvailableModels();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
@@ -73,52 +73,29 @@ export function AgentModelSelector({
 
   const customModels = storeCustomModels;
   
-  const normalizeModelId = (modelId?: string): string => {
-    if (!modelId) return subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID;
-    
-    if (modelsData?.models) {
-      const exactMatch = modelsData.models.find(m => m.short_name === modelId);
-      if (exactMatch) return exactMatch.short_name;
-
-      const fullMatch = modelsData.models.find(m => m.id === modelId);
-      if (fullMatch) return fullMatch.short_name || fullMatch.id;
-      
-      if (modelId.startsWith('openrouter/')) {
-        const shortName = modelId.replace('openrouter/', '');
-        const shortMatch = modelsData.models.find(m => m.short_name === shortName);
-        if (shortMatch) return shortMatch.short_name;
-      }
-    }
-    
-    return modelId;
-  };
-  
-  const normalizedValue = normalizeModelId(value);
-  
   // Use the prop value if provided, otherwise fall back to store value
-  const selectedModel = normalizedValue || storeSelectedModel;
+  const selectedModel = value || storeSelectedModel;
 
   // Keep store in sync if parent passes a different controlled value
   useEffect(() => {
-    if (normalizedValue && normalizedValue !== storeSelectedModel) {
+    if (value && value !== storeSelectedModel) {
       try {
         if (typeof storeHandleModelChange === 'function') {
-          storeHandleModelChange(normalizedValue);
+          storeHandleModelChange(value);
         }
       } catch {}
     }
-  }, [normalizedValue, storeSelectedModel, storeHandleModelChange]);
+  }, [value, storeSelectedModel, storeHandleModelChange]);
 
   const enhancedModelOptions = useMemo(() => {
     const modelMap = new Map();
 
     if (modelsData?.models) {
       modelsData.models.forEach(model => {
-        const shortName = model.short_name || model.id;
-        const displayName = model.display_name || shortName;
+        const displayName = model.display_name || model.short_name || model.id;
         
-        modelMap.set(shortName, {
-          id: shortName,
+        modelMap.set(model.id, {
+          id: model.id, // Use the actual model ID
           label: displayName,
           requiresSubscription: model.requires_subscription || false,
           priority: model.priority || 0,
@@ -261,14 +238,12 @@ export function AgentModelSelector({
 
   const handleSaveCustomModel = (formData: CustomModelFormData) => {
     const modelId = formData.id.trim();
-    const displayId = modelId.startsWith('openrouter/') ? modelId.replace('openrouter/', '') : modelId;
-    const modelLabel = formData.label.trim() || formatModelName(displayId);
+    const modelLabel = formData.label.trim() || formatModelName(modelId);
 
     if (!modelId) return;
     
-    const checkId = modelId;
     if (customModels.some(model =>
-      model.id === checkId && (dialogMode === 'add' || model.id !== editingModelId))) {
+      model.id === modelId && (dialogMode === 'add' || model.id !== editingModelId))) {
       console.error('A model with this ID already exists');
       return;
     }
@@ -302,8 +277,11 @@ export function AgentModelSelector({
     storeRemoveCustomModel(modelId);
     
     if (selectedModel === modelId) {
-      const defaultModel = subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID;
-      onChange(defaultModel);
+      // When deleting the currently selected custom model, let the hook determine the new default
+      const firstAvailableModel = allModels.find(m => canAccessModel(m.id));
+      if (firstAvailableModel) {
+        onChange(firstAvailableModel.id);
+      }
     }
   };
 
@@ -313,10 +291,9 @@ export function AgentModelSelector({
   // All models accessible now
   const accessible = true;
     const isHighlighted = index === highlightedIndex;
-  // Premium distinction removed (retain flag if needed for future styling)
-  const isPremium = false;
-    const isLowQuality = MODELS[model.id]?.lowQuality || false;
-    const isRecommended = MODELS[model.id]?.recommended || false;
+    const isPremium = model.requiresSubscription;
+    const isLowQuality = false; // API models are quality controlled
+    const isRecommended = model.recommended || false;
 
     return (
       <Tooltip key={`model-${model.id}-${index}`}>
@@ -331,7 +308,8 @@ export function AgentModelSelector({
                 onClick={() => !disabled && handleSelect(model.id)}
                 onMouseEnter={() => setHighlightedIndex(index)}
               >
-                <div className="flex items-center">
+                <div className="flex items-center gap-3">
+                  <ModelProviderIcon modelId={model.id} size={24} />
                   <span className="font-medium">{model.label}</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -404,11 +382,15 @@ export function AgentModelSelector({
                       className
                     )}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <ModelProviderIcon 
+                        modelId={selectedModel} 
+                        size={24}
+                      />
                       <span className="truncate">{selectedModelDisplay}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {MODELS[selectedModel]?.recommended && (
+                      {allModels.find(m => m.id === selectedModel)?.recommended && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 font-medium">
                           Recommended
                         </span>
@@ -426,8 +408,8 @@ export function AgentModelSelector({
                       className
                     )}
                   >
-                    <span className="text-sm truncate max-w-[200px]">{selectedModelDisplay}</span>
-                    <ChevronDown className="ml-1.5 h-3.5 w-3.5 opacity-60" />
+                    <ModelProviderIcon modelId={selectedModel} size={24} />
+                    <span className="text-sm">{selectedModelDisplay}</span>
                   </Button>
                 )}
               </DropdownMenuTrigger>
@@ -526,7 +508,8 @@ export function AgentModelSelector({
                                         )}
                                         onClick={() => handleSelect(model.id)}
                                       >
-                                        <div className="flex items-center">
+                                        <div className="flex items-center gap-3">
+                                          <ModelProviderIcon modelId={model.id} size={24} />
                                           <span className="font-medium">{model.label}</span>
                                         </div>
                                         <div className="flex items-center gap-2">

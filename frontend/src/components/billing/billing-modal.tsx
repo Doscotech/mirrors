@@ -25,7 +25,7 @@ import {
     SubscriptionStatus,
 } from '@/lib/api';
 import { useAuth } from '@/components/AuthProvider';
-import { useSubscriptionCommitment } from '@/hooks/react-query';
+import { useSubscriptionCommitment } from '@/hooks/react-query/subscriptions/use-subscriptions';
 import { useQueryClient } from '@tanstack/react-query';
 import { subscriptionKeys } from '@/hooks/react-query/subscriptions/keys';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -58,7 +58,6 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
 
-    // Get commitment info for the subscription (only if we have a valid ID)
     const {
         data: commitmentInfo,
         isLoading: commitmentLoading,
@@ -66,7 +65,6 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
         refetch: refetchCommitment
     } = useSubscriptionCommitment(subscriptionData?.subscription?.id || null);
 
-    // Simple function to fetch subscription data
     const fetchSubscriptionData = async () => {
         if (!session) return;
 
@@ -238,7 +236,7 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                 </DialogHeader>
 
                 <>
-                    {/* Usage Limit Alert
+                    {/* Usage Limit Alert */}
                     {showUsageLimitAlert && (
                         <div className="mb-6">
                             <div className="flex items-start p-3 sm:p-4 bg-destructive/5 border border-destructive/50 rounded-lg">
@@ -255,7 +253,7 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                                 </div>
                             </div>
                         </div>
-                    )} */}
+                    )}
 
                     {/* Usage section - show loading state or actual data */}
                     {isLoading || authLoading ? (
@@ -267,33 +265,40 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                                 </div>
                             </div>
                         </div>
-                                        ) : subscriptionData && (
+                    ) : subscriptionData ? (
                         <div className="mb-6">
                             <div className="rounded-lg border bg-background p-4">
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm font-medium text-foreground/90">
                                         Agent Usage This Month
                                     </span>
-                                                                        {(() => {
-                                                                            const fmt = (v: any) => {
-                                                                                if (v === null || v === undefined) return '0.00';
-                                                                                const n = typeof v === 'number' ? v : parseFloat(v);
-                                                                                if (Number.isNaN(n)) return '0.00';
-                                                                                return n.toFixed(2);
-                                                                            };
-                                                                            return (
-                                                                                <span className="text-sm font-medium">
-                                                                                    ${fmt(subscriptionData.current_usage)} / ${fmt(subscriptionData.cost_limit)}
-                                                                                </span>
-                                                                            );
-                                                                        })()}
+                                    {(() => {
+                                        const fmt = (v: any) => {
+                                            if (v === null || v === undefined) return '0.00';
+                                            const n = typeof v === 'number' ? v : parseFloat(v);
+                                            if (Number.isNaN(n)) return '0.00';
+                                            return n.toFixed(2);
+                                        };
+                                        return (
+                                            <span className="text-sm font-medium">
+                                                ${fmt(subscriptionData.current_usage)} / ${fmt(subscriptionData.cost_limit)}
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>
-                    )}
+                    ) : null}
 
-                    {/* Show pricing section immediately - no loading state */}
-                    <PricingSection returnUrl={returnUrl} showTitleAndTabs={false} />
+                    <PricingSection
+                        returnUrl={returnUrl}
+                        showTitleAndTabs={false}
+                        onSubscriptionUpdate={() => {
+                            setTimeout(() => {
+                                fetchSubscriptionData();
+                            }, 500);
+                        }}
+                    />
 
                     {/* Subscription Management Section - only show if there's actual subscription data */}
                     {error ? (
@@ -304,7 +309,6 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                         </div>
                     ) : subscriptionData?.subscription && (
                         <div className="mt-6 pt-4 border-t border-border">
-                            {/* Subscription Status Info Box */}
                             <div className="bg-muted/30 border border-border rounded-lg p-3 mb-3">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -344,9 +348,7 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                                 )}
                             </div>
 
-                            {/* Action Buttons underneath */}
                             <div className="flex gap-2 justify-center">
-                                {/* Cancel/Reactivate Button */}
                                 {!(subscriptionData.subscription.cancel_at_period_end || subscriptionData.subscription.cancel_at) ? (
                                     <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
                                         <DialogTrigger asChild>

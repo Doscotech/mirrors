@@ -6,15 +6,17 @@ import React, {
   useEffect,
   forwardRef,
   useImperativeHandle,
+  useCallback,
+  useMemo,
+  memo,
 } from 'react';
 import { useAgents } from '@/hooks/react-query/agents/use-agents';
 import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { handleFiles } from './file-upload-handler';
-import { MessageInput } from './message-input';
 import { AttachmentGroup } from '../attachment-group';
-import { useModelSelection } from './_use-model-selection-new';
+import { useModelSelection } from '@/hooks/use-model-selection';
 import { useFileDelete } from '@/hooks/react-query/files';
 import { useQueryClient } from '@tanstack/react-query';
 import { ToolCallInput } from './floating-tool-preview';
@@ -22,14 +24,17 @@ import { ChatSnack } from './chat-snack';
 import { Brain, Zap, Workflow, Database, ArrowDown } from 'lucide-react';
 import { useComposioToolkitIcon } from '@/hooks/react-query/composio/use-composio';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MessageInput } from './message-input';
 
 import { IntegrationsRegistry } from '@/components/agents/integrations-registry';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSubscriptionData } from '@/contexts/SubscriptionContext';
 import { isLocalMode } from '@/lib/config';
 import { BillingModal } from '@/components/billing/billing-modal';
-import { useRouter } from 'next/navigation';
+import { AgentConfigurationDialog } from '@/components/agents/agent-configuration-dialog';
 import posthog from 'posthog-js';
+
+export type SubscriptionStatus = 'no_subscription' | 'active';
 
 export interface ChatInputHandles {
   getPendingFiles: () => File[];
@@ -41,7 +46,6 @@ export interface ChatInputProps {
     message: string,
     options?: {
       model_name?: string;
-      enable_thinking?: boolean;
       agent_id?: string;
     },
   ) => void;
@@ -88,7 +92,7 @@ export interface UploadedFile {
 
 
 
-export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
+export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
   (
     {
       onSubmit,
@@ -126,7 +130,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
   ) => {
     const isControlled =
       controlledValue !== undefined && controlledOnChange !== undefined;
-    const router = useRouter();
 
     const [uncontrolledValue, setUncontrolledValue] = useState('');
     const value = isControlled ? controlledValue : uncontrolledValue;
@@ -142,6 +145,8 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const [showSnackbar, setShowSnackbar] = useState(defaultShowSnackbar);
     const [userDismissedUsage, setUserDismissedUsage] = useState(false);
     const [billingModalOpen, setBillingModalOpen] = useState(false);
+    const [agentConfigDialog, setAgentConfigDialog] = useState<{ open: boolean; tab: 'instructions' | 'knowledge' | 'triggers' | 'playbooks' | 'tools' | 'integrations' }>({ open: false, tab: 'instructions' });
+    const [mounted, setMounted] = useState(false);
 
     const {
       selectedModel,
@@ -166,7 +171,9 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     // Show usage preview logic:
     // - Always show to free users when showToLowCreditUsers is true
     // - For paid users, only show when they're at 70% or more of their cost limit (30% or below remaining)
-    const shouldShowUsage = !isLocalMode() && subscriptionData && showToLowCreditUsers && (() => {
+    const shouldShowUsage = useMemo(() => {
+      if (!subscriptionData || !showToLowCreditUsers || isLocalMode()) return false;
+      
       // Free users: always show
       if (subscriptionStatus === 'no_subscription') {
         return true;
@@ -179,7 +186,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       if (costLimit === 0) return false; // No limit set
 
       return currentUsage >= (costLimit * 0.7); // 70% or more used (30% or less remaining)
-    })();
+    }, [subscriptionData, showToLowCreditUsers, subscriptionStatus]);
 
     // Auto-show usage preview when we have subscription data
     useEffect(() => {
@@ -193,8 +200,8 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { data: agentsResponse } = useAgents({}, { enabled: isLoggedIn });
-    const agents = agentsResponse?.agents || [];
+  const { data: agentsResponse } = useAgents({}, { enabled: isLoggedIn });
+  const agents = useMemo(() => agentsResponse?.agents ?? [], [agentsResponse?.agents]);
 
     const { initializeFromAgents } = useAgentSelection();
     useImperativeHandle(ref, () => ({
@@ -207,6 +214,31 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
         initializeFromAgents(agents);
       }
     }, [agents, onAgentSelect, initializeFromAgents]);
+
+    useEffect(() => {
+      setMounted(true);
+    }, []);
+
+    // Auto-resize textarea
+    useEffect(() => {
+      if (!textareaRef.current) return;
+
+      const adjustHeight = () => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.maxHeight = '200px';
+        el.style.overflowY = el.scrollHeight > 200 ? 'auto' : 'hidden';
+
+        const newHeight = Math.min(el.scrollHeight, 200);
+        el.style.height = `${newHeight}px`;
+      };
+
+      adjustHeight();
+
+      window.addEventListener('resize', adjustHeight);
+      return () => window.removeEventListener('resize', adjustHeight);
+    }, [value]);
 
 
 
@@ -252,7 +284,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       return () => window.removeEventListener('xera-insert-text', handler as EventListener);
     }, [isControlled, controlledValue, uncontrolledValue, controlledOnChange]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
       e.preventDefault();
       if (
         (!value.trim() && uploadedFiles.length === 0) ||
@@ -275,19 +307,13 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
         message = message ? `${message}\n\n${fileInfo}` : fileInfo;
       }
 
-      let baseModelName = getActualModelId(selectedModel);
-      let thinkingEnabled = false;
-      if (selectedModel.endsWith('-thinking')) {
-        baseModelName = getActualModelId(selectedModel.replace(/-thinking$/, ''));
-        thinkingEnabled = true;
-      }
+      const baseModelName = getActualModelId(selectedModel);
 
       posthog.capture("task_prompt_submitted", { message });
 
       onSubmit(message, {
         agent_id: selectedAgentId,
         model_name: baseModelName,
-        enable_thinking: thinkingEnabled,
       });
 
       if (!isControlled) {
@@ -295,18 +321,55 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       }
 
       setUploadedFiles([]);
-    };
+    }, [value, uploadedFiles, loading, disabled, isAgentRunning, onStopAgent, getActualModelId, selectedModel, onSubmit, selectedAgentId, isControlled]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
       if (isControlled) {
         controlledOnChange(newValue);
       } else {
         setUncontrolledValue(newValue);
       }
+    }, [isControlled, controlledOnChange]);
+
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+        e.preventDefault();
+        if (
+          (value.trim() || uploadedFiles.length > 0) &&
+          !loading &&
+          (!disabled || isAgentRunning)
+        ) {
+          handleSubmit(e as unknown as React.FormEvent);
+        }
+      }
+    }, [value, uploadedFiles, loading, disabled, isAgentRunning, handleSubmit]);
+
+    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      if (!e.clipboardData) return;
+      const items = Array.from(e.clipboardData.items);
+      const imageFiles: File[] = [];
+      for (const item of items) {
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) imageFiles.push(file);
+        }
+      }
+      if (imageFiles.length > 0) {
+        e.preventDefault();
+        handleFiles(
+          imageFiles,
+          sandboxId,
+          setPendingFiles,
+          setUploadedFiles,
+          setIsUploading,
+          messages,
+          queryClient,
+        );
+      }
     };
 
-    const handleTranscription = (transcribedText: string) => {
+    const handleTranscription = useCallback((transcribedText: string) => {
       const currentValue = isControlled ? controlledValue : uncontrolledValue;
       const newValue = currentValue ? `${currentValue} ${transcribedText}` : transcribedText;
 
@@ -315,9 +378,9 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       } else {
         setUncontrolledValue(newValue);
       }
-    };
+    }, [isControlled, controlledValue, uncontrolledValue, controlledOnChange]);
 
-    const removeUploadedFile = async (index: number) => {
+    const removeUploadedFile = useCallback(async (index: number) => {
       const fileToRemove = uploadedFiles[index];
 
       // Clean up local URL if it exists
@@ -350,7 +413,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       } else {
         // File exists in chat history, don't delete from server
       }
-    };
+    }, [uploadedFiles, sandboxId, pendingFiles, messages, deleteFileMutation]);
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -363,8 +426,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       e.stopPropagation();
       setIsDraggingOver(false);
     };
-
-
 
     return (
       <div className="mx-auto w-full max-w-4xl relative">
@@ -393,13 +454,12 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
               <ArrowDown className="w-4 h-4 text-muted-foreground" />
             </button>
           )}
-          {/* Quick action panel moved above the input */}
           {enableAdvancedConfig && selectedAgentId && (
             <div className="w-full max-w-4xl mx-auto mb-0 relative z-20">
               <div className={`px-4 pt-2 pb-0 ${bgColor} rounded-t-3xl border border-b-0 transition-all duration-300 ease-out`}>
                 <div className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-none relative">
                   <button
-                    onClick={() => setRegistryDialogOpen(true)}
+                    onClick={() => setAgentConfigDialog({ open: true, tab: 'integrations' })}
                     className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-all duration-200 px-2.5 py-1.5 rounded-lg hover:bg-muted/50 border border-transparent hover:border-border/30 flex-shrink-0 cursor-pointer relative pointer-events-auto"
                   >
                     <div className="flex items-center -space-x-0.5">
@@ -435,28 +495,28 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                     <span className="text-xs font-medium">Integrations</span>
                   </button>
                   <button
-                    onClick={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=instructions`)}
+                    onClick={() => setAgentConfigDialog({ open: true, tab: 'instructions' })}
                     className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-all duration-200 px-2.5 py-1.5 rounded-lg hover:bg-muted/50 border border-transparent hover:border-border/30 flex-shrink-0 cursor-pointer relative pointer-events-auto"
                   >
                     <Brain className="h-3.5 w-3.5 flex-shrink-0" />
                     <span className="text-xs font-medium">Instructions</span>
                   </button>
                   <button
-                    onClick={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=knowledge`)}
+                    onClick={() => setAgentConfigDialog({ open: true, tab: 'knowledge' })}
                     className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-all duration-200 px-2.5 py-1.5 rounded-lg hover:bg-muted/50 border border-transparent hover:border-border/30 flex-shrink-0 cursor-pointer relative pointer-events-auto"
                   >
                     <Database className="h-3.5 w-3.5 flex-shrink-0" />
                     <span className="text-xs font-medium">Knowledge</span>
                   </button>
                   <button
-                    onClick={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=triggers`)}
+                    onClick={() => setAgentConfigDialog({ open: true, tab: 'triggers' })}
                     className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-all duration-200 px-2.5 py-1.5 rounded-lg hover:bg-muted/50 border border-transparent hover:border-border/30 flex-shrink-0 cursor-pointer relative pointer-events-auto"
                   >
                     <Zap className="h-3.5 w-3.5 flex-shrink-0" />
                     <span className="text-xs font-medium">Triggers</span>
                   </button>
                   <button
-                    onClick={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=workflows`)}
+                    onClick={() => setAgentConfigDialog({ open: true, tab: 'playbooks' })}
                     className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-all duration-200 px-2.5 py-1.5 rounded-lg hover:bg-muted/50 border border-transparent hover:border-border/30 flex-shrink-0 cursor-pointer relative pointer-events-auto"
                   >
                     <Workflow className="h-3.5 w-3.5 flex-shrink-0" />
@@ -533,6 +593,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                   selectedAgentId={selectedAgentId}
                   onAgentSelect={onAgentSelect}
                   hideAgentSelection={hideAgentSelection}
+                  queryClient={queryClient}
                 />
               </CardContent>
             </div>
@@ -550,7 +611,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                 selectedAgentId={selectedAgentId}
                 onAgentChange={onAgentSelect}
                 onToolsSelected={(profileId, selectedTools, appName, appSlug) => {
-                  // Save to workflow or perform other action here
                 }}
               />
             </DialogContent>
@@ -559,10 +619,19 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
             open={billingModalOpen}
             onOpenChange={setBillingModalOpen}
           />
+          {selectedAgentId && agentConfigDialog.open && (
+            <AgentConfigurationDialog
+              open={agentConfigDialog.open}
+              onOpenChange={(open) => setAgentConfigDialog({ ...agentConfigDialog, open })}
+              agentId={selectedAgentId}
+              initialTab={agentConfigDialog.tab}
+              onAgentChange={onAgentSelect}
+            />
+          )}
         </div>
       </div>
     );
   },
-);
+));
 
 ChatInput.displayName = 'ChatInput';

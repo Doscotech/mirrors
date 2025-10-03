@@ -11,10 +11,15 @@ import { StrReplaceToolView } from '../str-replace/StrReplaceToolView';
 import { WebCrawlToolView } from '../WebCrawlToolView';
 import { WebScrapeToolView } from '../web-scrape-tool/WebScrapeToolView';
 import { WebSearchToolView } from '../web-search-tool/WebSearchToolView';
+import { PeopleSearchToolView } from '../people-search-tool/PeopleSearchToolView';
+import { CompanySearchToolView } from '../company-search-tool/CompanySearchToolView';
+import { PaperSearchToolView } from '../paper-search-tool/PaperSearchToolView';
+import { DocumentParserToolView } from '../document-parser-tool/DocumentParserToolView';
 import { SeeImageToolView } from '../see-image-tool/SeeImageToolView';
 import { TerminateCommandToolView } from '../command-tool/TerminateCommandToolView';
 import { AskToolView } from '../ask-tool/AskToolView';
 import { CompleteToolView } from '../CompleteToolView';
+import { WaitToolView } from '../wait-tool/WaitToolView';
 import { ExecuteDataProviderCallToolView } from '../data-provider-tool/ExecuteDataProviderCallToolView';
 import { DataProviderEndpointsToolView } from '../data-provider-tool/DataProviderEndpointsToolView';
 import { DeployToolView } from '../DeployToolView';
@@ -33,11 +38,12 @@ import { PresentationViewer } from '../presentation-tools/PresentationViewer';
 import { ListPresentationsToolView } from '../presentation-tools/ListPresentationsToolView';
 import { DeleteSlideToolView } from '../presentation-tools/DeleteSlideToolView';
 import { DeletePresentationToolView } from '../presentation-tools/DeletePresentationToolView';
-import { PresentationStylesToolView } from '../presentation-tools/PresentationStylesToolView';
+// import { PresentationStylesToolView } from '../presentation-tools/PresentationStylesToolView';
 import { PresentPresentationToolView } from '../presentation-tools/PresentPresentationToolView';
 import { SheetsToolView } from '../sheets-tools/sheets-tool-view';
 import { GetProjectStructureView } from '../web-dev/GetProjectStructureView';
 import { ImageEditGenerateToolView } from '../image-edit-generate-tool/ImageEditGenerateToolView';
+import { DesignerToolView } from '../designer-tool/DesignerToolView';
 import { UploadFileToolView } from '../UploadFileToolView';
 import { DocsToolView, ListDocumentsToolView, DeleteDocumentToolView } from '../docs-tool';
 import { CreateNewAgentToolView } from '../create-new-agent/create-new-agent';
@@ -51,6 +57,7 @@ import CreateAgentScheduledTriggerToolView from '../create-agent-scheduled-trigg
 import ListAgentWorkflowsToolView from '../list-agent-workflows/list-agent-workflows';
 import { createPresentationViewerToolContent, parsePresentationSlidePath } from '../utils/presentation-utils';
 import { extractToolData } from '../utils';
+import { KbToolView } from '../KbToolView';
 
 
 export type ToolViewComponent = React.ComponentType<ToolViewProps>;
@@ -74,11 +81,17 @@ const defaultRegistry: ToolViewRegistryType = {
   'read-file': FileOperationToolView,
   'edit-file': FileEditToolView,
 
+  'parse-document': DocumentParserToolView,
+
   'str-replace': StrReplaceToolView,
 
   'web-search': WebSearchToolView,
+  'people-search': PeopleSearchToolView,
+  'company-search': CompanySearchToolView,
+  'paper-search': PaperSearchToolView,
   'crawl-webpage': WebCrawlToolView,
   'scrape-webpage': WebScrapeToolView,
+  'image-search': WebSearchToolView,
 
   'execute-data-provider-call': ExecuteDataProviderCallToolView,
   'get-data-provider-endpoints': DataProviderEndpointsToolView,
@@ -100,26 +113,30 @@ const defaultRegistry: ToolViewRegistryType = {
 
   'expose-port': ExposePortToolView,
 
-  'see-image': SeeImageToolView,
+  'load-image': SeeImageToolView,
+  'clear-images-from-context': SeeImageToolView,
   'image-edit-or-generate': ImageEditGenerateToolView,
+  'designer-create-or-edit': DesignerToolView,
+  'designer_create_or_edit': DesignerToolView,
 
   'ask': AskToolView,
   'complete': CompleteToolView,
+  'wait': WaitToolView,
 
   'deploy': DeployToolView,
 
   'create-presentation-outline': PresentationOutlineToolView,
   'list-presentation-templates': ListPresentationTemplatesToolView,
-  
+
   // New per-slide presentation tools
   'create-slide': PresentationViewer,
   'list-slides': PresentationViewer,
   'list-presentations': ListPresentationsToolView,
   'delete-slide': DeleteSlideToolView,
   'delete-presentation': DeletePresentationToolView,
-  'presentation-styles': PresentationStylesToolView,
+  // 'presentation-styles': PresentationStylesToolView,
   'present-presentation': PresentPresentationToolView,
-  
+
   'create-sheet': SheetsToolView,
   'update-sheet': SheetsToolView,
   'view-sheet': SheetsToolView,
@@ -131,6 +148,28 @@ const defaultRegistry: ToolViewRegistryType = {
   'list-web-projects': GenericToolView,
 
   'upload-file': UploadFileToolView,
+
+  // Knowledge Base tools
+  'init_kb': KbToolView,
+  'init-kb': KbToolView,
+  'search_files': KbToolView,
+  'search-files': KbToolView,
+  'ls_kb': KbToolView,
+  'ls-kb': KbToolView,
+  'cleanup_kb': KbToolView,
+  'cleanup-kb': KbToolView,
+  'global_kb_sync': KbToolView,
+  'global-kb-sync': KbToolView,
+  'global_kb_create_folder': KbToolView,
+  'global-kb-create-folder': KbToolView,
+  'global_kb_upload_file': KbToolView,
+  'global-kb-upload-file': KbToolView,
+  'global_kb_list_contents': KbToolView,
+  'global-kb-list-contents': KbToolView,
+  'global_kb_delete_item': KbToolView,
+  'global-kb-delete-item': KbToolView,
+  'global_kb_enable_item': KbToolView,
+  'global-kb-enable-item': KbToolView,
 
   // Document operations - using specific views for different operations
   'create-document': DocsToolView,
@@ -223,7 +262,7 @@ export function ToolView({ name = 'default', assistantContent, toolContent, ...p
     'list-slides',
     'delete-slide',
     'delete-presentation',
-    'presentation-styles',
+    // 'presentation-styles',
     'present-presentation',
   ]
 
@@ -233,7 +272,7 @@ export function ToolView({ name = 'default', assistantContent, toolContent, ...p
   if (isPresentationSlide && filePath && presentationName && slideNumber && !isAlreadyPresentationTool) {
     modifiedToolContent = createPresentationViewerToolContent(presentationName, filePath, slideNumber);
   }
-  
+
   // determine the effective tool name
   const effectiveToolName = (isPresentationSlide && !isAlreadyPresentationTool) ? 'create-slide' : name;
 

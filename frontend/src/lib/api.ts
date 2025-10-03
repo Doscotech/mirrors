@@ -9,6 +9,52 @@ const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const nonRunningAgentRuns = new Set<string>();
 // Map to keep track of active EventSource streams
 const activeStreams = new Map<string, EventSource>();
+// Map to keep track of safety timeouts
+const safetyTimeouts = new Map<string, number>();
+
+/**
+ * Helper function to safely cleanup EventSource connections
+ * This ensures consistent cleanup and prevents memory leaks
+ */
+const cleanupEventSource = (agentRunId: string, reason?: string): void => {
+  const stream = activeStreams.get(agentRunId);
+  if (stream) {
+    if (reason) {
+      console.log(`[STREAM] Cleaning up EventSource for ${agentRunId}: ${reason}`);
+    }
+    
+    // Close the connection
+    if (stream.readyState !== EventSource.CLOSED) {
+      stream.close();
+    }
+    
+    // Remove from active streams
+    activeStreams.delete(agentRunId);
+  }
+
+  // Clear any associated safety timeout
+  const timeout = safetyTimeouts.get(agentRunId);
+  if (timeout) {
+    clearTimeout(timeout);
+    safetyTimeouts.delete(agentRunId);
+  }
+};
+
+/**
+ * Failsafe cleanup function to prevent memory leaks
+ * Should be called periodically or during app teardown
+ */
+const cleanupAllEventSources = (reason = 'batch cleanup'): void => {
+  console.log(`[STREAM] Running batch cleanup: ${activeStreams.size} active streams`);
+  
+  const streamIds = Array.from(activeStreams.keys());
+  streamIds.forEach(agentRunId => {
+    cleanupEventSource(agentRunId, reason);
+  });
+};
+
+// Export cleanup function for external use
+export { cleanupAllEventSources };
 
 // Custom error for billing issues
 export class BillingError extends Error {
@@ -89,6 +135,36 @@ export class AgentCountLimitError extends Error {
   }
 }
 
+export class ProjectLimitError extends Error {
+  status: number;
+  detail: { 
+    message: string;
+    current_count: number;
+    limit: number;
+    tier_name: string;
+    error_code: string;
+  };
+
+  constructor(
+    status: number,
+    detail: { 
+      message: string;
+      current_count: number;
+      limit: number;
+      tier_name: string;
+      error_code: string;
+      [key: string]: any;
+    },
+    message?: string,
+  ) {
+    super(message || detail.message || `Project Limit Exceeded: ${status}`);
+    this.name = 'ProjectLimitError';
+    this.status = status;
+    this.detail = detail;
+    Object.setPrototypeOf(this, ProjectLimitError.prototype);
+  }
+}
+
 export class NoAccessTokenAvailableError extends Error {
   constructor(message?: string, options?: { cause?: Error }) {
     super(message || 'No access token available', options);
@@ -128,6 +204,8 @@ export type Project = {
     pass?: string;
   };
   is_public?: boolean; // Flag to indicate if the project is public
+  // Icon system field for thread categorization
+  icon_name?: string | null;
   [key: string]: any; // Allow additional properties to handle database fields
 };
 
@@ -147,9 +225,6 @@ export type Message = {
   agent_id?: string;
   agents?: {
     name: string;
-    avatar?: string;
-    avatar_color?: string;
-    profile_image_url?: string;
   };
 };
 
@@ -268,7 +343,8 @@ export const getProjects = async (): Promise<Project[]> => {
     const { data, error } = await supabase
       .from('projects')
       .select('*')
-      .eq('account_id', userData.user.id);
+      .eq('account_id', userData.user.id)
+      .order('created_at', { ascending: false });
 
     if (error) {
       // Handle permission errors specifically
@@ -297,6 +373,8 @@ export const getProjects = async (): Promise<Project[]> => {
         vnc_preview: '',
         sandbox_url: '',
       },
+      // Include icon field for thread categorization
+      icon_name: project.icon_name,
     }));
 
     return mappedProjects;
@@ -674,9 +752,7 @@ export const getMessages = async (threadId: string): Promise<Message[]> => {
       .select(`
         *,
         agents:agent_id (
-          name,
-          avatar,
-          avatar_color
+          name
         )
       `)
       .eq('thread_id', threadId)
@@ -708,9 +784,6 @@ export const startAgent = async (
   threadId: string,
   options?: {
     model_name?: string;
-    enable_thinking?: boolean;
-    reasoning_effort?: string;
-    stream?: boolean;
     agent_id?: string; // Optional again
   },
 ): Promise<{ agent_run_id: string }> => {
@@ -732,19 +805,14 @@ export const startAgent = async (
     }
 
     const defaultOptions = {
-      model_name: 'claude-3-7-sonnet-latest',
-      enable_thinking: false,
-      reasoning_effort: 'low',
-      stream: true,
+      model_name: 'anthropic/claude-3-7-sonnet-latest',
     };
 
     const finalOptions = { ...defaultOptions, ...options };
 
     const body: any = {
       model_name: finalOptions.model_name,
-      enable_thinking: finalOptions.enable_thinking,
-      reasoning_effort: finalOptions.reasoning_effort,
-      stream: finalOptions.stream,
+      stream: true, // Always stream for better UX
     };
     
     // Only include agent_id if it's provided
@@ -762,52 +830,113 @@ export const startAgent = async (
     });
 
     if (!response.ok) {
-      if (response.status === 402) {
-        try {
-          const errorData = await response.json();
-          const detail = errorData?.detail || { message: 'Payment Required' };
-          if (typeof detail.message !== 'string') {
-            detail.message = 'Payment Required';
-          }
-          throw new BillingError(response.status, detail);
-        } catch (parseError) {
-          throw new BillingError(
-            response.status,
-            { message: 'Payment Required' },
-            `Error starting agent: ${response.statusText} (402)`,
-          );
-        }
-      }
-
-      if (response.status === 429) {
-          const errorData = await response.json();
-          const detail = errorData?.detail || { 
-            message: 'Too many agent runs running',
-            running_thread_ids: [],
-            running_count: 0,
-          };
-          if (typeof detail.message !== 'string') {
-            detail.message = 'Too many agent runs running';
-          }
-          if (!Array.isArray(detail.running_thread_ids)) {
-            detail.running_thread_ids = [];
-          }
-          if (typeof detail.running_count !== 'number') {
-            detail.running_count = 0;
-          }
-          throw new AgentRunLimitError(response.status, detail);
-      }
-
-      // Attempt to parse JSON error to inspect for model issues
+      // Try to parse the error payload once so we can reuse it across handlers
       let errorPayload: any = null;
       try {
         errorPayload = await response.clone().json();
       } catch {
-        // fallback to text below
+        // Ignore JSON parsing errors; we'll fall back to the response text
       }
-      const errorText = errorPayload ? (errorPayload.detail || errorPayload.message || JSON.stringify(errorPayload)) : await response
-        .text()
-        .catch(() => 'No error details available');
+
+      if (response.status === 402) {
+        const rawDetail =
+          errorPayload && typeof errorPayload === 'object'
+            ? (errorPayload as Record<string, any>).detail
+            : undefined;
+        const detailBase: Record<string, any> =
+          rawDetail && typeof rawDetail === 'object'
+            ? { ...rawDetail }
+            : {};
+
+        if (detailBase.error_code === 'PROJECT_LIMIT_EXCEEDED') {
+          throw new ProjectLimitError(response.status, {
+            message:
+              typeof detailBase.message === 'string'
+                ? detailBase.message
+                : 'Project limit exceeded',
+            current_count:
+              typeof detailBase.current_count === 'number'
+                ? detailBase.current_count
+                : 0,
+            limit:
+              typeof detailBase.limit === 'number' ? detailBase.limit : 0,
+            tier_name:
+              typeof detailBase.tier_name === 'string'
+                ? detailBase.tier_name
+                : 'none',
+            error_code: detailBase.error_code,
+          });
+        }
+
+        const billingDetail: { message: string; [key: string]: any } = {
+          ...detailBase,
+          message:
+            typeof detailBase.message === 'string'
+              ? detailBase.message
+              : 'Payment Required',
+        };
+
+        throw new BillingError(response.status, billingDetail);
+      }
+
+      if (response.status === 429) {
+        const rawDetail =
+          errorPayload && typeof errorPayload === 'object'
+            ? (errorPayload as Record<string, any>).detail
+            : undefined;
+        const detailSource =
+          rawDetail && typeof rawDetail === 'object'
+            ? (rawDetail as Record<string, any>)
+            : {};
+
+        const detail: {
+          message: string;
+          running_thread_ids: string[];
+          running_count: number;
+          [key: string]: any;
+        } = {
+          ...detailSource,
+          message:
+            typeof detailSource.message === 'string'
+              ? detailSource.message
+              : 'Too many agent runs running',
+          running_thread_ids: Array.isArray(detailSource.running_thread_ids)
+            ? detailSource.running_thread_ids
+            : [],
+          running_count:
+            typeof detailSource.running_count === 'number'
+              ? detailSource.running_count
+              : 0,
+        };
+
+        throw new AgentRunLimitError(response.status, detail);
+      }
+
+      let errorText: string;
+      if (errorPayload) {
+        if (typeof errorPayload === 'string') {
+          errorText = errorPayload;
+        } else {
+          const detail =
+            typeof errorPayload === 'object'
+              ? (errorPayload as Record<string, any>).detail
+              : undefined;
+          if (typeof detail === 'string') {
+            errorText = detail;
+          } else if (
+            typeof errorPayload === 'object' &&
+            typeof (errorPayload as Record<string, any>).message === 'string'
+          ) {
+            errorText = (errorPayload as Record<string, any>).message as string;
+          } else {
+            errorText = JSON.stringify(errorPayload);
+          }
+        }
+      } else {
+        errorText = await response
+          .text()
+          .catch(() => 'No error details available');
+      }
 
       const lower = (typeof errorText === 'string' ? errorText : '').toLowerCase();
       const modelIndicators = [
@@ -836,7 +965,12 @@ export const startAgent = async (
     const result = await response.json();
     return result;
   } catch (error) {
-    if (error instanceof BillingError || error instanceof AgentRunLimitError || error instanceof ModelUnavailableError) {
+    if (
+      error instanceof BillingError ||
+      error instanceof AgentRunLimitError ||
+      error instanceof ProjectLimitError ||
+      error instanceof ModelUnavailableError
+    ) {
       throw error;
     }
 
@@ -954,6 +1088,60 @@ export const getAgentStatus = async (agentRunId: string): Promise<AgentRun> => {
   }
 };
 
+export interface AgentIconGenerationRequest {
+  name: string;
+  description?: string;
+}
+
+export interface AgentIconGenerationResponse {
+  icon_name: string;
+  icon_color: string;
+  icon_background: string;
+}
+
+export const generateAgentIcon = async (request: AgentIconGenerationRequest): Promise<AgentIconGenerationResponse> => {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new NoAccessTokenAvailableError();
+    }
+
+    const response = await fetch(`${API_URL}/agents/generate-icon`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorText = await response
+        .text()
+        .catch(() => 'No error details available');
+      console.error(
+        `[API] Error generating agent icon: ${response.status} ${response.statusText}`,
+        errorText,
+      );
+
+      throw new Error(
+        `Error generating agent icon: ${response.statusText} (${response.status})`,
+      );
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('[API] Failed to generate agent icon:', error);
+    handleApiError(error, { operation: 'generate agent icon', resource: 'agent icon generation' });
+    throw error;
+  }
+};
+
 export const getAgentRuns = async (threadId: string): Promise<AgentRun[]> => {
   try {
     const supabase = createClient();
@@ -1008,8 +1196,7 @@ export const streamAgent = (
 
   const existingStream = activeStreams.get(agentRunId);
   if (existingStream) {
-    existingStream.close();
-    activeStreams.delete(agentRunId);
+    cleanupEventSource(agentRunId, 'replacing existing stream');
   }
 
   try {
@@ -1059,7 +1246,19 @@ export const streamAgent = (
 
       activeStreams.set(agentRunId, eventSource);
 
+      // Safety timeout to prevent indefinite connections (30 minutes)
+      const safetyTimeout = setTimeout(() => {
+        console.warn(`[STREAM] Safety timeout reached for ${agentRunId}, cleaning up`);
+        cleanupEventSource(agentRunId, 'safety timeout');
+        callbacks.onError('Connection timeout - stream has been running too long');
+        callbacks.onClose();
+      }, 30 * 60 * 1000); // 30 minutes
+
+      // Store the timeout ID for cleanup
+      safetyTimeouts.set(agentRunId, safetyTimeout as unknown as number);
+
       eventSource.onopen = () => {
+        console.log(`[STREAM] EventSource opened for ${agentRunId}`);
       };
 
       eventSource.onmessage = (event) => {
@@ -1100,8 +1299,7 @@ export const streamAgent = (
             callbacks.onError('Agent run not found in active runs');
 
             // Clean up
-            eventSource.close();
-            activeStreams.delete(agentRunId);
+            cleanupEventSource(agentRunId, 'agent run not found');
             callbacks.onClose();
 
             return;
@@ -1122,8 +1320,7 @@ export const streamAgent = (
             callbacks.onMessage(rawData);
 
             // Clean up
-            eventSource.close();
-            activeStreams.delete(agentRunId);
+            cleanupEventSource(agentRunId, 'agent run completed');
             callbacks.onClose();
 
             return;
@@ -1148,13 +1345,14 @@ export const streamAgent = (
       };
 
       eventSource.onerror = (event) => {
+        console.error(`[STREAM] EventSource error for ${agentRunId}:`, event);
+        
         // Check if the agent is still running
         getAgentStatus(agentRunId)
           .then((status) => {
             if (status.status !== 'running') {
               nonRunningAgentRuns.add(agentRunId);
-              eventSource.close();
-              activeStreams.delete(agentRunId);
+              cleanupEventSource(agentRunId, 'agent not running');
               callbacks.onClose();
             } else {
               // Let the browser handle reconnection for non-fatal errors
@@ -1175,13 +1373,16 @@ export const streamAgent = (
 
             if (isNotFoundErr) {
               nonRunningAgentRuns.add(agentRunId);
-              eventSource.close();
-              activeStreams.delete(agentRunId);
+              cleanupEventSource(agentRunId, 'agent not found');
+              callbacks.onClose();
+            } else {
+              // For other errors, still clean up the stream to prevent memory leaks
+              // but don't add to nonRunningAgentRuns as it might be a temporary network issue
+              console.warn(`[STREAM] Cleaning up stream for ${agentRunId} due to persistent error`);
+              cleanupEventSource(agentRunId, 'persistent error');
+              callbacks.onError(errMsg);
               callbacks.onClose();
             }
-
-            // For other errors, notify but don't close the stream
-            callbacks.onError(errMsg);
           });
       };
     };
@@ -1191,11 +1392,7 @@ export const streamAgent = (
 
     // Return a cleanup function
     return () => {
-      const stream = activeStreams.get(agentRunId);
-      if (stream) {
-        stream.close();
-        activeStreams.delete(agentRunId);
-      }
+      cleanupEventSource(agentRunId, 'manual cleanup');
     };
   } catch (error) {
     console.error(`[STREAM] Error setting up stream for ${agentRunId}:`, error);
@@ -1670,6 +1867,13 @@ export interface SubscriptionStatus {
   // Credit information
   credit_balance?: number;
   can_purchase_credits?: boolean;
+  tier?: {
+    name: string;
+    credits: number;
+    can_purchase_credits: boolean;
+    models?: string[];
+    project_limit?: number;
+  };
 }
 
 export interface CommitmentInfo {
@@ -1749,9 +1953,7 @@ export interface UsageLogEntry {
 export interface UsageLogsResponse {
   logs: UsageLogEntry[];
   has_more: boolean;
-  message?: string;
-  subscription_limit?: number;
-  cumulative_cost?: number;
+  total_count?: number;
 }
 
 export interface BillingStatusResponse {
@@ -1860,6 +2062,7 @@ export const createCheckoutSession = async (
     
     const requestBody = { ...request, tolt_referral: window.tolt_referral };
     
+    // Use the new billing v2 API endpoint
     const response = await fetch(`${API_URL}/billing/create-checkout-session`, {
       method: 'POST',
       headers: {
@@ -1883,25 +2086,19 @@ export const createCheckoutSession = async (
     }
 
     const data = await response.json();
-    switch (data.status) {
-      case 'upgraded':
-      case 'updated':
-      case 'downgrade_scheduled':
-      case 'scheduled':
-      case 'no_change':
-        return data;
-      case 'new':
-      case 'checkout_created':
-        if (!data.url) {
-          throw new Error('No checkout URL provided');
-        }
-        return data;
-      default:
-        console.warn(
-          'Unexpected status from createCheckoutSession:',
-          data.status,
-        );
-        return data;
+    if (data.checkout_url) {
+      return {
+        status: 'checkout_created',
+        url: data.checkout_url
+      };
+    } else if (data.success && data.subscription_id) {
+      return {
+        status: 'updated',
+        message: data.message || 'Subscription updated successfully',
+        subscription_id: data.subscription_id
+      };
+    } else {
+      return data;
     }
   } catch (error) {
     console.error('Failed to create checkout session:', error);
@@ -1946,7 +2143,11 @@ export const createPortalSession = async (
       );
     }
 
-    return response.json();
+    const data = await response.json();
+    
+    return {
+      url: data.portal_url
+    };
   } catch (error) {
     console.error('Failed to create portal session:', error);
     handleApiError(error, { operation: 'create portal session', resource: 'billing portal' });
@@ -1957,9 +2158,6 @@ export const createPortalSession = async (
 
 export const getSubscription = async (): Promise<SubscriptionStatus> => {
   try {
-    // Log when subscription API is called for debugging
-    console.log('🔍 [BILLING] Making subscription API call:', new Date().toISOString());
-    
     const supabase = createClient();
     const {
       data: { session },
@@ -1988,7 +2186,19 @@ export const getSubscription = async (): Promise<SubscriptionStatus> => {
       );
     }
 
-    return response.json();
+    const data = await response.json();
+
+    return {
+      subscription: data.subscription ? {
+        ...data.subscription,
+        cancel_at_period_end: data.subscription.cancel_at ? true : false,
+      } : null,
+      current_usage: data.credits?.lifetime_used || 0,
+      cost_limit: data.tier?.credits || 0,
+      credit_balance: data.credits?.balance || 0,
+      can_purchase_credits: data.credits?.can_purchase || false,
+      ...data 
+    } as SubscriptionStatus;
   } catch (error) {
     if (error instanceof NoAccessTokenAvailableError) {
       throw error;
@@ -2011,6 +2221,7 @@ export const getSubscriptionCommitment = async (subscriptionId: string): Promise
       throw new NoAccessTokenAvailableError();
     }
 
+    // Use the new billing v2 API endpoint
     const response = await fetch(`${API_URL}/billing/subscription-commitment/${subscriptionId}`, {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -2084,7 +2295,6 @@ export const getAvailableModels = async (): Promise<AvailableModelsResponse> => 
   }
 };
 
-
 export const checkBillingStatus = async (): Promise<BillingStatusResponse> => {
   try {
     const supabase = createClient();
@@ -2143,6 +2353,7 @@ export const cancelSubscription = async (): Promise<CancelSubscriptionResponse> 
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
+      body: JSON.stringify({}),
     });
 
     if (!response.ok) {
@@ -2183,6 +2394,7 @@ export const reactivateSubscription = async (): Promise<ReactivateSubscriptionRe
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
+      body: JSON.stringify({}),
     });
 
     if (!response.ok) {

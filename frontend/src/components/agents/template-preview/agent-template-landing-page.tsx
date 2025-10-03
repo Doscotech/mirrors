@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { MarketplaceTemplate } from '@/components/agents/installation/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AgentIconAvatar } from '@/components/agents/config/agent-icon-avatar';
+import { AgentAvatar } from '@/components/thread/content/agent-avatar';
 import { 
   Bot, 
   Download, 
@@ -122,7 +122,7 @@ export const AgentTemplateLandingPage: React.FC<AgentTemplateLandingPageProps> =
       
       if (response?.data?.agent_id) {
         toast.success('Agent installed successfully!');
-        router.push(`/agents/config/${response.data.agent_id}`);
+        router.push(`/?agent_id=${response.data.agent_id}`);
       } else {
         throw new Error('Invalid response: missing agent_id');
       }
@@ -142,15 +142,6 @@ export const AgentTemplateLandingPage: React.FC<AgentTemplateLandingPageProps> =
     } finally {
       setIsInstalling(false);
     }
-  };
-
-  const handleShare = () => {
-    const currentUrl = window.location.href;
-    navigator.clipboard.writeText(currentUrl).then(() => {
-      toast.success('Share link copied to clipboard!');
-    }).catch(() => {
-      toast.error('Failed to copy link to clipboard');
-    });
   };
 
   const formatDate = (dateString: string) => {
@@ -201,8 +192,7 @@ export const AgentTemplateLandingPage: React.FC<AgentTemplateLandingPageProps> =
               variants={fadeInUp}
             >
               <div className="relative">
-                <AgentIconAvatar
-                  profileImageUrl={template.profile_image_url}
+                <AgentAvatar
                   iconName={template.icon_name}
                   iconColor={template.icon_color}
                   backgroundColor={template.icon_background}

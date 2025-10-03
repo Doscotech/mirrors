@@ -10,36 +10,24 @@ import { useAuth } from '@/components/AuthProvider';
 import { BillingErrorAlert } from '@/components/billing/usage-limit-alert';
 import { useBillingError } from '@/hooks/useBillingError';
 import { useAccounts } from '@/hooks/use-accounts';
-import { isLocalMode, config } from '@/lib/config';
-import { toast } from 'sonner';
 import { BillingModal } from '@/components/billing/billing-modal';
 import { motion } from 'framer-motion';
 import { UnicornBackground } from './unicorn-background';
+import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 // Xera typography uses global utilities defined in globals.css
-
-// (Hero simplified: input and prompts removed)
-
-
 
 export function HeroSection() {
   const { hero } = siteConfig;
   const [mounted, setMounted] = useState(false);
-  const router = useRouter();
-  const { user, isLoading } = useAuth();
-  const { billingError, handleBillingError, clearBillingError } =
-    useBillingError();
-  const { data: accounts } = useAccounts();
+  const { user } = useAuth();
+  const { billingError, clearBillingError } = useBillingError();
+  const { data: accounts } = useAccounts({ enabled: !!user });
   const personalAccount = accounts?.find((account) => account.personal_account);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  // removed chat input flow state
-
-  // no auth dialog in simplified hero
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // no chat input submission in simplified hero
 
   const [isShortScreen, setIsShortScreen] = useState(false);
 
@@ -160,14 +148,11 @@ export function HeroSection() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              {/* Removed GitHub link/button per request */}
             </motion.div>
           </div>
         </div>
       </div>
       <div className="mb-8 sm:mb-16 sm:mt-32 mx-auto"></div>
-
-            {/* Auth Dialog removed in simplified hero */}
 
       {/* Add Billing Error Alert here */}
       <BillingErrorAlert

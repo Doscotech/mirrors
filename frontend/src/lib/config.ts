@@ -13,7 +13,6 @@ export interface SubscriptionTierData {
 
 // Subscription tiers structure
 export interface SubscriptionTiers {
-  FREE: SubscriptionTierData;
   TIER_2_20: SubscriptionTierData;
   TIER_6_50: SubscriptionTierData;
   TIER_12_100: SubscriptionTierData;
@@ -45,10 +44,6 @@ interface Config {
 
 // Production tier IDs
 const PROD_TIERS: SubscriptionTiers = {
-  FREE: {
-    priceId: 'price_1RILb4G6l1KZGqIrK4QLrx9i',
-    name: 'Free',
-  },
   TIER_2_20: {
     // Updated 2025-09-12 to new live price
     priceId: 'price_1S6M51K1vBaPZ9xHerPEa3p8',
@@ -124,10 +119,6 @@ const PROD_TIERS: SubscriptionTiers = {
 
 // Staging tier IDs
 const STAGING_TIERS: SubscriptionTiers = {
-  FREE: {
-    priceId: 'price_1RIGvuG6l1KZGqIrw14abxeL',
-    name: 'Free',
-  },
   TIER_2_20: {
     priceId: 'price_1RIGvuG6l1KZGqIrCRu0E4Gi',
     name: '2h/$20',

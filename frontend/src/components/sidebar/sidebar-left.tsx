@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Plus, LayoutDashboard, FolderKanban, UserCircle2, Bot, Sparkles, Menu } from 'lucide-react';
+import { Plus, LayoutDashboard, FolderKanban, UserCircle2, Bot } from 'lucide-react';
 
 // NavAgents (thread history) removed per request to hide message/task history from sidebar
 // import { NavAgents } from '@/components/sidebar/nav-agents';
@@ -39,12 +39,8 @@ import { cn } from '@/lib/utils';
 import { usePathname, useSearchParams } from 'next/navigation';
 import posthog from 'posthog-js';
 import { useDocumentModalStore } from '@/lib/stores/use-document-modal-store';
-// Floating mobile menu button component
+
 function FloatingMobileMenuButton() {
-  const { setOpenMobile, openMobile } = useSidebar();
-  const isMobile = useIsMobile();
-
-
   return null;
 }
 
@@ -57,10 +53,12 @@ export function SidebarLeft({
     name: string;
     email: string;
     avatar: string;
+    isAdmin?: boolean;
   }>({
     name: 'Loading...',
     email: 'loading@example.com',
     avatar: '',
+    isAdmin: false,
   });
 
   const pathname = usePathname();
@@ -68,27 +66,33 @@ export function SidebarLeft({
   const [showNewAgentDialog, setShowNewAgentDialog] = useState(false);
   const { isOpen: isDocumentModalOpen } = useDocumentModalStore();
 
-  // Close mobile menu on page navigation
   useEffect(() => {
     if (isMobile) {
       setOpenMobile(false);
     }
   }, [pathname, searchParams, isMobile, setOpenMobile]);
 
-  
+
   useEffect(() => {
     const fetchUserData = async () => {
       const supabase = createClient();
       const { data } = await supabase.auth.getUser();
-
       if (data.user) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .in('role', ['admin', 'super_admin']);
+        const isAdmin = roleData && roleData.length > 0;
+
         setUser({
           name:
             data.user.user_metadata?.name ||
             data.user.email?.split('@')[0] ||
             'User',
           email: data.user.email || '',
-          avatar: data.user.user_metadata?.avatar_url || '',
+          avatar: data.user.user_metadata?.avatar_url || '', // User avatar (different from agent avatar)
+          isAdmin: isAdmin,
         });
       }
     };
@@ -98,10 +102,8 @@ export function SidebarLeft({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Don't handle sidebar shortcuts when document modal is open
-      console.log('Sidebar-left handler - document modal open:', isDocumentModalOpen, 'key:', event.key);
       if (isDocumentModalOpen) return;
-      
+
       if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
         event.preventDefault();
         setOpen(!state.startsWith('expanded'));
@@ -217,8 +219,8 @@ export function SidebarLeft({
         <NavUserWithTeams user={user} />
       </SidebarFooter>
       <SidebarRail />
-      <NewAgentDialog 
-        open={showNewAgentDialog} 
+      <NewAgentDialog
+        open={showNewAgentDialog}
         onOpenChange={setShowNewAgentDialog}
       />
     </Sidebar>

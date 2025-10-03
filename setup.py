@@ -138,6 +138,7 @@ def load_existing_env_vars():
             "TAVILY_API_KEY": backend_env.get("TAVILY_API_KEY", ""),
             "FIRECRAWL_API_KEY": backend_env.get("FIRECRAWL_API_KEY", ""),
             "FIRECRAWL_URL": backend_env.get("FIRECRAWL_URL", ""),
+            "EXA_API_KEY": backend_env.get("EXA_API_KEY", ""),
         },
         "rapidapi": {
             "RAPID_API_KEY": backend_env.get("RAPID_API_KEY", ""),
@@ -686,9 +687,9 @@ class SetupWizard:
         )
         print_info("Create a snapshot with these exact settings:")
         print_info(
-            f"   - Name:\t\t{Colors.GREEN}kortix/suna:0.1.3.12{Colors.ENDC}")
+            f"   - Name:\t\t{Colors.GREEN}kortix/suna:0.1.3.20{Colors.ENDC}")
         print_info(
-            f"   - Snapshot name:\t{Colors.GREEN}kortix/suna:0.1.3.12{Colors.ENDC}")
+            f"   - Snapshot name:\t{Colors.GREEN}kortix/suna:0.1.3.20{Colors.ENDC}")
         print_info(
             f"   - Entrypoint:\t{Colors.GREEN}/usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf{Colors.ENDC}"
         )
@@ -848,9 +849,10 @@ class SetupWizard:
             )
         else:
             print_info(
-                "Suna uses Tavily for search and Firecrawl for web scraping.")
+                "Suna uses Tavily for search, Firecrawl for web scraping, and Exa for people search.")
             print_info(
-                "Get a Tavily key at https://tavily.com and a Firecrawl key at https://firecrawl.dev"
+                "Get a Tavily key at https://tavily.com, a Firecrawl key at https://firecrawl.dev, "
+                "and an Exa key at https://exa.ai"
             )
             input("Press Enter to continue once you have your keys...")
 
@@ -865,6 +867,21 @@ class SetupWizard:
             validate_api_key,
             "Invalid API key.",
             default_value=self.env_vars["search"]["FIRECRAWL_API_KEY"],
+        )
+        
+        # Exa API key (optional for people search)
+        print_info(
+            "\nExa API enables advanced people search with LinkedIn/email enrichment using Websets."
+        )
+        print_info(
+            "This is optional but required for the People Search tool. Leave blank to skip."
+        )
+        self.env_vars["search"]["EXA_API_KEY"] = self._get_input(
+            "Enter your Exa API key (optional): ",
+            validate_api_key,
+            "Invalid API key.",
+            allow_empty=True,
+            default_value=self.env_vars["search"]["EXA_API_KEY"],
         )
 
         # Handle Firecrawl URL configuration
@@ -1150,21 +1167,21 @@ class SetupWizard:
 
         try:
             subprocess.run(
-                ["supabase", "--version"],
+                ["npx", "supabase", "--version"],
                 check=True,
                 capture_output=True,
                 shell=IS_WINDOWS,
             )
         except (subprocess.SubprocessError, FileNotFoundError):
             print_error(
-                "Supabase CLI not found. Install it from: https://supabase.com/docs/guides/cli"
+                "Node.js/npm not found or Supabase CLI not available. Make sure Node.js is installed."
             )
             print_info(
                 "You can skip this step and set up the database manually later.")
-            skip_due_to_cli = (
-                input("Skip database setup due to missing CLI? (y/N): ").lower().strip()
+            skip_due_to_node = (
+                input("Skip database setup due to missing Node.js/npm? (y/N): ").lower().strip()
             )
-            if skip_due_to_cli == "y":
+            if skip_due_to_node == "y":
                 print_info("Skipping Supabase database setup.")
                 return
             sys.exit(1)
@@ -1180,11 +1197,11 @@ class SetupWizard:
 
         try:
             print_info("Logging into Supabase CLI...")
-            subprocess.run(["supabase", "login"], check=True, shell=IS_WINDOWS)
+            subprocess.run(["npx", "supabase", "login"], check=True, shell=IS_WINDOWS)
 
             print_info(f"Linking to Supabase project {project_ref}...")
             subprocess.run(
-                ["supabase", "link", "--project-ref", project_ref],
+                ["npx", "supabase", "link", "--project-ref", project_ref],
                 cwd="backend",
                 check=True,
                 shell=IS_WINDOWS,
@@ -1192,7 +1209,7 @@ class SetupWizard:
 
             print_info("Pushing database migrations...")
             subprocess.run(
-                ["supabase", "db", "push"], cwd="backend", check=True, shell=IS_WINDOWS
+                ["npx", "supabase", "db", "push"], cwd="backend", check=True, shell=IS_WINDOWS
             )
             print_success("Database migrations pushed successfully.")
 

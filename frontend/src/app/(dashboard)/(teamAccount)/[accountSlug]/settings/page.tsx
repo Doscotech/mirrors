@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
 import MobileSidebarToggle from '@/components/layout/MobileSidebarToggle';
 
 type AccountParams = {
@@ -32,11 +32,22 @@ export default function TeamSettingsPage({
 
   React.useEffect(() => {
     async function loadData() {
+      if (!accountSlug) {
+        setError('Account slug is missing');
+        setLoading(false);
+        return;
+      }
+      
       try {
-        const supabaseClient = await createClient();
-        const { data } = await supabaseClient.rpc('get_account_by_slug', {
+        const supabaseClient = createClient();
+        const { data, error: rpcError } = await supabaseClient.rpc('get_account_by_slug', {
           slug: accountSlug,
         });
+        
+        if (rpcError) {
+          throw rpcError;
+        }
+        
         setTeamAccount(data);
         setLoading(false);
       } catch (err) {

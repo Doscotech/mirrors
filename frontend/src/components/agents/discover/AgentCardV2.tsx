@@ -45,7 +45,7 @@ export const AgentCardV2: React.FC<AgentCardV2Props> = ({ item, onPreview, onIns
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-base ring-1 ring-border">
-            {item.avatar || '🤖'}
+            {(item as any).avatar || item.icon_name || '🤖'}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">

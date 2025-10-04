@@ -225,7 +225,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           } */}
 
           <div className='flex items-center gap-2'>
-            {renderConfigDropdown}
+            {/* Config dropdown removed - model/agent selector already at top of screen */}
             {isLoggedIn && <VoiceRecorder
               onTranscription={onTranscription}
               disabled={loading || (disabled && !isAgentRunning)}

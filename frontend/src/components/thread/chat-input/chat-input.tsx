@@ -173,33 +173,42 @@ export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
     const { data: slackIcon } = useComposioToolkitIcon('slack', { enabled: shouldFetchIcons });
     const { data: notionIcon } = useComposioToolkitIcon('notion', { enabled: shouldFetchIcons });
 
-    // Show usage preview logic:
+    // Show usage preview logic: DISABLED - usage bar removed as it's too obstructive
     // - Always show to free users when showToLowCreditUsers is true
     // - For paid users, only show when they're at 70% or more of their cost limit (30% or below remaining)
     const shouldShowUsage = useMemo(() => {
-      if (!subscriptionData || !showToLowCreditUsers || isLocalMode()) return false;
+      return false; // Disabled - usage bar removed
       
-      // Free users: always show
-      if (subscriptionStatus === 'no_subscription') {
-        return true;
-      }
+      // Original logic commented out:
+      // if (!subscriptionData || !showToLowCreditUsers || isLocalMode()) return false;
+      
+      // // Free users: always show
+      // if (subscriptionStatus === 'no_subscription') {
+      //   return true;
+      // }
 
-      // Paid users: only show when at 70% or more of cost limit
-      const currentUsage = subscriptionData.current_usage || 0;
-      const costLimit = subscriptionData.cost_limit || 0;
+      // // Paid users: only show when at 70% or more of cost limit
+      // const currentUsage = subscriptionData.current_usage || 0;
+      // const costLimit = subscriptionData.cost_limit || 0;
 
-      if (costLimit === 0) return false; // No limit set
+      // if (costLimit === 0) return false; // No limit set
 
-      return currentUsage >= (costLimit * 0.7); // 70% or more used (30% or less remaining)
+      // return currentUsage >= (costLimit * 0.7); // 70% or more used (30% or less remaining)
     }, [subscriptionData, showToLowCreditUsers, subscriptionStatus]);
 
-    // Auto-show usage preview when we have subscription data
+    // Auto-show usage preview when we have subscription data - DISABLED
     useEffect(() => {
-      if (shouldShowUsage && defaultShowSnackbar !== false && !userDismissedUsage && (showSnackbar === false || showSnackbar === defaultShowSnackbar)) {
-        setShowSnackbar('upgrade');
-      } else if (!shouldShowUsage && showSnackbar !== false) {
+      // Usage preview disabled - always hide
+      if (showSnackbar !== false) {
         setShowSnackbar(false);
       }
+      
+      // Original logic commented out:
+      // if (shouldShowUsage && defaultShowSnackbar !== false && !userDismissedUsage && (showSnackbar === false || showSnackbar === defaultShowSnackbar)) {
+      //   setShowSnackbar('upgrade');
+      // } else if (!shouldShowUsage && showSnackbar !== false) {
+      //   setShowSnackbar(false);
+      // }
     }, [subscriptionData, showSnackbar, defaultShowSnackbar, shouldShowUsage, subscriptionStatus, showToLowCreditUsers, userDismissedUsage]);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -459,7 +468,7 @@ export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
         </div>
 
         <div className='flex items-center gap-2'>
-          {renderConfigDropdown}
+          {/* Config dropdown removed - model/agent selector already at top of screen */}
           <BillingModal
             open={billingModalOpen}
             onOpenChange={setBillingModalOpen}
@@ -499,7 +508,7 @@ export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
           </Button>
         </div>
       </div>
-    ), [hideAttachments, loading, disabled, isAgentRunning, isUploading, sandboxId, messages, isLoggedIn, renderConfigDropdown, billingModalOpen, setBillingModalOpen, handleTranscription, onStopAgent, handleSubmit, value, uploadedFiles]);
+    ), [hideAttachments, loading, disabled, isAgentRunning, isUploading, sandboxId, messages, isLoggedIn, billingModalOpen, setBillingModalOpen, handleTranscription, onStopAgent, handleSubmit, value, uploadedFiles]);
 
 
 

@@ -175,12 +175,6 @@ export function SidebarLeft({
                 match: (p: string) => p.startsWith('/projects'),
               },
               {
-                href: '/scheduled',
-                label: 'Scheduled',
-                icon: Calendar,
-                match: (p: string) => p.startsWith('/scheduled'),
-              },
-              {
                 href: '/agents?tab=explore',
                 label: 'Command Center',
                 icon: Bot,

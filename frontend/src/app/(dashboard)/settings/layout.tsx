@@ -8,10 +8,9 @@ import { Cog, CreditCard, KeyRound, Shield, Wrench, Palette } from 'lucide-react
 export default function UnifiedSettingsLayout({ children }: { children: React.ReactNode }) {
   const items = [
     { label: 'Account', href: '/settings/account', icon: 'Cog' },
-    { label: 'Billing', href: '/settings/billing', icon: 'CreditCard' },
+    { label: 'Billing', href: '/overview', icon: 'CreditCard' },
     { label: 'API Keys', href: '/settings/api-keys', icon: 'KeyRound' },
     { label: 'Credentials', href: '/settings/credentials', icon: 'Shield' },
-    { label: 'Environment', href: '/settings/environment', icon: 'Wrench' },
     { label: 'Appearance', href: '/settings/appearance', icon: 'Palette' },
   ] as const; // nav now targets individual subpages instead of hash anchors
   return (

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { createClient } from '@/lib/supabase/client';
 import { getSubscription } from '@/lib/api';
-import UsageLogs from '@/components/billing/usage-logs';
 import { StandardHero } from '@/components/layout/StandardHero';
 import { GlassPanel } from '@/components/profile/GlassPanel';
 import { UsageRing } from '@/components/profile/UsageRing';
@@ -32,7 +31,6 @@ export default function ProfileInner() {
   const { theme, setTheme } = useTheme();
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [subLoading, setSubLoading] = useState(false);
-  const [showUsageLogs, setShowUsageLogs] = useState(false);
   // Filter + thread data state (moved above returns to keep hook order stable)
   const [activeStatus, setActiveStatus] = useState<string>('All');
   const [activeMonth, setActiveMonth] = useState<Date>(new Date());
@@ -192,17 +190,7 @@ export default function ProfileInner() {
                   <StatCard label="Limit" value={formatDollar(subscriptionData?.cost_limit ?? data.cost_limit)} loading={subLoading} accent="success" />
                   <StatCard label="Status" value={subscriptionData?.subscription?.cancel_at_period_end ? 'Cancelling' : 'Active'} loading={subLoading} accent="warning" />
                 </div>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setShowUsageLogs(s => !s)}
-                    className="h-8 px-3 text-xs rounded bg-gradient-to-r from-indigo-500 to-emerald-500 text-white shadow hover:opacity-90 transition"
-                  >{showUsageLogs ? 'Hide Usage Logs' : 'Show Usage Logs'}</button>
-                </div>
-                {showUsageLogs && (
-                  <div className="mt-6 border rounded-lg p-4 bg-muted/30">
-                    <UsageLogs accountId={data.account?.id || ''} />
-                  </div>
-                )}
+                {/* Usage logs removed - component doesn't exist */}
               </div>
               <div className="space-y-4">
                 <h2 className="text-sm font-medium tracking-wide text-muted-foreground/80">Projects</h2>

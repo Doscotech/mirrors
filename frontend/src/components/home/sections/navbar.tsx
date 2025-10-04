@@ -124,7 +124,8 @@ export function Navbar() {
             <div className="flex items-center justify-start flex-shrink-0 w-auto md:w-[200px]">
               <Link href="/" className="flex items-center gap-3">
                 <span
-                  className="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent"
+                  className="text-2xl md:text-3xl"
+                  style={{ fontFamily: 'var(--font-xera-accent)', fontStyle: 'italic', color: 'hsl(var(--primary))', lineHeight: 1 }}
                 >
                   Xera
                 </span>

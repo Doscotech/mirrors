@@ -6,6 +6,7 @@ import { Building2, User, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepWrapper } from '../shared/step-wrapper';
 import { userContext, updateUserContext } from '../shared/context';
+import { vujahdayScript } from '@/app/fonts';
 
 const companySizes = [
   { id: 'solo', label: 'Just me', description: 'Solo founder or freelancer' },
@@ -77,7 +78,9 @@ export const UserTypeStep = () => {
               className="text-center space-y-8"
             >
               <div>
-                <h1 className="text-4xl font-bold mb-3">Welcome to Xera</h1>
+                <h1 className="text-4xl font-bold mb-3">
+                  Welcome to <span className={vujahdayScript.className} style={{ fontStyle: 'italic', color: 'hsl(var(--primary))' }}>Xera</span>
+                </h1>
                 <p className="text-lg text-muted-foreground">Choose your account type</p>
               </div>
 

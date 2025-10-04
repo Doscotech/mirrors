@@ -19,7 +19,7 @@ export function FooterSection() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between p-10">
             <div className="flex flex-col items-start justify-start gap-y-5 max-w-xs mx-0">
               <Link href="/" className="flex items-center gap-2">
-                <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Xera</span>
+                <span className="text-3xl" style={{ fontFamily: 'var(--font-xera-accent)', fontStyle: 'italic', color: 'hsl(var(--primary))', lineHeight: 1 }}>Xera</span>
               </Link>
               <p className="tracking-tight text-muted-foreground font-medium">
                 {siteConfig.hero.description}

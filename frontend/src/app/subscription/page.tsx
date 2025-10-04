@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { apiClient, backendApi } from '@/lib/api-client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KortixLogo } from '@/components/sidebar/kortix-logo';
+import { vujahdayScript } from '@/app/fonts';
 import { createClient } from '@/lib/supabase/client';
 import { clearUserLocalStorage } from '@/lib/utils/clear-local-storage';
 import { useMaintenanceNoticeQuery } from '@/hooks/react-query/edge-flags';
@@ -110,7 +111,7 @@ export default function SubscriptionRequiredPage() {
           <div className="flex items-center justify-between">
             <div className="flex-1" />
             <div className="text-2xl font-bold flex items-center justify-center gap-2">
-              <KortixLogo/>
+              <span className={vujahdayScript.className} style={{ fontSize: '2rem', fontStyle: 'italic', color: 'hsl(var(--primary))' }}>Xera</span>
               <span>{isTrialExpired ? 'Your Trial Has Ended' : 'Subscription Required'}</span>
             </div>
             <div className="flex-1 flex justify-end">

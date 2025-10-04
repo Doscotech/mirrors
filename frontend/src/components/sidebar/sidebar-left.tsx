@@ -132,11 +132,10 @@ export function SidebarLeft({
         <div className="flex h-[44px] items-center px-2 relative">
           <Link href="/dashboard" className="flex-shrink-0 group" onClick={() => isMobile && setOpenMobile(false)}>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-xl group-hover:shadow-primary/30 transition-all duration-300">
-                <span className="text-white font-bold text-sm">X</span>
-              </div>
-              {state !== 'collapsed' && (
-                <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Xera</span>
+              {state !== 'collapsed' ? (
+                <span className="text-3xl" style={{ fontFamily: 'var(--font-xera-accent)', fontStyle: 'italic', color: 'hsl(var(--primary))', lineHeight: 1 }}>Xera</span>
+              ) : (
+                <span className="text-2xl" style={{ fontFamily: 'var(--font-xera-accent)', fontStyle: 'italic', color: 'hsl(var(--primary))', lineHeight: 1 }}>X</span>
               )}
             </div>
           </Link>

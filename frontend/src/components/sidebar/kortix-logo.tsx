@@ -1,33 +1,28 @@
 'use client';
 
-import Image from 'next/image';
-import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { vujahdayScript } from '@/app/fonts';
 
 interface KortixLogoProps {
   size?: number;
+  className?: string;
 }
-export function KortixLogo({ size = 24 }: KortixLogoProps) {
-  const { theme, systemTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
 
-  // After mount, we can access the theme
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const shouldInvert = mounted && (
-    theme === 'dark' || (theme === 'system' && systemTheme === 'dark')
-  );
-
+export function KortixLogo({ size = 24, className = '' }: KortixLogoProps) {
+  // Calculate font size based on the size prop
+  const fontSize = size * 1.2; // Make text slightly larger than the size
+  
   return (
-    <Image
-        src="/kortix-symbol.svg"
-        alt="Kortix"
-        width={size}
-        height={size}
-        className={`${shouldInvert ? 'invert' : ''} flex-shrink-0`}
-        style={{ width: size, height: size, minWidth: size, minHeight: size }}
-      />
+    <span 
+      className={`${vujahdayScript.className} ${className}`}
+      style={{ 
+        fontSize: `${fontSize}px`,
+        fontStyle: 'italic',
+        color: 'hsl(var(--primary))',
+        lineHeight: 1,
+        display: 'inline-block'
+      }}
+    >
+      Xera
+    </span>
   );
 }

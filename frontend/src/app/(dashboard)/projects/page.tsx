@@ -5,11 +5,29 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { getProjects } from '@/lib/api';
 import MobileSidebarToggle from '@/components/layout/MobileSidebarToggle';
+import { useDeleteThread } from '@/hooks/react-query/sidebar/use-sidebar';
+import { Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 
 export default function ProjectsPage() {
   // This page now represents the user's thread/message history.
   const [search, setSearch] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [threadToDelete, setThreadToDelete] = useState<{ id: string; name: string } | null>(null);
+  
   const { data: threads = [], isLoading, error } = useAllThreads();
+  const { mutate: deleteThreadMutation, isPending: isDeleting } = useDeleteThread();
 
   // Load projects to show friendly project names on thread cards.
   const { data: projects = [] } = useQuery({
@@ -188,6 +206,32 @@ export default function ProjectsPage() {
     );
   }, [enriched, search]);
 
+  const handleDeleteClick = (e: React.MouseEvent, threadId: string, threadName: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setThreadToDelete({ id: threadId, name: threadName });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!threadToDelete) return;
+    
+    deleteThreadMutation(
+      { threadId: threadToDelete.id },
+      {
+        onSuccess: () => {
+          toast.success('Thread deleted successfully');
+          setDeleteDialogOpen(false);
+          setThreadToDelete(null);
+        },
+        onError: (error) => {
+          toast.error('Failed to delete thread');
+          console.error('Delete error:', error);
+        },
+      }
+    );
+  };
+
   return (
     <div className="relative p-6 space-y-6">
       <div className="absolute top-2 left-2 md:hidden z-10">
@@ -214,13 +258,25 @@ export default function ProjectsPage() {
           const updated = t.updated_at || t.created_at;
           const showProjectChip = projectName && projectName !== t._title;
           return (
-            <Link key={t.thread_id} href={target} className="group border rounded-lg p-4 hover:border-primary transition-colors">
-              <div className="flex items-start justify-between mb-2">
-                <h2 className="font-medium truncate max-w-[70%] group-hover:text-primary">{t._title}</h2>
-                {showProjectChip && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{projectName}</span>
-                )}
-              </div>
+            <div key={t.thread_id} className="relative group border rounded-lg hover:border-primary transition-colors">
+              <Link href={target} className="block p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h2 className="font-medium truncate max-w-[70%] group-hover:text-primary">{t._title}</h2>
+                  <div className="flex items-center gap-2">
+                    {showProjectChip && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{projectName}</span>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                      onClick={(e) => handleDeleteClick(e, t.thread_id, t._title)}
+                      disabled={isDeleting}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               <p className="text-xs text-muted-foreground line-clamp-2 min-h-[32px]">{t._description || 'No description available.'}</p>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
                 {t._agentName && (
@@ -230,7 +286,8 @@ export default function ProjectsPage() {
                 <span>•</span>
                 <span>ID {t.thread_id.slice(0,8)}</span>
               </div>
-            </Link>
+              </Link>
+            </div>
           );
         })}
         {!isLoading && filtered.length === 0 && (
@@ -239,6 +296,28 @@ export default function ProjectsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Thread</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{threadToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

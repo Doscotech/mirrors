@@ -122,12 +122,12 @@ export const MyAgentsTab = ({
             <p className="text-destructive">Failed to load templates</p>
           </div>
         ) : !myTemplates || myTemplates.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-3xl flex items-center justify-center mb-6">
+          <div className="text-center py-20">
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-3xl flex items-center justify-center mb-6 shadow-lg">
               <Globe className="h-10 w-10 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-3">No published templates yet</h3>
-            <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            <h3 className="text-2xl font-semibold mb-3">No published templates yet</h3>
+            <p className="text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
               Publish your agents to the marketplace to share them with the community and track their usage.
             </p>
           </div>
@@ -186,7 +186,7 @@ export const MyAgentsTab = ({
   };
 
   return (
-    <div className="space-y-6 flex flex-col min-h-full">
+    <div className="space-y-8 flex flex-col min-h-full">
       <DiscoverHeader
         value={agentsSearchQuery}
         onChange={setAgentsSearchQuery}
@@ -195,14 +195,14 @@ export const MyAgentsTab = ({
         right={(
           <button
             onClick={onCreateAgent}
-            className="inline-flex items-center gap-2 rounded-xl border bg-background/70 px-3.5 py-2.5 text-sm hover:bg-background/90 transition"
+            className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 px-4 py-2.5 text-sm font-medium shadow-sm hover:shadow-md transition-all duration-300"
             title="Create agent"
             aria-label="Create agent"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            <span className="hidden sm:inline">New Agent</span>
+            <span className="hidden sm:inline text-primary">New Agent</span>
           </button>
         )}
         title="My Agents"
@@ -213,26 +213,26 @@ export const MyAgentsTab = ({
         <div className="hidden" />
         <div className="flex items-center gap-3">
           <Select value={agentFilter} onValueChange={(value: AgentFilter) => setAgentFilter(value)}>
-            <SelectTrigger className="w-[180px] h-12 rounded-xl">
+            <SelectTrigger className="w-[180px] h-11 rounded-xl border-border/50 bg-card/50 shadow-sm hover:shadow-md transition-all">
               <SelectValue placeholder="Filter agents" />
             </SelectTrigger>
-            <SelectContent className='rounded-xl'>
+            <SelectContent className='rounded-xl border-border/50 shadow-xl'>
               {filterOptions.map((filter) => (
-                <SelectItem key={filter.value} className='rounded-xl' value={filter.value}>
+                <SelectItem key={filter.value} className='rounded-lg focus:bg-accent/50' value={filter.value}>
                   {filter.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <div className="ml-1 inline-flex items-center rounded-xl border bg-background/70">
+          <div className="inline-flex items-center rounded-xl border border-border/50 bg-card/50 shadow-sm overflow-hidden">
             <button
               onClick={() => setViewMode('grid')}
-              className={`px-3 py-2 text-sm rounded-l-xl ${viewMode === 'grid' ? 'bg-primary/10 text-primary border-r border-primary/20' : 'text-muted-foreground'}`}
+              className={`px-4 py-2.5 text-sm font-medium transition-all ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
               title="Grid view"
             >Grid</button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-2 text-sm rounded-r-xl ${viewMode === 'list' ? 'bg-primary/10 text-primary border-l border-primary/20' : 'text-muted-foreground'}`}
+              className={`px-4 py-2.5 text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
               title="List view"
             >List</button>
           </div>

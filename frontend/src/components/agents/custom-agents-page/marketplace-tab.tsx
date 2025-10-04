@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { Globe } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -93,12 +94,12 @@ export const MarketplaceTab = ({
   ).slice(0, 24);
 
   return (
-  <div className="space-y-5 flex flex-col min-h-full">
+  <div className="space-y-8 flex flex-col min-h-full">
       <DiscoverHeader
         value={marketplaceSearchQuery}
         onChange={setMarketplaceSearchQuery}
         onSubmit={() => { /* triggers useEffect pagination reset upstream */ }}
-  nav={<TabsNavigation activeTab={'marketplace'} onTabChange={(tab) => { onTabChange?.(tab); }} />}
+  nav={<TabsNavigation activeTab={'explore'} onTabChange={(tab) => { onTabChange?.(tab); }} />}
       />
 
       <FiltersBar
@@ -121,24 +122,31 @@ export const MarketplaceTab = ({
 
       <div className="flex-1">
         {marketplaceLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-card rounded-2xl overflow-hidden shadow-sm">
-                <Skeleton className="h-48" />
-                <div className="p-6 space-y-3">
-                  <Skeleton className="h-5 rounded" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 rounded" />
-                    <Skeleton className="h-4 rounded w-3/4" />
+              <div key={i} className="bg-gradient-to-br from-card/95 to-card/50 backdrop-blur-sm rounded-3xl overflow-hidden border border-border/40 shadow-sm">
+                <div className="p-6 space-y-4">
+                  <div className="flex items-start justify-between">
+                    <Skeleton className="h-12 w-12 rounded-2xl" />
+                    <Skeleton className="h-6 w-16 rounded-full" />
                   </div>
-                  <Skeleton className="h-10 rounded-full" />
+                  <Skeleton className="h-6 rounded w-3/4" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 rounded w-full" />
+                    <Skeleton className="h-4 rounded w-2/3" />
+                  </div>
+                  <Skeleton className="h-9 rounded-xl w-full" />
                 </div>
               </div>
             ))}
           </div>
         ) : allMarketplaceItems.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
+          <div className="text-center py-20">
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-3xl flex items-center justify-center mb-6">
+              <Globe className="h-10 w-10 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-3">No agents found</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
               {marketplaceSearchQuery 
                 ? "No templates found matching your criteria. Try adjusting your search or filters."
                 : "No agent templates are currently available in the marketplace."}
@@ -150,12 +158,12 @@ export const MarketplaceTab = ({
               <SpotlightRow items={spotlightItems} onPreview={handleAgentClick} onInstall={onInstallClick} />
             )}
             {marketplaceFilter === 'all' ? (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {/* <MarketplaceSectionHeader
                   title="Popular Agents"
                   subtitle="Sorted by popularity - most downloads first"
                 /> */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {allMarketplaceItems.map((item) => (
                     <UnifiedAgentCard
                       key={item.id}
@@ -188,7 +196,7 @@ export const MarketplaceTab = ({
                 </div>
               </div>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {allMarketplaceItems.map((item) => (
                   <UnifiedAgentCard
                     key={item.id}

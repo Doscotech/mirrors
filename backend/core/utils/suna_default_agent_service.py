@@ -12,8 +12,8 @@ class SunaDefaultAgentService:
         logger.debug("🔄 XeraDefaultAgentService initialized (simplified)")
     
     async def get_suna_default_config(self) -> Dict[str, Any]:
-    """Get the current Xera configuration."""
-    from core.suna_config import SUNA_CONFIG
+        """Get the current Xera configuration."""
+        from core.suna_config import SUNA_CONFIG
         return SUNA_CONFIG.copy()
     
     async def install_for_all_users(self) -> Dict[str, Any]:
@@ -89,14 +89,14 @@ class SunaDefaultAgentService:
                 if replace_existing:
                     # Delete existing agent
                     await self._delete_agent(existing_agent_id)
-            logger.debug("Deleted existing Xera agent for replacement")
+                    logger.debug("Deleted existing Xera agent for replacement")
                 else:
-            logger.debug(f"User {account_id} already has Xera agent: {existing_agent_id}")
+                    logger.debug(f"User {account_id} already has Xera agent: {existing_agent_id}")
                     return existing_agent_id
 
             # Create new agent
-        agent_id = await self._create_suna_agent_for_user(account_id)
-        logger.debug(f"Successfully installed Xera agent {agent_id} for user {account_id}")
+            agent_id = await self._create_suna_agent_for_user(account_id)
+            logger.debug(f"Successfully installed Xera agent {agent_id} for user {account_id}")
             return agent_id
                 
         except Exception as e:
@@ -104,7 +104,7 @@ class SunaDefaultAgentService:
             return None
     
     async def get_suna_agent_stats(self) -> Dict[str, Any]:
-    """Get statistics about Xera agents."""
+        """Get statistics about Xera agents."""
         try:
             client = await self._db.client
             

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from utils.auth_utils import verify_and_get_user_id_from_jwt
-from utils.logger import logger
-from services.supabase import DBConnection
-from services import billing
-from services import redis as redis_service
+from core.utils.auth_utils import verify_and_get_user_id_from_jwt
+from core.utils.logger import logger
+from core.services.supabase import DBConnection
+# from core.services import billing  # TODO: Fix billing imports
+from core.services import redis as redis_service
 import json
 
 router = APIRouter()
@@ -47,14 +47,15 @@ async def get_user_profile(user_id: str = Depends(verify_and_get_user_id_from_jw
         subscription_info = None
         current_usage = None
         cost_limit = None
-        try:
-            subscription = await billing.get_user_subscription(user_id)
-            subscription_info = subscription
-            usage_info = await billing.get_user_usage(user_id)
-            current_usage = usage_info.get('dollar_total') if usage_info else None
-            cost_limit = usage_info.get('dollar_limit') if usage_info else None
-        except Exception as e:
-            logger.warning(f"Failed to gather billing info for {user_id}: {e}")
+        # TODO: Re-enable billing info once imports are fixed
+        # try:
+        #     subscription = await billing.get_user_subscription(user_id)
+        #     subscription_info = subscription
+        #     usage_info = await billing.get_user_usage(user_id)
+        #     current_usage = usage_info.get('dollar_total') if usage_info else None
+        #     cost_limit = usage_info.get('dollar_limit') if usage_info else None
+        # except Exception as e:
+        #     logger.warning(f"Failed to gather billing info for {user_id}: {e}")
 
         # Credential profile count
         credential_profiles = 0

@@ -716,7 +716,7 @@ class SetupWizard:
             )
         else:
             print_info(
-                "Suna requires at least one LLM provider. Supported: OpenAI, Anthropic, Google Gemini, OpenRouter."
+                "Xera requires at least one LLM provider. Supported: OpenAI, Anthropic, Google Gemini, OpenRouter."
             )
 
         # Don't clear existing keys if we're updating

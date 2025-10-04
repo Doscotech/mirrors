@@ -10,7 +10,7 @@ import { useAccounts } from '@/hooks/use-accounts';
 import { useAgents } from '@/hooks/react-query/agents/use-agents';
 import { useBillingStatus } from '@/hooks/react-query/subscriptions/use-billing';
 import { useSubscription } from '@/hooks/react-query/subscriptions/use-subscriptions';
-import { useUsageLogs } from '@/hooks/react-query/subscriptions/use-billing';
+// import { useUsageLogs } from '@/hooks/react-query/subscriptions/use-billing'; // TODO: Hook not implemented yet
 import { useQuery } from '@tanstack/react-query';
 import { getProjects } from '@/lib/api';
 import Link from 'next/link';
@@ -59,7 +59,8 @@ export default function OverviewPage() {
   // Usage / Subscription
   const { data: subscriptionData, isLoading: subscriptionLoading } = useSubscription();
   const { data: billingStatus, isLoading: billingLoading } = useBillingStatus();
-  const { data: usageLogsData } = useUsageLogs(0, 1000);
+  // const { data: usageLogsData } = useUsageLogs(0, 1000); // TODO: Hook not implemented yet
+  const usageLogsData = undefined; // Temporary placeholder
 
   // Agents (for counts)
   const { data: agentsResp, isLoading: agentsLoading } = useAgents({ page: 1, limit: 1, sort_by: 'created_at', sort_order: 'desc' });

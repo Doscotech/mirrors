@@ -12,6 +12,11 @@ interface TabsNavigationProps {
 
 const agentTabs: TabConfig[] = [
   {
+    value: 'explore',
+    icon: ShoppingBag,
+    label: 'Explore',
+  },
+  {
     value: 'my-agents',
     icon: Bot,
     label: 'My Agents',

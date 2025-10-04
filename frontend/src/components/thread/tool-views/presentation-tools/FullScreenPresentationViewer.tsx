@@ -103,11 +103,32 @@ export function FullScreenPresentationViewer({
       
       const response = await fetch(urlWithCacheBust, {
         cache: 'no-cache',
-        headers: { 'Cache-Control': 'no-cache' }
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
       });
       
       if (response.ok) {
-        const data = await response.json();
+        // Read response as text first (can only read body once)
+        const textContent = await response.text();
+        
+        // Check if response looks like JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.warn('Response is not JSON:', { contentType, preview: textContent.substring(0, 100) });
+          throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}`);
+        }
+        
+        // Try to parse the text as JSON
+        let data;
+        try {
+          data = JSON.parse(textContent);
+        } catch (parseError) {
+          console.error('Failed to parse JSON:', parseError);
+          console.warn('Response content:', textContent.substring(0, 200));
+          throw new Error(`Invalid JSON response: ${parseError}`);
+        }
+        
         setMetadata(data);
         console.log('Successfully loaded presentation metadata:', data);
         setIsLoading(false);

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Plus, LayoutDashboard, FolderKanban, UserCircle2, Bot } from 'lucide-react';
+import { Plus, LayoutDashboard, FolderKanban, UserCircle2, Bot, Calendar } from 'lucide-react';
 
 // NavAgents (thread history) removed per request to hide message/task history from sidebar
 // import { NavAgents } from '@/components/sidebar/nav-agents';
@@ -125,23 +125,26 @@ export function SidebarLeft({
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r-0 bg-background/95 backdrop-blur-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+      className="border-r border-border/40 bg-gradient-to-b from-background via-background/98 to-background/95 backdrop-blur-md [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] shadow-sm"
       {...props}
     >
-      <SidebarHeader className="px-2 py-2">
-        <div className="flex h-[40px] items-center px-1 relative">
-          <Link href="/dashboard" className="flex-shrink-0" onClick={() => isMobile && setOpenMobile(false)}>
-            <span className="text-base font-bold tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Xera</span>
-          </Link>
-          {state !== 'collapsed' && (
-            <div className="ml-2 transition-all duration-200 ease-in-out whitespace-nowrap">
+      <SidebarHeader className="px-3 py-4 border-b border-border/40">
+        <div className="flex h-[44px] items-center px-2 relative">
+          <Link href="/dashboard" className="flex-shrink-0 group" onClick={() => isMobile && setOpenMobile(false)}>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-xl group-hover:shadow-primary/30 transition-all duration-300">
+                <span className="text-white font-bold text-sm">X</span>
+              </div>
+              {state !== 'collapsed' && (
+                <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Xera</span>
+              )}
             </div>
-          )}
+          </Link>
           <div className="ml-auto flex items-center gap-2">
             {state !== 'collapsed' && !isMobile && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <SidebarTrigger className="h-8 w-8" />
+                  <SidebarTrigger className="h-8 w-8 hover:bg-accent/50 rounded-lg transition-colors" />
                 </TooltipTrigger>
                 <TooltipContent>Toggle sidebar (CMD+B)</TooltipContent>
               </Tooltip>
@@ -149,9 +152,9 @@ export function SidebarLeft({
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent className="[&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+      <SidebarContent className="[&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] px-2 py-3">
         <SidebarGroup>
-          <SidebarMenu>
+          <SidebarMenu className="space-y-1">
             {[
               {
                 href: '/dashboard',
@@ -173,7 +176,13 @@ export function SidebarLeft({
                 match: (p: string) => p.startsWith('/projects'),
               },
               {
-                href: '/agents?tab=marketplace',
+                href: '/scheduled',
+                label: 'Scheduled',
+                icon: Calendar,
+                match: (p: string) => p.startsWith('/scheduled'),
+              },
+              {
+                href: '/agents?tab=explore',
                 label: 'Command Center',
                 icon: Bot,
                 match: (p: string) => p.startsWith('/agents'),
@@ -187,16 +196,25 @@ export function SidebarLeft({
             ].map(item => (
               <Link key={item.href} href={item.href}>
                 <SidebarMenuButton
-                  className={cn('touch-manipulation mt-1 first:mt-0', {
-                    'bg-accent text-accent-foreground font-medium': item.match(pathname),
-                  })}
+                  className={cn(
+                    'touch-manipulation rounded-xl transition-all duration-200 group relative overflow-hidden',
+                    item.match(pathname)
+                      ? 'bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-semibold shadow-sm border border-primary/20'
+                      : 'hover:bg-accent/50 text-muted-foreground hover:text-foreground font-medium'
+                  )}
                   onClick={() => {
                     item.onClick?.();
                     if (isMobile) setOpenMobile(false);
                   }}
                 >
-                  <item.icon className="h-4 w-4 mr-2" />
-                  <span className="flex items-center justify-between w-full">{item.label}</span>
+                  {item.match(pathname) && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50" />
+                  )}
+                  <item.icon className={cn(
+                    "h-4 w-4 mr-3 relative z-10 transition-transform duration-200",
+                    item.match(pathname) ? "scale-110" : "group-hover:scale-110"
+                  )} />
+                  <span className="flex items-center justify-between w-full relative z-10">{item.label}</span>
                 </SidebarMenuButton>
               </Link>
             ))}
@@ -205,12 +223,12 @@ export function SidebarLeft({
   {/* Thread / message history removed */}
       </SidebarContent>
   {/* Enterprise demo CTA removed per request */}
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-border/40 px-2 py-3">
         {state === 'collapsed' && (
-          <div className="mt-2 flex justify-center">
+          <div className="mb-2 flex justify-center">
             <Tooltip>
               <TooltipTrigger asChild>
-                <SidebarTrigger className="h-8 w-8" />
+                <SidebarTrigger className="h-8 w-8 hover:bg-accent/50 rounded-lg transition-colors" />
               </TooltipTrigger>
               <TooltipContent>Expand sidebar (CMD+B)</TooltipContent>
             </Tooltip>

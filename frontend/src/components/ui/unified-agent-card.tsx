@@ -171,15 +171,15 @@ const MarketplaceBadge: React.FC<{
   isKortixTeam?: boolean; 
   isOwner?: boolean;
 }> = ({ isKortixTeam, isOwner }) => (
-  <div className="flex gap-1 flex-wrap">
+  <div className="flex gap-1.5 flex-wrap">
     {isKortixTeam && (
-      <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 dark:bg-blue-950 dark:text-blue-300">
+      <Badge variant="secondary" className="bg-gradient-to-br from-blue-100 to-blue-50 text-blue-700 border-blue-200/50 shadow-sm dark:from-blue-950 dark:to-blue-900 dark:text-blue-300 dark:border-blue-800/50 font-medium">
         <CheckCircle className="h-3 w-3 mr-1" />
         Xera
       </Badge>
     )}
     {isOwner && (
-      <Badge variant="secondary" className="bg-green-100 text-green-700 border-0 dark:bg-green-950 dark:text-green-300">
+      <Badge variant="secondary" className="bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200/50 shadow-sm dark:from-emerald-950 dark:to-emerald-900 dark:text-emerald-300 dark:border-emerald-800/50 font-medium">
         Owner
       </Badge>
     )}
@@ -189,14 +189,14 @@ const MarketplaceBadge: React.FC<{
 const TemplateBadge: React.FC<{ isPublic?: boolean }> = ({ isPublic }) => {
   if (isPublic) {
     return (
-      <Badge variant="default" className="bg-green-100 text-green-700 border-0 dark:bg-green-950 dark:text-green-300">
+      <Badge variant="default" className="bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200/50 shadow-sm dark:from-emerald-950 dark:to-emerald-900 dark:text-emerald-300 dark:border-emerald-800/50 font-medium">
         <Globe className="h-3 w-3" />
         Public
       </Badge>
     );
   }
   return (
-    <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-0 dark:bg-gray-800 dark:text-gray-300">
+    <Badge variant="secondary" className="bg-gradient-to-br from-gray-100 to-gray-50 text-gray-700 border-gray-200/50 shadow-sm dark:from-gray-800 dark:to-gray-900 dark:text-gray-300 dark:border-gray-700/50 font-medium">
       <GlobeLock className="h-3 w-3" />
       Private
     </Badge>
@@ -204,15 +204,15 @@ const TemplateBadge: React.FC<{ isPublic?: boolean }> = ({ isPublic }) => {
 };
 
 const AgentBadges: React.FC<{ data: BaseAgentData, isSunaAgent: boolean }> = ({ data, isSunaAgent }) => (
-  <div className="flex gap-1">
+  <div className="flex gap-1.5">
     {!isSunaAgent && data.current_version && (
-      <Badge variant="outline" className="text-xs">
+      <Badge variant="outline" className="text-xs border-border/50 shadow-sm font-medium">
         <GitBranch className="h-3 w-3 mr-1" />
         {data.current_version.version_name}
       </Badge>
     )}
     {!isSunaAgent && data.is_public && (
-      <Badge variant="default" className="bg-green-100 text-green-700 border-0 dark:bg-green-950 dark:text-green-300 text-xs">
+      <Badge variant="default" className="bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200/50 shadow-sm dark:from-emerald-950 dark:to-emerald-900 dark:text-emerald-300 dark:border-emerald-800/50 text-xs font-medium">
         <Globe className="h-3 w-3 mr-1" />
         Published
       </Badge>
@@ -222,16 +222,16 @@ const AgentBadges: React.FC<{ data: BaseAgentData, isSunaAgent: boolean }> = ({ 
 
 // Tag list component
 const TagList: React.FC<{ tags?: string[]; maxTags?: number }> = ({ tags, maxTags = 3 }) => (
-  <div className="flex flex-wrap gap-1 min-h-[1.25rem]">
+  <div className="flex flex-wrap gap-1.5 min-h-[1.25rem]">
     {tags && tags.length > 0 && (
       <>
         {tags.slice(0, maxTags).map(tag => (
-          <Badge key={tag} variant="outline" className="text-xs border-border/50">
+          <Badge key={tag} variant="outline" className="text-xs border-border/40 bg-muted/30 hover:bg-muted/50 transition-colors font-medium">
             {tag}
           </Badge>
         ))}
         {tags.length > maxTags && (
-          <Badge variant="outline" className="text-xs border-border/50">
+          <Badge variant="outline" className="text-xs border-border/40 bg-muted/30 font-medium">
             +{tags.length - maxTags}
           </Badge>
         )}
@@ -429,7 +429,7 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
   
   const renderStandardCard = () => {
     const cardClassName = cn(
-      'group relative bg-card rounded-2xl overflow-hidden transition-all duration-300 border cursor-pointer flex flex-col border-border/50 hover:border-primary/20',
+      'group relative bg-gradient-to-br from-card/95 to-card/50 backdrop-blur-sm rounded-3xl overflow-hidden transition-all duration-500 border cursor-pointer flex flex-col border-border/40 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1',
       className
     );
     
@@ -449,14 +449,14 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
     const renderMetadata = () => {
       if (variant === 'marketplace') {
         return (
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <User className="h-3 w-3" />
-              <span>{data.creator_name || 'Anonymous'}</span>
+          <div className="flex items-center justify-between text-xs text-muted-foreground/80">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/40">
+              <User className="h-3.5 w-3.5" />
+              <span className="font-medium">{data.creator_name || 'Anonymous'}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <Download className="h-3 w-3" />
-              <span>{data.download_count || 0} installs</span>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/5 text-primary">
+              <Download className="h-3.5 w-3.5" />
+              <span className="font-semibold">{data.download_count || 0}</span>
             </div>
           </div>
         );
@@ -464,9 +464,9 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
       
       if ((variant === 'template' || variant === 'agent') && data.is_public && data.download_count && data.download_count > 0) {
         return (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Download className="h-3 w-3" />
-            <span>{data.download_count} downloads</span>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground px-2 py-1 rounded-full bg-primary/5">
+            <Download className="h-3.5 w-3.5 text-primary" />
+            <span className="font-medium">{data.download_count} downloads</span>
           </div>
         );
       }
@@ -484,7 +484,7 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
                 onPrimaryAction?.(data, e);
               }}
               disabled={isActioning}
-              className="flex-1"
+              className="flex-1 rounded-xl font-medium shadow-sm hover:shadow-md transition-all"
               size="sm"
             >
               {isActioning ? (
@@ -506,7 +506,7 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="px-2"
+                    className="px-2 rounded-xl border-border/50 hover:border-border hover:bg-accent/50"
                     disabled={isActioning}
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -532,7 +532,7 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
               onClick={(e) => onPrimaryAction?.(data, e)}
               disabled={isActioning}
               variant={data.is_public ? "outline" : "default"}
-              className="w-full"
+              className="w-full rounded-xl font-medium shadow-sm hover:shadow-md transition-all"
               size="sm"
             >
               {isActioning ? (
@@ -565,16 +565,25 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
     
     return (
       <div className={cardClassName} onClick={() => onClick?.(data)}>
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-primary/3 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
+        
+        {/* Glow effect */}
+        <div className="absolute -inset-[1px] bg-gradient-to-br from-primary/20 to-primary/5 rounded-3xl opacity-0 group-hover:opacity-100 blur-sm transition-all duration-500 -z-10" />
+        
         <div className="relative p-6 flex flex-col flex-1">
           <div className="flex items-start justify-between mb-4">
-            <CardAvatar data={data} variant={variant} />
+            <div className="relative">
+              <CardAvatar data={data} variant={variant} />
+              {/* Avatar glow on hover */}
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-50 transition-opacity duration-500" />
+            </div>
             <div className="flex items-center gap-2">
               {renderBadge()}
             </div>
           </div>
           
-          <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-1">
+          <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors duration-300">
             {data.name}
           </h3>
           
@@ -583,10 +592,8 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
               <TagList tags={data.tags} />
             </div>
             
-            <div className="mt-auto">
-              <div className="mb-3">
-                {renderMetadata()}
-              </div>
+            <div className="mt-auto space-y-3">
+              {renderMetadata()}
               {renderActions()}
             </div>
           </div>

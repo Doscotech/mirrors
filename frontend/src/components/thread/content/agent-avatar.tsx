@@ -101,19 +101,43 @@ export const AgentAvatar: React.FC<AgentAvatarProps> = ({
     );
   }
 
-  // Fallback to default bot icon
+  // Fallback to default bot icon with gradient background
+  // Generate a consistent gradient based on agent name
+  const gradients = [
+    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+    'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+    'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+    'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+    'linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%)',
+  ];
+  
+  const nameHash = agentName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const gradientIndex = nameHash % gradients.length;
+  const selectedGradient = gradients[gradientIndex];
+  
   return (
     <div 
       className={cn(
-        "flex items-center justify-center bg-muted border",
+        "flex items-center justify-center border border-white/20 shadow-sm",
         className
       )}
-      style={{ width: size, height: size, ...borderRadiusStyle }}
+      style={{ 
+        width: size, 
+        height: size, 
+        background: selectedGradient,
+        ...borderRadiusStyle 
+      }}
     >
       <DynamicIcon 
         name="bot" 
         size={size * 0.5} 
-        color="#6B7280"
+        color="#ffffff"
+        strokeWidth={2.5}
       />
     </div>
   );

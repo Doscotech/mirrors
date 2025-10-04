@@ -20,8 +20,8 @@ export const CEOIntroStep = () => {
                 <Play className="h-8 w-8 text-primary ml-1" />
               </div>
               <div>
-                <p className="text-lg font-medium">Welcome Message from Marko</p>
-                <p className="text-sm text-muted-foreground">CEO & Founder</p>
+                <p className="text-lg font-medium">Welcome Message from the Xpert Agent Team</p>
+                <p className="text-sm text-muted-foreground">Your AI Workforce Specialists</p>
               </div>
             </div>
           </div>
@@ -34,7 +34,7 @@ export const CEOIntroStep = () => {
               Welcome to Your AI Workforce
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              I'm Marko, and I'm excited to help you build a team of AI agents that will 
+              We're the Xpert Agent Team, and we're excited to help you build a team of AI agents that will 
               supercharge your productivity and help you achieve your goals faster than ever.
             </p>
           </div>

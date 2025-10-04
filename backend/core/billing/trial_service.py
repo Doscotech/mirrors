@@ -3,7 +3,25 @@ from typing import Dict, Optional
 from datetime import datetime, timezone
 import stripe
 from core.services.supabase import DBConnection
-from core.utils.config import config
+from core.util        # Check credit ledger for existing trials
+        ledger_check = await client.from_('credit_ledger')\
+            .select('id, description')\
+            .eq('account_id', account_id)\
+            .or_(
+                'description.ilike.%trial credits%,'
+                'description.ilike.%free trial%,'
+                'description.ilike.%day trial%,'
+                'type.eq.promotional'
+            )\
+            .execute()
+        
+        if ledger_check.data:
+            has_actual_trial = False
+            for entry in ledger_check.data:
+                desc = entry.get('description', '').lower()
+                if 'trial' in desc:
+                    has_actual_trial = True
+                    breakfig
 from core.utils.logger import logger
 from .config import (
     TRIAL_ENABLED,
@@ -190,7 +208,7 @@ class TrialService:
                 'description.ilike.%trial credits%,'
                 'description.ilike.%free trial%,'
                 'description.ilike.%day trial%,'
-                'type.eq.trial_grant'
+                'type.eq.promotional'
             )\
             .execute()
         
@@ -231,7 +249,7 @@ class TrialService:
                 account_id=account_id,
                 amount=TRIAL_CREDITS,
                 description=f'{TRIAL_DURATION_DAYS}-day trial credits (no payment required)',
-                transaction_type='trial_grant'
+                type='promotional'
             )
             
             # Create trial history record
@@ -325,7 +343,7 @@ class TrialService:
                 'description.ilike.%trial credits%,'
                 'description.ilike.%free trial%,'
                 'description.ilike.%day trial%,'
-                'type.eq.trial_grant'
+                'type.eq.promotional'
             )\
             .execute()
         

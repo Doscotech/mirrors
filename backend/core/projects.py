@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from utils.auth_utils import verify_and_get_user_id_from_jwt, verify_and_authorize_thread_access
-from utils.logger import logger
-from .. import utils
+from core.utils.auth_utils import verify_and_get_user_id_from_jwt, verify_and_authorize_thread_access
+from core.utils.logger import logger
+from core import utils
 from typing import Optional
 
 router = APIRouter()

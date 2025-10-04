@@ -20,7 +20,7 @@ export const DiscoverHeader: React.FC<DiscoverHeaderProps> = ({
   nav,
   right,
   title = 'Discover Agents',
-  subtitle = 'Browse curated agents and templates by Xpathedge and the community.',
+  subtitle = 'Browse curated agents and templates from the team and by the community.',
   placeholder = 'Search agents, tools, or tags'
 }) => {
   return (

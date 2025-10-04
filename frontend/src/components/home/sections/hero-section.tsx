@@ -60,7 +60,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section id="hero" className="w-full relative overflow-hidden min-h-screen">
+    <section id="hero" className="w-full relative overflow-visible min-h-screen -mt-[72px] pt-[72px]">
       <BillingModal 
         open={showPaymentModal} 
         onOpenChange={setShowPaymentModal}
@@ -70,7 +70,7 @@ export function HeroSection() {
   <UnicornBackground />
         {/* Light mode overlays: subtle color glows and rings, fully transparent base */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-20 dark:hidden"
+          className="pointer-events-none absolute inset-0 opacity-20 dark:hidden -top-[72px] h-[calc(100%+72px)]"
           style={{
             background:
               'radial-gradient(900px 360px at 10% 0%, rgba(6,182,212,0.12), transparent 60%),' +
@@ -79,7 +79,7 @@ export function HeroSection() {
           }}
         />
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.18] dark:hidden"
+          className="pointer-events-none absolute inset-0 opacity-[0.18] dark:hidden -top-[72px] h-[calc(100%+72px)]"
           style={{
             backgroundImage:
               'repeating-radial-gradient(circle at 15% -10%, rgba(6,182,212,0.20) 0px, rgba(6,182,212,0.20) 1px, transparent 2px, transparent 24px),' +
@@ -89,7 +89,7 @@ export function HeroSection() {
 
         {/* Dark mode overlays only; light mode stays fully transparent */}
         <div
-          className="pointer-events-none absolute inset-0 hidden dark:block opacity-60"
+          className="pointer-events-none absolute inset-0 hidden dark:block opacity-60 -top-[72px] h-[calc(100%+72px)]"
           style={{
             background:
               'radial-gradient(900px 360px at 10% 0%, rgba(6,182,212,0.12), transparent 60%),' +
@@ -98,7 +98,7 @@ export function HeroSection() {
           }}
         />
         <div
-          className="pointer-events-none absolute inset-0 hidden dark:block opacity-[0.14]"
+          className="pointer-events-none absolute inset-0 hidden dark:block opacity-[0.14] -top-[72px] h-[calc(100%+72px)]"
           style={{
             backgroundImage:
               'repeating-radial-gradient(circle at 15% -10%, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 1px, transparent 2px, transparent 26px),' +
@@ -106,7 +106,7 @@ export function HeroSection() {
           }}
         />
         <div
-          className="pointer-events-none absolute inset-0 hidden dark:block"
+          className="pointer-events-none absolute inset-0 hidden dark:block -top-[72px] h-[calc(100%+72px)]"
           style={{
             background:
               'linear-gradient(180deg, rgba(6,182,212,0.06), transparent 22%, transparent 78%, rgba(244,63,94,0.06)),' +

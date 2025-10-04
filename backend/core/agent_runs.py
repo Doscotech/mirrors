@@ -14,6 +14,7 @@ from core.utils.logger import logger, structlog
 from core.billing.billing_integration import billing_integration
 from core.utils.config import config, EnvMode
 from core.services import redis
+from redis import exceptions as redis_exceptions  # Import without shadowing the service module
 from core.sandbox.sandbox import create_sandbox, delete_sandbox
 from run_agent_background import run_agent_background
 from core.ai_models import model_manager
@@ -489,39 +490,51 @@ async def stream_agent_run(
             message_queue = asyncio.Queue()
 
             async def listen_messages():
-                listener = pubsub.listen()
-                task = asyncio.create_task(listener.__anext__())
+                try:
+                    listener = pubsub.listen()
+                    task = asyncio.create_task(listener.__anext__())
 
-                while not terminate_stream:
-                    done, _ = await asyncio.wait([task], return_when=asyncio.FIRST_COMPLETED)
-                    for finished in done:
-                        try:
-                            message = finished.result()
-                            if message and isinstance(message, dict) and message.get("type") == "message":
-                                channel = message.get("channel")
-                                data = message.get("data")
-                                if isinstance(data, bytes):
-                                    data = data.decode('utf-8')
+                    while not terminate_stream:
+                        done, _ = await asyncio.wait([task], return_when=asyncio.FIRST_COMPLETED)
+                        for finished in done:
+                            try:
+                                message = finished.result()
+                                if message and isinstance(message, dict) and message.get("type") == "message":
+                                    channel = message.get("channel")
+                                    data = message.get("data")
+                                    if isinstance(data, bytes):
+                                        data = data.decode('utf-8')
 
-                                if channel == response_channel and data == "new":
-                                    await message_queue.put({"type": "new_response"})
-                                elif channel == control_channel and data in ["STOP", "END_STREAM", "ERROR"]:
-                                    logger.debug(f"Received control signal '{data}' for {agent_run_id}")
-                                    await message_queue.put({"type": "control", "data": data})
-                                    return  # Stop listening on control signal
+                                    if channel == response_channel and data == "new":
+                                        await message_queue.put({"type": "new_response"})
+                                    elif channel == control_channel and data in ["STOP", "END_STREAM", "ERROR"]:
+                                        logger.debug(f"Received control signal '{data}' for {agent_run_id}")
+                                        await message_queue.put({"type": "control", "data": data})
+                                        return  # Stop listening on control signal
 
-                        except StopAsyncIteration:
-                            logger.warning(f"Listener stopped for {agent_run_id}.")
-                            await message_queue.put({"type": "error", "data": "Listener stopped unexpectedly"})
-                            return
-                        except Exception as e:
-                            logger.error(f"Error in listener for {agent_run_id}: {e}")
-                            await message_queue.put({"type": "error", "data": "Listener failed"})
-                            return
-                        finally:
-                            # Resubscribe to the next message if continuing
-                            if not terminate_stream:
-                                task = asyncio.create_task(listener.__anext__())
+                            except StopAsyncIteration:
+                                logger.debug(f"Listener stopped for {agent_run_id}.")
+                                await message_queue.put({"type": "error", "data": "Listener stopped unexpectedly"})
+                                return
+                            except redis_exceptions.ConnectionError as ce:
+                                logger.debug(f"Redis connection closed for {agent_run_id}: {ce}")
+                                await message_queue.put({"type": "error", "data": "Connection closed"})
+                                return
+                            except Exception as e:
+                                logger.error(f"Error in listener for {agent_run_id}: {e}")
+                                await message_queue.put({"type": "error", "data": "Listener failed"})
+                                return
+                            finally:
+                                # Resubscribe to the next message if continuing
+                                if not terminate_stream:
+                                    task = asyncio.create_task(listener.__anext__())
+                
+                except redis_exceptions.ConnectionError as ce:
+                    logger.debug(f"Redis connection error in listen_messages for {agent_run_id}: {ce}")
+                    await message_queue.put({"type": "error", "data": "Connection error"})
+                except Exception as e:
+                    logger.error(f"Unexpected error in listen_messages for {agent_run_id}: {e}", exc_info=True)
+                    await message_queue.put({"type": "error", "data": "Listener crashed"})
 
 
             listener_task = asyncio.create_task(listen_messages())

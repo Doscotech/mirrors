@@ -89,19 +89,8 @@ export default function AgentsPage() {
 
   const activeTab = useMemo(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'marketplace') {
-      return 'my-agents';
-    }
     return tab || 'my-agents';
   }, [searchParams]);
-
-  useEffect(() => {
-    if (searchParams.get('tab') === 'marketplace') {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('tab', 'my-agents');
-      router.replace(`${pathname}?${params.toString()}`);
-    }
-  }, [searchParams, pathname, router]);
 
   const agentsQueryParams: AgentsParams = useMemo(() => {
     const params: AgentsParams = {
@@ -561,8 +550,8 @@ export default function AgentsPage() {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="container mx-auto max-w-7xl px-4 py-2">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-background/95">
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         <div className="w-full min-h-[calc(100vh-300px)]">
           {activeTab === "my-agents" && (
             <MyAgentsTab
@@ -602,14 +591,12 @@ export default function AgentsPage() {
             />
           )}
 
-          {/* Marketplace tab is disabled
-          {activeTab === "marketplace" && (
+          {activeTab === "explore" && (
             <MarketplaceTab
               marketplaceSearchQuery={marketplaceSearchQuery}
               setMarketplaceSearchQuery={setMarketplaceSearchQuery}
               marketplaceFilter={marketplaceFilter}
               setMarketplaceFilter={setMarketplaceFilter}
-  // no-op
               marketplaceLoading={marketplaceLoading}
               allMarketplaceItems={allMarketplaceItems}
               mineItems={[]}
@@ -626,7 +613,7 @@ export default function AgentsPage() {
               marketplacePagination={marketplaceTemplates?.pagination}
               onTabChange={handleTabChange}
             />
-          )} */}
+          )}
         </div>
 
         <PublishDialog

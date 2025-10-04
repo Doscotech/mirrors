@@ -6,7 +6,8 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { useSubscription } from '@/hooks/react-query/subscriptions/use-subscriptions';
-import { useUsageLogs, useBillingStatus } from '@/hooks/react-query/subscriptions/use-billing';
+import { useBillingStatus } from '@/hooks/react-query/subscriptions/use-billing';
+// import { useUsageLogs } from '@/hooks/react-query/subscriptions/use-billing'; // TODO: Hook not implemented yet
 
 // Lightweight sparkline reused from overview inline implementation
 function Sparkline({ values, max, height = 40 }: { values: number[]; max: number; height?: number }) {
@@ -28,7 +29,8 @@ function Sparkline({ values, max, height = 40 }: { values: number[]; max: number
 
 export const UsageWidget: React.FC = () => {
   const { data: subscriptionData, isLoading: subscriptionLoading } = useSubscription();
-  const { data: usageLogsData } = useUsageLogs(0, 1000);
+  // const { data: usageLogsData } = useUsageLogs(0, 1000); // TODO: Hook not implemented yet
+  const usageLogsData = undefined; // Temporary placeholder
 
   const usedUsd = (subscriptionData as any)?.current_usage ?? 0;
   const limitUsd = (subscriptionData as any)?.cost_limit ?? 0;

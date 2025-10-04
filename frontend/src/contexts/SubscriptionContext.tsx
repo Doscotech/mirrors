@@ -107,7 +107,7 @@ export function useSubscriptionData() {
       data: context.subscriptionData ? {
         ...context.subscriptionData,
         current_usage: context.creditBalance?.lifetime_used || 0,
-        cost_limit: context.subscriptionData.tier.credits,
+        cost_limit: context.subscriptionData.tier?.credits || 0,
         credit_balance: context.creditBalance?.balance || 0,
         can_purchase_credits: context.creditBalance?.can_purchase_credits || false,
         subscription: context.subscriptionData.subscription ? {
@@ -129,7 +129,7 @@ export function useSubscriptionData() {
     data: data ? {
       ...data,
       current_usage: creditBalance?.lifetime_used || 0,
-      cost_limit: data.tier.credits,
+      cost_limit: data.tier?.credits || 0,
       credit_balance: creditBalance?.balance || 0,
       can_purchase_credits: creditBalance?.can_purchase_credits || false,
       subscription: data.subscription ? {

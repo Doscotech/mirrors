@@ -14,8 +14,14 @@ import { useAgents } from '@/hooks/react-query/agents/use-agents';
 import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { handleFiles } from './file-upload-handler';
+import { handleFiles, FileUploadHandler } from './file-upload-handler';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Loader2, ArrowUp } from 'lucide-react';
+import { VoiceRecorder } from './voice-recorder';
+import { UnifiedConfigMenu } from './unified-config-menu';
 import { AttachmentGroup } from '../attachment-group';
+import { cn } from '@/lib/utils';
 import { useModelSelection } from '@/hooks/use-model-selection';
 import { useFileDelete } from '@/hooks/react-query/files';
 import { useQueryClient } from '@tanstack/react-query';
@@ -24,7 +30,6 @@ import { ChatSnack } from './chat-snack';
 import { Brain, Zap, Workflow, Database, ArrowDown } from 'lucide-react';
 import { useComposioToolkitIcon } from '@/hooks/react-query/composio/use-composio';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MessageInput } from './message-input';
 
 import { IntegrationsRegistry } from '@/components/agents/integrations-registry';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -200,8 +205,8 @@ export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: agentsResponse } = useAgents({}, { enabled: isLoggedIn });
-  const agents = useMemo(() => agentsResponse?.agents ?? [], [agentsResponse?.agents]);
+    const { data: agentsResponse } = useAgents({}, { enabled: isLoggedIn });
+    const agents = agentsResponse?.agents || [];
 
     const { initializeFromAgents } = useAgentSelection();
     useImperativeHandle(ref, () => ({
@@ -247,42 +252,6 @@ export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
         textareaRef.current.focus();
       }
     }, [autoFocus]);
-
-    // Listen for quoted text insertion events
-    useEffect(() => {
-      const handler = (e: Event) => {
-        const custom = e as CustomEvent<{ text: string }>;
-        const insertText = custom.detail?.text || '';
-        if (!insertText) return;
-        const target = textareaRef.current;
-        const currentVal = isControlled ? controlledValue || '' : uncontrolledValue;
-        if (target) {
-          const start = target.selectionStart ?? currentVal.length;
-          const end = target.selectionEnd ?? currentVal.length;
-          const newValue = currentVal.slice(0, start) + insertText + currentVal.slice(end);
-          if (isControlled) {
-            controlledOnChange(newValue);
-          } else {
-            setUncontrolledValue(newValue);
-          }
-          // Move cursor after inserted block
-          requestAnimationFrame(() => {
-            target.selectionStart = target.selectionEnd = start + insertText.length;
-            target.focus();
-          });
-        } else {
-          // Fallback append
-          const newValue = currentVal + (currentVal.endsWith('\n') ? '' : '\n') + insertText;
-          if (isControlled) {
-            controlledOnChange(newValue);
-          } else {
-            setUncontrolledValue(newValue);
-          }
-        }
-      };
-      window.addEventListener('xera-insert-text', handler as EventListener);
-      return () => window.removeEventListener('xera-insert-text', handler as EventListener);
-    }, [isControlled, controlledValue, uncontrolledValue, controlledOnChange]);
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
       e.preventDefault();
@@ -427,6 +396,113 @@ export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
       setIsDraggingOver(false);
     };
 
+    const renderConfigDropdown = useMemo(() => {
+      // Don't render dropdown components until after hydration to prevent ID mismatches
+      if (!mounted) {
+        return <div className="flex items-center gap-2 h-8" />; // Placeholder with same height
+      }
+      // Unified compact menu for both logged and non-logged (non-logged shows only models subset via menu trigger)
+      return (
+        <div className="flex items-center gap-2" data-tour="agent-selector">
+          <UnifiedConfigMenu
+            isLoggedIn={isLoggedIn}
+            selectedAgentId={!hideAgentSelection ? selectedAgentId : undefined}
+            onAgentSelect={!hideAgentSelection ? onAgentSelect : undefined}
+            selectedModel={selectedModel}
+            onModelChange={handleModelChange}
+            modelOptions={modelOptions}
+            subscriptionStatus={subscriptionStatus}
+            canAccessModel={canAccessModel}
+            refreshCustomModels={refreshCustomModels}
+          />
+        </div>
+      );
+    }, [mounted, isLoggedIn, hideAgentSelection, selectedAgentId, onAgentSelect, selectedModel, handleModelChange, modelOptions, subscriptionStatus, canAccessModel, refreshCustomModels]);
+
+    const renderTextArea = useMemo(() => (
+      <div className="flex flex-col gap-1 px-2">
+        <Textarea
+          ref={textareaRef}
+          value={value}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          placeholder={placeholder}
+          className={cn(
+            'w-full bg-transparent dark:bg-transparent border-none shadow-none focus-visible:ring-0 px-0.5 pb-6 pt-4 !text-[15px] min-h-[36px] max-h-[200px] overflow-y-auto resize-none',
+            isDraggingOver ? 'opacity-40' : '',
+          )}
+          disabled={loading || (disabled && !isAgentRunning)}
+          rows={1}
+        />
+      </div>
+    ), [value, handleChange, handleKeyDown, handlePaste, placeholder, isDraggingOver, loading, disabled, isAgentRunning]);
+
+    const renderControls = useMemo(() => (
+      <div className="flex items-center justify-between mt-0 mb-1 px-2">
+        <div className="flex items-center gap-3">
+          {!hideAttachments && (
+            <FileUploadHandler
+              ref={fileInputRef}
+              loading={loading}
+              disabled={disabled}
+              isAgentRunning={isAgentRunning}
+              isUploading={isUploading}
+              sandboxId={sandboxId}
+              setPendingFiles={setPendingFiles}
+              setUploadedFiles={setUploadedFiles}
+              setIsUploading={setIsUploading}
+              messages={messages}
+              isLoggedIn={isLoggedIn}
+            />
+          )}
+        </div>
+
+        <div className='flex items-center gap-2'>
+          {renderConfigDropdown}
+          <BillingModal
+            open={billingModalOpen}
+            onOpenChange={setBillingModalOpen}
+            returnUrl={typeof window !== 'undefined' ? window.location.href : '/'}
+          />
+
+          {isLoggedIn && <VoiceRecorder
+            onTranscription={handleTranscription}
+            disabled={loading || (disabled && !isAgentRunning)}
+          />}
+
+          <Button
+            type="submit"
+            onClick={isAgentRunning && onStopAgent ? onStopAgent : handleSubmit}
+            size="sm"
+            className={cn(
+              'w-8 h-8 flex-shrink-0 self-end rounded-xl',
+              (!value.trim() && uploadedFiles.length === 0 && !isAgentRunning) ||
+                loading ||
+                (disabled && !isAgentRunning)
+                ? 'opacity-50'
+                : '',
+            )}
+            disabled={
+              (!value.trim() && uploadedFiles.length === 0 && !isAgentRunning) ||
+              loading ||
+              (disabled && !isAgentRunning)
+            }
+          >
+            {loading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : isAgentRunning ? (
+              <div className="min-h-[14px] min-w-[14px] w-[14px] h-[14px] rounded-sm bg-current" />
+            ) : (
+              <ArrowUp className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
+      </div>
+    ), [hideAttachments, loading, disabled, isAgentRunning, isUploading, sandboxId, messages, isLoggedIn, renderConfigDropdown, billingModalOpen, setBillingModalOpen, handleTranscription, onStopAgent, handleSubmit, value, uploadedFiles]);
+
+
+
     return (
       <div className="mx-auto w-full max-w-4xl relative">
         <div className="relative">
@@ -454,9 +530,49 @@ export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
               <ArrowDown className="w-4 h-4 text-muted-foreground" />
             </button>
           )}
+          <Card
+            className={`-mb-2 shadow-none w-full max-w-4xl mx-auto bg-transparent border-none overflow-visible ${enableAdvancedConfig && selectedAgentId ? '' : 'rounded-3xl'} relative z-10`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDraggingOver(false);
+              if (fileInputRef.current && e.dataTransfer.files.length > 0) {
+                const files = Array.from(e.dataTransfer.files);
+                handleFiles(
+                  files,
+                  sandboxId,
+                  setPendingFiles,
+                  setUploadedFiles,
+                  setIsUploading,
+                  messages,
+                  queryClient,
+                );
+              }
+            }}
+          >
+            <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
+              <CardContent className={`w-full p-1.5 pb-2 ${bgColor} border rounded-3xl`}>
+                <AttachmentGroup
+                  files={uploadedFiles || []}
+                  sandboxId={sandboxId}
+                  onRemove={removeUploadedFile}
+                  layout="inline"
+                  maxHeight="216px"
+                  showPreviews={true}
+                />
+                <div className="relative flex flex-col w-full h-full gap-2 justify-between">
+                  {renderTextArea}
+                  {renderControls}
+                </div>
+              </CardContent>
+            </div>
+          </Card>
+
           {enableAdvancedConfig && selectedAgentId && (
-            <div className="w-full max-w-4xl mx-auto mb-0 relative z-20">
-              <div className={`px-4 pt-2 pb-0 ${bgColor} rounded-t-3xl border border-b-0 transition-all duration-300 ease-out`}>
+            <div className="w-full max-w-4xl mx-auto -mt-12 relative z-20">
+              <div className="bg-gradient-to-b from-transparent via-transparent to-muted/30 pt-8 pb-2 px-4 rounded-b-3xl border border-t-0 border-border/50 transition-all duration-300 ease-out">
                 <div className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-none relative">
                   <button
                     onClick={() => setAgentConfigDialog({ open: true, tab: 'integrations' })}
@@ -526,80 +642,6 @@ export const ChatInput = memo(forwardRef<ChatInputHandles, ChatInputProps>(
               </div>
             </div>
           )}
-
-          <Card
-            className={`-mb-2 shadow-none w-full max-w-4xl mx-auto bg-transparent border-none overflow-visible ${enableAdvancedConfig && selectedAgentId ? '' : 'rounded-3xl'} relative z-10`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsDraggingOver(false);
-              if (fileInputRef.current && e.dataTransfer.files.length > 0) {
-                const files = Array.from(e.dataTransfer.files);
-                handleFiles(
-                  files,
-                  sandboxId,
-                  setPendingFiles,
-                  setUploadedFiles,
-                  setIsUploading,
-                  messages,
-                  queryClient,
-                );
-              }
-            }}
-          >
-            <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
-              <CardContent className={`w-full p-1.5 pb-2 ${bgColor} border ${enableAdvancedConfig && selectedAgentId ? 'rounded-b-3xl border-t-0' : 'rounded-3xl'}`}>
-                <AttachmentGroup
-                  files={uploadedFiles || []}
-                  sandboxId={sandboxId}
-                  onRemove={removeUploadedFile}
-                  layout="inline"
-                  maxHeight="216px"
-                  showPreviews={true}
-                />
-                <MessageInput
-                  ref={textareaRef}
-                  value={value}
-                  onChange={handleChange}
-                  onSubmit={handleSubmit}
-                  onTranscription={handleTranscription}
-                  placeholder={placeholder}
-                  loading={loading}
-                  disabled={disabled}
-                  isAgentRunning={isAgentRunning}
-                  onStopAgent={onStopAgent}
-                  isDraggingOver={isDraggingOver}
-                  uploadedFiles={uploadedFiles}
-
-                  fileInputRef={fileInputRef}
-                  isUploading={isUploading}
-                  sandboxId={sandboxId}
-                  setPendingFiles={setPendingFiles}
-                  setUploadedFiles={setUploadedFiles}
-                  setIsUploading={setIsUploading}
-                  hideAttachments={hideAttachments}
-                  messages={messages}
-
-                  selectedModel={selectedModel}
-                  onModelChange={handleModelChange}
-                  modelOptions={modelOptions}
-                  subscriptionStatus={subscriptionStatus}
-                  canAccessModel={canAccessModel}
-                  refreshCustomModels={refreshCustomModels}
-                  isLoggedIn={isLoggedIn}
-
-                  selectedAgentId={selectedAgentId}
-                  onAgentSelect={onAgentSelect}
-                  hideAgentSelection={hideAgentSelection}
-                  queryClient={queryClient}
-                />
-              </CardContent>
-            </div>
-          </Card>
-
-          {/* Panel moved above; removed from below */}
 
           <Dialog open={registryDialogOpen} onOpenChange={setRegistryDialogOpen}>
             <DialogContent className="p-0 max-w-6xl h-[90vh] overflow-hidden">

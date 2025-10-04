@@ -114,6 +114,98 @@ export interface UnifiedAgentCardProps {
   currentUserId?: string;
 }
 
+// Color theme mapping based on tags
+const getColorFromTags = (tags?: string[]): string => {
+  if (!tags || tags.length === 0) return 'default';
+  
+  const tagColorMap: Record<string, string> = {
+    'productivity': 'blue',
+    'code': 'purple',
+    'developer': 'purple',
+    'programming': 'purple',
+    'writing': 'amber',
+    'content': 'amber',
+    'data': 'cyan',
+    'analytics': 'cyan',
+    'design': 'pink',
+    'creative': 'pink',
+    'sales': 'orange',
+    'marketing': 'orange',
+    'support': 'green',
+    'customer': 'green',
+    'research': 'purple',
+    'finance': 'emerald',
+    'accounting': 'emerald',
+  };
+  
+  // Find first matching tag
+  for (const tag of tags) {
+    const lowerTag = tag.toLowerCase();
+    for (const [key, color] of Object.entries(tagColorMap)) {
+      if (lowerTag.includes(key)) {
+        return color;
+      }
+    }
+  }
+  
+  // Consistent fallback color from tag hash
+  const hash = tags[0].split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const colors = ['purple', 'blue', 'green', 'orange', 'pink', 'cyan', 'amber'];
+  return colors[hash % colors.length];
+};
+
+const getCardColorClasses = (color: string) => {
+  const colorMap = {
+    purple: {
+      bg: 'from-purple-50/95 to-purple-100/50 dark:from-purple-950/95 dark:to-purple-900/50',
+      border: 'border-purple-200/40 hover:border-purple-400/40 dark:border-purple-800/40 dark:hover:border-purple-600/40',
+      glow: 'from-purple-500/20 to-purple-400/5',
+    },
+    blue: {
+      bg: 'from-blue-50/95 to-blue-100/50 dark:from-blue-950/95 dark:to-blue-900/50',
+      border: 'border-blue-200/40 hover:border-blue-400/40 dark:border-blue-800/40 dark:hover:border-blue-600/40',
+      glow: 'from-blue-500/20 to-blue-400/5',
+    },
+    green: {
+      bg: 'from-emerald-50/95 to-emerald-100/50 dark:from-emerald-950/95 dark:to-emerald-900/50',
+      border: 'border-emerald-200/40 hover:border-emerald-400/40 dark:border-emerald-800/40 dark:hover:border-emerald-600/40',
+      glow: 'from-emerald-500/20 to-emerald-400/5',
+    },
+    emerald: {
+      bg: 'from-emerald-50/95 to-emerald-100/50 dark:from-emerald-950/95 dark:to-emerald-900/50',
+      border: 'border-emerald-200/40 hover:border-emerald-400/40 dark:border-emerald-800/40 dark:hover:border-emerald-600/40',
+      glow: 'from-emerald-500/20 to-emerald-400/5',
+    },
+    orange: {
+      bg: 'from-orange-50/95 to-orange-100/50 dark:from-orange-950/95 dark:to-orange-900/50',
+      border: 'border-orange-200/40 hover:border-orange-400/40 dark:border-orange-800/40 dark:hover:border-orange-600/40',
+      glow: 'from-orange-500/20 to-orange-400/5',
+    },
+    pink: {
+      bg: 'from-pink-50/95 to-pink-100/50 dark:from-pink-950/95 dark:to-pink-900/50',
+      border: 'border-pink-200/40 hover:border-pink-400/40 dark:border-pink-800/40 dark:hover:border-pink-600/40',
+      glow: 'from-pink-500/20 to-pink-400/5',
+    },
+    cyan: {
+      bg: 'from-cyan-50/95 to-cyan-100/50 dark:from-cyan-950/95 dark:to-cyan-900/50',
+      border: 'border-cyan-200/40 hover:border-cyan-400/40 dark:border-cyan-800/40 dark:hover:border-cyan-600/40',
+      glow: 'from-cyan-500/20 to-cyan-400/5',
+    },
+    amber: {
+      bg: 'from-amber-50/95 to-amber-100/50 dark:from-amber-950/95 dark:to-amber-900/50',
+      border: 'border-amber-200/40 hover:border-amber-400/40 dark:border-amber-800/40 dark:hover:border-amber-600/40',
+      glow: 'from-amber-500/20 to-amber-400/5',
+    },
+    default: {
+      bg: 'from-card/95 to-card/50',
+      border: 'border-border/40 hover:border-primary/40',
+      glow: 'from-primary/20 to-primary/5',
+    }
+  };
+  
+  return colorMap[color as keyof typeof colorMap] || colorMap.default;
+};
+
 // Avatar component
 const CardAvatar: React.FC<{ 
   data: BaseAgentData;
@@ -428,8 +520,14 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
   );
   
   const renderStandardCard = () => {
+    // Get color based on tags
+    const cardColor = getColorFromTags(data.tags);
+    const colorClasses = getCardColorClasses(cardColor);
+    
     const cardClassName = cn(
-      'group relative bg-gradient-to-br from-card/95 to-card/50 backdrop-blur-sm rounded-3xl overflow-hidden transition-all duration-500 border cursor-pointer flex flex-col border-border/40 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1',
+      'group relative bg-gradient-to-br backdrop-blur-sm rounded-3xl overflow-hidden transition-all duration-500 border cursor-pointer flex flex-col hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1',
+      colorClasses.bg,
+      colorClasses.border,
       className
     );
     
@@ -568,8 +666,11 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-primary/3 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
         
-        {/* Glow effect */}
-        <div className="absolute -inset-[1px] bg-gradient-to-br from-primary/20 to-primary/5 rounded-3xl opacity-0 group-hover:opacity-100 blur-sm transition-all duration-500 -z-10" />
+        {/* Glow effect - color-specific */}
+        <div className={cn(
+          "absolute -inset-[1px] bg-gradient-to-br rounded-3xl opacity-0 group-hover:opacity-100 blur-sm transition-all duration-500 -z-10",
+          colorClasses.glow
+        )} />
         
         <div className="relative p-6 flex flex-col flex-1">
           <div className="flex items-start justify-between mb-4">

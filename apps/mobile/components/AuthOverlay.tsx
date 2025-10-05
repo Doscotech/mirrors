@@ -1,5 +1,5 @@
 import { fontWeights } from '@/constants/Fonts';
-import { supabase } from '@/constants/SupabaseConfig';
+import { createSupabaseClient } from '@/constants/SupabaseConfig';
 import { useTheme } from '@/hooks/useThemeColor';
 import React, { useState } from 'react';
 import {
@@ -110,7 +110,7 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({ visible, onClose }) =>
         },
         successIconText: {
             fontSize: 28,
-            color: '#ffffff',
+            color: theme.background,
         },
         successTitle: {
             fontSize: 24,
@@ -134,8 +134,8 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({ visible, onClose }) =>
             marginBottom: 16,
         },
         successNote: {
-            backgroundColor: '#10B98120',
-            borderColor: '#10B98140',
+            backgroundColor: 'rgba(16,185,129,0.12)',
+            borderColor: 'rgba(16,185,129,0.25)',
             borderWidth: 1,
             borderRadius: 8,
             padding: 12,
@@ -188,6 +188,7 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({ visible, onClose }) =>
                     return;
                 }
 
+                const supabase = createSupabaseClient();
                 const { error } = await supabase.auth.signUp({
                     email: email.trim(),
                     password: password.trim(),
@@ -200,6 +201,7 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({ visible, onClose }) =>
                     setShowSuccess(true);
                 }
             } else if (mode === 'forgot') {
+                const supabase = createSupabaseClient();
                 const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
 
                 if (error) {
@@ -209,6 +211,7 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({ visible, onClose }) =>
                     setMode('signin');
                 }
             } else {
+                const supabase = createSupabaseClient();
                 const { error } = await supabase.auth.signInWithPassword({
                     email: email.trim(),
                     password: password.trim(),
@@ -224,6 +227,7 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({ visible, onClose }) =>
                                 {
                                     text: 'Resend Email',
                                     onPress: async () => {
+                                        const supabase = createSupabaseClient();
                                         const { error: resendError } = await supabase.auth.resend({
                                             type: 'signup',
                                             email: email.trim()

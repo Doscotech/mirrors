@@ -119,7 +119,7 @@ export const WebSearchToolView: React.FC<WebSearchToolViewProps> = ({
     const mutedBg = theme.muted === '#e8e8e8' ? '#e8e8e833' : '#30303033';
 
     // Link colors based on theme
-    const linkColor = theme.background === '#ffffff' ? '#155dfc' : '#51a2ff';
+    const linkColor = theme.background && String(theme.background).toLowerCase() === '#ffffff' ? '#155dfc' : '#51a2ff';
 
     const styles = StyleSheet.create({
         container: {

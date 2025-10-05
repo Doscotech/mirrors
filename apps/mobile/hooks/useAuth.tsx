@@ -1,4 +1,4 @@
-import { supabase } from '@/constants/SupabaseConfig';
+import { createSupabaseClient } from '@/constants/SupabaseConfig';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
@@ -17,6 +17,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Initialize client lazily so the code is safe to run in Node/CLI
+        const supabase = createSupabaseClient();
+
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
             setSession(session);
@@ -37,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const signOut = async () => {
+        const supabase = createSupabaseClient();
         await supabase.auth.signOut();
     };
 

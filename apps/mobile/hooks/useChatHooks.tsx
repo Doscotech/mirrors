@@ -17,6 +17,8 @@ import {
 import { projectKeys } from '@/api/project-api';
 import { createSupabaseClient } from '@/constants/SupabaseConfig';
 import { useNewChatSessionKey, useSetIsGenerating, useUpdateNewChatProject } from '@/stores/ui-store';
+import useModelStore from '@/stores/model-store';
+import useAgentStore from '@/stores/agent-store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -439,6 +441,8 @@ export const useChatSession = (projectId: string) => {
     const { data: rawApiMessages = [], isLoading: messagesLoading } = useMessages(threadId || thread?.thread_id || '');
     const addMessage = useAddMessage();
     const startAgentMutation = useStartAgent();
+    const selectedModelId = useModelStore(state => state.selectedModelId);
+    const selectedAgentId = useAgentStore(state => state.selectedAgentId);
     const stopAgentMutation = useStopAgent();
     const setIsGenerating = useSetIsGenerating();
     const updateNewChatProject = useUpdateNewChatProject();
@@ -575,6 +579,8 @@ export const useChatSession = (projectId: string) => {
                 const result = await initiateAgent(content.trim(), {
                     stream: true,
                     enable_context_manager: true,
+                    model_name: selectedModelId || undefined,
+                    agent_id: selectedAgentId || undefined,
                     files: files
                 });
 
@@ -600,6 +606,10 @@ export const useChatSession = (projectId: string) => {
                     });
                     const agentPromise = startAgentMutation.mutateAsync({
                         threadId: currentThreadId,
+                        options: { 
+                            model_name: selectedModelId || undefined,
+                            agent_id: selectedAgentId || undefined,
+                        },
                     });
                     const results = await Promise.allSettled([messagePromise, agentPromise]);
 

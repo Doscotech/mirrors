@@ -264,7 +264,7 @@ export function ExecuteDataProviderCallToolView({
         jsonContainer: {
             marginTop: 8,
             padding: 16,
-            backgroundColor: theme.background === '#ffffff' ? '#1e293b' : '#0f172a',
+            backgroundColor: theme.card,
             borderRadius: 8,
         },
         jsonText: {
@@ -318,7 +318,7 @@ export function ExecuteDataProviderCallToolView({
                         <CardContent style={{ padding: 0 }}>
                             <View style={styles.providerHeader}>
                                 <View style={styles.providerIcon}>
-                                    <IconComponent size={24} color="#ffffff" />
+                                    <IconComponent size={24} color={theme.background} />
                                 </View>
 
                                 <View style={styles.providerInfo}>

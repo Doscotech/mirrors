@@ -6,6 +6,8 @@ import { UploadedFile } from '@/utils/file-upload';
 import React, { useEffect, useState } from 'react';
 import { Keyboard, KeyboardEvent, Platform, View } from 'react-native';
 import { ChatInput } from './ChatInput';
+import ModelSelector from './ModelSelector';
+import AgentSelector from './AgentSelector';
 import { MessageThread } from './MessageThread';
 import { SkeletonText } from './Skeleton';
 import { Body } from './Typography';
@@ -101,6 +103,17 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ className }) => {
         chatContent: {
             flex: 1,
         },
+        inputSection: {
+            backgroundColor: theme.background,
+        },
+        selectorsBar: {
+            flexDirection: 'row' as const,
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            paddingBottom: 12,
+            backgroundColor: theme.background,
+            gap: 12,
+        },
     }));
 
     const handleScrollPositionChange = (isAtBottom: boolean) => {
@@ -143,32 +156,41 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({ className }) => {
                     sandboxId={selectedProject?.sandbox?.id}
                 />
             </View>
-            <ChatInput
-                onSendMessage={(content: string, files?: UploadedFile[]) => {
-                    console.log('[ChatContainer] Sending message with files:', files?.length || 0);
+            
+            <View style={styles.inputSection}>
+                {/* Selectors above chat input */}
+                <View style={styles.selectorsBar}>
+                    <AgentSelector />
+                    <ModelSelector />
+                </View>
+                
+                <ChatInput
+                    onSendMessage={(content: string, files?: UploadedFile[]) => {
+                        console.log('[ChatContainer] Sending message with files:', files?.length || 0);
 
-                    if (isNewChatMode) {
-                        // For new chat mode, pass files to the sendMessage function
-                        (newChatSession.sendMessage as any)(content, files);
-                    } else {
-                        // For existing chat mode, files are already uploaded to sandbox
-                        sendMessage(content);
+                        if (isNewChatMode) {
+                            // For new chat mode, pass files to the sendMessage function
+                            (newChatSession.sendMessage as any)(content, files);
+                        } else {
+                            // For existing chat mode, files are already uploaded to sandbox
+                            sendMessage(content);
+                        }
+                    }}
+                    onCancelStream={stopAgent}
+                    placeholder={
+                        isGenerating
+                            ? "AI is responding..."
+                            : isSending
+                                ? "Sending..."
+                                : isNewChatMode
+                                    ? "Start a new conversation..."
+                                    : `Chat with ${selectedProject?.name || 'project'}...`
                     }
-                }}
-                onCancelStream={stopAgent}
-                placeholder={
-                    isGenerating
-                        ? "AI is responding..."
-                        : isSending
-                            ? "Sending..."
-                            : isNewChatMode
-                                ? "Start a new conversation..."
-                                : `Chat with ${selectedProject?.name || 'project'}...`
-                }
-                isAtBottomOfChat={isAtBottomOfChat}
-                isGenerating={isGenerating}
-                isSending={isSending}
-            />
+                    isAtBottomOfChat={isAtBottomOfChat}
+                    isGenerating={isGenerating}
+                    isSending={isSending}
+                />
+            </View>
         </View>
     );
 }; 

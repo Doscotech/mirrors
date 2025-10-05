@@ -8,12 +8,23 @@ import { handleApiError } from './error-handlers';
 import { Platform } from 'react-native';
 
 // Use global EventSource if available, otherwise try polyfill
-let EventSourceClass: typeof EventSource;
-if (Platform.OS === 'web' || typeof global.EventSource !== 'undefined') {
-  EventSourceClass = global.EventSource || EventSource;
-} else {
-  // For React Native, we'll implement a simple fetch-based alternative
-  console.warn('[STREAM] Using fetch-based streaming instead of EventSource for React Native');
+let EventSourceClass: any | undefined;
+// Safely detect EventSource without referencing the bare identifier which can throw in some bundlers
+try {
+  if (
+    Platform.OS === 'web' ||
+    typeof (global as any).EventSource !== 'undefined' ||
+    typeof EventSource !== 'undefined'
+  ) {
+    EventSourceClass = typeof (global as any).EventSource !== 'undefined' ? (global as any).EventSource : (typeof EventSource !== 'undefined' ? EventSource : undefined);
+  } else {
+    // For React Native, we'll implement a simple fetch-based alternative
+    console.warn('[STREAM] Using fetch-based streaming instead of EventSource for React Native');
+  }
+} catch (e) {
+  // If any check above throws, fallback to fetch/XHR based streaming (React Native)
+  EventSourceClass = undefined;
+  console.warn('[STREAM] EventSource not available, using fetch/XHR fallback', e);
 }
 
 // Message types (aligned with existing MessageThread)
@@ -84,7 +95,7 @@ export class BillingError extends Error {
 }
 
 // Active streams management
-const activeStreams = new Map<string, EventSource>();
+const activeStreams = new Map<string, any>();
 const nonRunningAgentRuns = new Set<string>();
 
 // XMLHttpRequest-based streaming for React Native (better streaming support)
@@ -807,28 +818,29 @@ export const streamAgent = (
       const url = new URL(`${SERVER_URL}/agent-run/${agentRunId}/stream`);
       url.searchParams.append('token', session.access_token);
 
-      console.log(`[STREAM] Creating EventSource for ${agentRunId}`);
+  console.log(`[STREAM] Creating EventSource for ${agentRunId}`);
       console.log(`[STREAM] Stream URL:`, url.toString());
       console.log(`[STREAM] SERVER_URL:`, SERVER_URL);
-      console.log(`[STREAM] Platform:`, Platform.OS);
-      console.log(`[STREAM] EventSource available:`, typeof global.EventSource !== 'undefined');
+  console.log(`[STREAM] Platform:`, Platform.OS);
       
-      // Use XHR-based streaming for React Native
-      if (Platform.OS !== 'web' && typeof global.EventSource === 'undefined') {
+      // Use XHR-based streaming for React Native or when EventSource isn't available
+      if (!EventSourceClass) {
         console.log(`[STREAM] Using XHR-based streaming for React Native`);
         const xhrCleanup = await setupFetchStream(url.toString(), agentRunId, callbacks);
         return xhrCleanup;
       }
       
       // Use EventSource for web or if available
-      const eventSource = new EventSource(url.toString());
-      console.log(`[STREAM] EventSource created, readyState:`, eventSource.readyState);
+      const eventSource = new EventSourceClass(url.toString());
+      console.log(`[STREAM] EventSource created, readyState:`, eventSource?.readyState);
 
       activeStreams.set(agentRunId, eventSource);
 
       // Set a timeout to detect connection issues
       const connectionTimeout = setTimeout(() => {
-        if (eventSource.readyState === EventSource.CONNECTING) {
+        // EventSource.CONNECTING may not exist on some polyfills; guard safely
+        const CONNECTING = (eventSource && (eventSource as any).CONNECTING) || 0;
+        if (eventSource.readyState === CONNECTING) {
           console.error(`[STREAM] EventSource connection timeout for ${agentRunId}`);
           console.error(`[STREAM] Still connecting after 10 seconds - possible network/CORS issue`);
           eventSource.close();
@@ -845,7 +857,7 @@ export const streamAgent = (
         clearTimeout(connectionTimeout);
       };
 
-      eventSource.onmessage = (event) => {
+      eventSource.onmessage = (event: any) => {
         try {
           const rawData = event.data;
           console.log(`[STREAM] Raw EventSource data received:`, rawData);
@@ -889,7 +901,7 @@ export const streamAgent = (
         }
       };
 
-      eventSource.onerror = (event) => {
+      eventSource.onerror = (event: any) => {
         console.error(`[STREAM] EventSource error for ${agentRunId}:`, event);
         console.log(`[STREAM] EventSource readyState: ${eventSource.readyState}`);
         console.log(`[STREAM] Event details:`, {

@@ -114,8 +114,8 @@ export const DeployToolView: React.FC<DeployToolViewProps> = ({
     // Convert color-mix(in oklab, var(--muted) 20%, transparent) to hex
     const mutedBg = theme.muted === '#e8e8e8' ? '#e8e8e833' : '#30303033';
 
-    // Link colors based on theme
-    const linkColor = theme.background === '#ffffff' ? '#155dfc' : '#51a2ff';
+    // Link colors based on theme background
+    const linkColor = theme.background && String(theme.background).toLowerCase() === '#ffffff' ? '#155dfc' : '#51a2ff';
 
     const styles = StyleSheet.create({
         container: {
@@ -157,10 +157,10 @@ export const DeployToolView: React.FC<DeployToolViewProps> = ({
             fontWeight: '600' as const,
         },
         successText: {
-            color: '#009966',
+            color: '#10B981',
         },
         errorText: {
-            color: '#ef4444',
+            color: theme.destructive || '#ef4444',
         },
         urlContainer: {
             backgroundColor: theme.muted === '#e8e8e8' ? '#e8e8e820' : '#30303020',
@@ -173,7 +173,7 @@ export const DeployToolView: React.FC<DeployToolViewProps> = ({
             fontFamily: 'monospace',
         },
         actionButton: {
-            backgroundColor: '#009966',
+            backgroundColor: '#10B981',
             paddingHorizontal: 16,
             paddingVertical: 10,
             borderRadius: 16,
@@ -183,18 +183,18 @@ export const DeployToolView: React.FC<DeployToolViewProps> = ({
             gap: 8,
         },
         actionButtonText: {
-            color: '#ffffff',
+            color: theme.background,
             fontWeight: '600' as const,
         },
         liveBadge: {
-            backgroundColor: '#009966',
+            backgroundColor: '#10B981',
             paddingHorizontal: 8,
             paddingVertical: 2,
             borderRadius: 12,
             alignSelf: 'flex-start',
         },
         liveBadgeText: {
-            color: '#ffffff',
+            color: theme.background,
             fontSize: 12,
             fontWeight: '600' as const,
         },
@@ -317,7 +317,7 @@ export const DeployToolView: React.FC<DeployToolViewProps> = ({
                                     onPress={() => handleLinkPress(deployUrl)}
                                     activeOpacity={0.7}
                                 >
-                                    <ExternalLink size={16} color="#ffffff" />
+                                    <ExternalLink size={16} color={theme.background} />
                                     <Body style={styles.actionButtonText}>Open Website</Body>
                                 </TouchableOpacity>
                             </>

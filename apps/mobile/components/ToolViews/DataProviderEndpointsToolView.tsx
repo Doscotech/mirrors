@@ -295,7 +295,7 @@ export function DataProviderEndpointsToolView({
                         <CardContent style={{ padding: 0 }}>
                             <View style={styles.providerHeader}>
                                 <View style={styles.providerIcon}>
-                                    <IconComponent size={24} color="#ffffff" />
+                                    <IconComponent size={24} color={theme.background} />
                                 </View>
 
                                 <View style={styles.providerInfo}>

@@ -1,11 +1,12 @@
 import { fontWeights } from '@/constants/Fonts';
 import { useAuth } from '@/hooks/useAuth';
 import { useThemedStyles } from '@/hooks/useThemeColor';
-import { X } from 'lucide-react-native';
+import { X, Bot, ChevronRight } from 'lucide-react-native';
 import React from 'react';
-import { Modal, Platform, TouchableOpacity, View } from 'react-native';
+import { Modal, Platform, TouchableOpacity, View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Caption, H3 } from './Typography';
+import { Caption, H3, Body } from './Typography';
+import { useRouter } from 'expo-router';
 
 interface SettingsDrawerProps {
     visible: boolean;
@@ -15,6 +16,7 @@ interface SettingsDrawerProps {
 export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ visible, onClose }) => {
     const insets = useSafeAreaInsets();
     const { signOut } = useAuth();
+    const router = useRouter();
 
     const styles = useThemedStyles((theme) => ({
         container: {
@@ -55,6 +57,40 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ visible, onClose
             paddingHorizontal: 20,
             paddingTop: 20,
         },
+        menuSection: {
+            marginBottom: 24,
+        },
+        sectionTitle: {
+            color: theme.mutedForeground,
+            fontSize: 14,
+            fontFamily: fontWeights[600],
+            textTransform: 'uppercase' as const,
+            letterSpacing: 0.5,
+            marginBottom: 12,
+        },
+        menuItem: {
+            flexDirection: 'row' as const,
+            alignItems: 'center' as const,
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderRadius: 8,
+            backgroundColor: theme.mutedWithOpacity(0.05),
+            marginBottom: 8,
+        },
+        menuIcon: {
+            marginRight: 12,
+        },
+        menuText: {
+            flex: 1,
+            color: theme.foreground,
+            fontSize: 15,
+            fontFamily: fontWeights[500],
+        },
+        menuDescription: {
+            color: theme.mutedForeground,
+            fontSize: 13,
+            marginTop: 2,
+        },
         signOutButton: {
             paddingVertical: 12,
             paddingHorizontal: 16,
@@ -78,6 +114,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ visible, onClose
         } catch (error) {
             console.error('Error signing out:', error);
         }
+    };
+
+    const handleCommandCenter = () => {
+        onClose();
+        router.push('/private/agents');
     };
 
     return (
@@ -105,11 +146,25 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ visible, onClose
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.content}>
+                    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                        <View style={styles.menuSection}>
+                            <Caption style={styles.sectionTitle}>Agent Management</Caption>
+                            <TouchableOpacity style={styles.menuItem} onPress={handleCommandCenter}>
+                                <Bot size={20} color={styles.title.color} style={styles.menuIcon} />
+                                <View style={{ flex: 1 }}>
+                                    <Body style={styles.menuText}>Command Center</Body>
+                                    <Caption style={styles.menuDescription}>
+                                        Manage your AI agents, templates, and configurations
+                                    </Caption>
+                                </View>
+                                <ChevronRight size={18} color={styles.menuText.color} opacity={0.5} />
+                            </TouchableOpacity>
+                        </View>
+
                         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
                             <Caption style={styles.signOutText}>Sign Out</Caption>
                         </TouchableOpacity>
-                    </View>
+                    </ScrollView>
                 </View>
             </View>
         </Modal>

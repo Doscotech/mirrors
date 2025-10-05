@@ -56,8 +56,14 @@ const MessageItem = memo<MessageItemProps>(({ message, sandboxId, onLongPress, o
         const text = askTool.parameters?.text || '';
         const attachments = askTool.parameters?.attachments || '';
 
-        // Parse attachments (could be comma-separated)
-        const attachmentList = attachments ? attachments.split(',').map((a: string) => a.trim()).filter(Boolean) : [];
+        // Parse attachments (could be comma-separated string or already an array)
+        const attachmentList = attachments 
+            ? (typeof attachments === 'string' 
+                ? attachments.split(',').map((a: string) => a.trim()).filter(Boolean)
+                : Array.isArray(attachments) 
+                    ? attachments 
+                    : [])
+            : [];
 
         return {
             text,

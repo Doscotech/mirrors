@@ -319,7 +319,7 @@ export function CsvRenderer({ content, style }: CsvRendererProps) {
                                 setCurrentPage(1);
                             }}
                             style={{
-                                backgroundColor: isDark ? '#333' : '#fff',
+                                backgroundColor: isDark ? '#333' : theme.background,
                                 borderWidth: 1,
                                 borderColor: isDark ? '#404040' : '#e9ecef',
                                 borderRadius: 6,
@@ -342,7 +342,7 @@ export function CsvRenderer({ content, style }: CsvRendererProps) {
                     <View style={{
                         marginTop: 12,
                         padding: 12,
-                        backgroundColor: isDark ? '#404040' : '#ffffff',
+                        backgroundColor: isDark ? '#404040' : theme.background,
                         borderRadius: 8,
                         borderWidth: 1,
                         borderColor: isDark ? '#505050' : '#e9ecef'

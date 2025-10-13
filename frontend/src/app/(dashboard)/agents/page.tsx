@@ -10,6 +10,8 @@ import { useAuth } from '@/components/AuthProvider';
 
 import { StreamlinedInstallDialog } from '@/components/agents/installation/streamlined-install-dialog';
 import type { MarketplaceTemplate } from '@/components/agents/installation/types';
+import { AgentCountLimitError } from '@/lib/api';
+import { AgentCountLimitDialog } from '@/components/agents/agent-count-limit-dialog';
 
 import { AgentsParams } from '@/hooks/react-query/agents/utils';
 
@@ -20,8 +22,6 @@ import { PublishDialog } from '@/components/agents/custom-agents-page/publish-di
 import { LoadingSkeleton } from '@/components/agents/custom-agents-page/loading-skeleton';
 import { NewAgentDialog } from '@/components/agents/new-agent-dialog';
 import { MarketplaceAgentPreviewDialog } from '@/components/agents/marketplace-agent-preview-dialog';
-import { AgentCountLimitDialog } from '@/components/agents/agent-count-limit-dialog';
-import { AgentCountLimitError } from '@/lib/api';
 
 type ViewMode = 'grid' | 'list';
 type AgentSortOption = 'name' | 'created_at' | 'updated_at' | 'tools_count';
@@ -72,6 +72,9 @@ export default function AgentsPage() {
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [marketplaceFilter, setMarketplaceFilter] = useState<'all' | 'kortix' | 'community' | 'mine'>('all');
+  const [marketplaceViewMode, setMarketplaceViewMode] = useState<ViewMode>('grid');
+  const [commandCenterMode, setCommandCenterMode] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('all');
   
   const [templatesPage, setTemplatesPage] = useState(1);
   const [templatesPageSize, setTemplatesPageSize] = useState(20);
@@ -612,6 +615,8 @@ export default function AgentsPage() {
               onMarketplacePageSizeChange={handleMarketplacePageSizeChange}
               marketplacePagination={marketplaceTemplates?.pagination}
               onTabChange={handleTabChange}
+              viewMode={marketplaceViewMode}
+              setViewMode={setMarketplaceViewMode}
             />
           )}
         </div>

@@ -11,9 +11,12 @@ interface FiltersBarProps {
   availableTags: string[];
   segment: 'all' | 'featured' | 'kortix' | 'community' | 'mine';
   onSegmentChange: (seg: FiltersBarProps['segment']) => void;
+  // Optional view mode props (grid or list)
+  viewMode?: 'grid' | 'list';
+  onViewModeChange?: (mode: 'grid' | 'list') => void;
 }
 
-export const FiltersBar: React.FC<FiltersBarProps> = ({ sortBy, onSortChange, selectedTags, onToggleTag, availableTags, segment, onSegmentChange }) => {
+export const FiltersBar: React.FC<FiltersBarProps> = ({ sortBy, onSortChange, selectedTags, onToggleTag, availableTags, segment, onSegmentChange, viewMode, onViewModeChange }) => {
   return (
   <div className="flex flex-col gap-4">
     <div className="flex flex-wrap items-center gap-1.5">
@@ -35,6 +38,21 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({ sortBy, onSortChange, se
             <option value="newest">Newest</option>
             <option value="name">Name</option>
           </select>
+          {/* Optional view toggle */}
+          {typeof onViewModeChange === 'function' && (
+            <div className="inline-flex items-center rounded-xl border border-border/50 bg-card/50 shadow-sm overflow-hidden ml-2">
+              <button
+                onClick={() => onViewModeChange('grid')}
+                className={`px-3 py-2 text-sm font-medium transition-all ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+                title="Grid view"
+              >Grid</button>
+              <button
+                onClick={() => onViewModeChange('list')}
+                className={`px-3 py-2 text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+                title="List view"
+              >List</button>
+            </div>
+          )}
         </div>
       </div>
       {availableTags.length > 0 && (

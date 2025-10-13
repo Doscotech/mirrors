@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Globe } from 'lucide-react';
+import { Globe, Grid3X3, List } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +14,9 @@ import { DiscoverHeader } from '@/components/agents/discover/DiscoverHeader';
 import { FiltersBar } from '@/components/agents/discover/FiltersBar';
 import { SpotlightRow } from '@/components/agents/discover/SpotlightRow';
 import { TabsNavigation } from './tabs-navigation';
+import UnicornLightning from '@/components/visuals/unicorn-lightning';
+import { Toggle } from '@/components/ui/toggle';
+import { useCommandCenter } from '@/contexts/CommandCenterContext';
 
 import type { MarketplaceTemplate } from '@/components/agents/installation/types';
 
@@ -36,6 +39,9 @@ interface MarketplaceTabProps {
   setMarketplaceSelectedTags?: (tags: string[]) => void;
   marketplaceSortBy?: 'newest' | 'popular' | 'most_downloaded' | 'name';
   setMarketplaceSortBy?: (s: 'newest' | 'popular' | 'most_downloaded' | 'name') => void;
+  // View mode
+  viewMode: 'grid' | 'list';
+  setViewMode: (mode: 'grid' | 'list') => void;
   
   marketplacePage: number;
   setMarketplacePage: (page: number) => void;
@@ -75,72 +81,124 @@ export const MarketplaceTab = ({
   marketplacePageSize,
   onMarketplacePageSizeChange,
   marketplacePagination,
-  onTabChange
+  onTabChange,
+  viewMode,
+  setViewMode
 }: MarketplaceTabProps) => {
   const router = useRouter();
+  const { activeCategory } = useCommandCenter();
+
   const handleAgentClick = (item: MarketplaceTemplate) => {
     // Use the dedicated preview page
     router.push(`/agents/preview/${item.id}`);
   };
 
+  // Category filtering logic
+  const getCategoryTags = (category: string): string[] => {
+    const categoryMappings: Record<string, string[]> = {
+      'academic': ['academic', 'research', 'education', 'learning', 'study', 'science', 'math', 'writing', 'analysis'],
+      'osint': ['osint', 'intelligence', 'investigation', 'research', 'security', 'analysis', 'data', 'web', 'search'],
+      'entertainment': ['entertainment', 'music', 'video', 'gaming', 'fun', 'creative', 'media', 'art'],
+      'games': ['gaming', 'games', 'entertainment', 'fun', 'strategy', 'puzzle', 'arcade'],
+      'productivity': ['productivity', 'organization', 'management', 'workflow', 'automation', 'efficiency', 'business'],
+      'creative': ['creative', 'art', 'design', 'writing', 'music', 'video', 'content', 'media'],
+      'utilities': ['utility', 'tools', 'helper', 'converter', 'calculator', 'formatter', 'automation'],
+      'coding': ['coding', 'programming', 'development', 'software', 'code', 'javascript', 'python', 'web', 'api'],
+      'web': ['web', 'api', 'http', 'network', 'internet', 'browser', 'development', 'integration'],
+      'security': ['security', 'encryption', 'privacy', 'protection', 'authentication', 'cybersecurity'],
+      'automation': ['automation', 'workflow', 'integration', 'api', 'scripting', 'productivity'],
+    };
+    return categoryMappings[category] || [];
+  };
+
+  const filterItemsByCategory = (items: MarketplaceTemplate[]): MarketplaceTemplate[] => {
+    if (activeCategory === 'all') return items;
+
+    const categoryTags = getCategoryTags(activeCategory);
+    return items.filter(item => {
+      const itemTags = item.tags || [];
+      const itemName = item.name.toLowerCase();
+      const itemDescription = item.description?.toLowerCase() || '';
+
+      return categoryTags.some(tag =>
+        itemTags.some(itemTag => itemTag.toLowerCase().includes(tag)) ||
+        itemName.includes(tag) ||
+        itemDescription.includes(tag)
+      );
+    });
+  };
+
+  const filteredMarketplaceItems = filterItemsByCategory(allMarketplaceItems);
+
   // Phase 1 wiring: derive spotlight and available tags
   const curatedFeaturedIds = new Set<string>(CURATED_FEATURED_TEMPLATE_IDS);
-  const spotlightItems = allMarketplaceItems.filter(
+  const spotlightItems = filteredMarketplaceItems.filter(
     (i) => i.is_kortix_team || curatedFeaturedIds.has(i.id)
   ).slice(0, 8);
 
   const availableTags = Array.from(
-    new Set(allMarketplaceItems.flatMap(i => i.tags || []))
+    new Set(filteredMarketplaceItems.flatMap(i => i.tags || []))
   ).slice(0, 24);
 
   return (
   <div className="space-y-8 flex flex-col min-h-full">
-      <DiscoverHeader
-        value={marketplaceSearchQuery}
-        onChange={setMarketplaceSearchQuery}
-        onSubmit={() => { /* triggers useEffect pagination reset upstream */ }}
-  nav={<TabsNavigation activeTab={'explore'} onTabChange={(tab) => { onTabChange?.(tab); }} />}
-      />
+    {/* Lightning effect in header only (simulate hover) */}
+    <div className="relative z-0">
+      <UnicornLightning projectId="Gr1LmwbKSeJOXhpYEdit" simulateHover className="pointer-events-none absolute inset-0" />
+      <div className="relative z-10">
+        <DiscoverHeader
+          value={marketplaceSearchQuery}
+          onChange={setMarketplaceSearchQuery}
+          onSubmit={() => { /* triggers useEffect pagination reset upstream */ }}
+          nav={<TabsNavigation activeTab={'explore'} onTabChange={(tab) => { onTabChange?.(tab); }} />}
+        />
+      </div>
+    </div>
 
-      <FiltersBar
-        sortBy={(marketplaceSortBy === 'most_downloaded' ? 'popular' : marketplaceSortBy) as any}
-        onSortChange={(v) => setMarketplaceSortBy && setMarketplaceSortBy(v === 'popular' ? 'most_downloaded' : v)}
-        selectedTags={marketplaceSelectedTags}
-        onToggleTag={(tag) => {
-          if (!setMarketplaceSelectedTags) return;
-          const active = marketplaceSelectedTags.includes(tag);
-          const next = active ? marketplaceSelectedTags.filter(t => t !== tag) : [...marketplaceSelectedTags, tag];
-          setMarketplaceSelectedTags(next);
-        }}
-        availableTags={availableTags}
-        segment={marketplaceFilter === 'kortix' ? 'kortix' : marketplaceFilter === 'community' ? 'community' : marketplaceFilter === 'mine' ? 'mine' : 'all'}
-        onSegmentChange={(seg) => {
-          const map: Record<string, 'all' | 'kortix' | 'community' | 'mine'> = { all: 'all', featured: 'all', kortix: 'kortix', community: 'community', mine: 'mine' };
-          setMarketplaceFilter(map[seg]);
-        }}
-      />
+    <FiltersBar
+      sortBy={(marketplaceSortBy === 'most_downloaded' ? 'popular' : marketplaceSortBy) as any}
+      onSortChange={(v) => setMarketplaceSortBy && setMarketplaceSortBy(v === 'popular' ? 'most_downloaded' : v)}
+      selectedTags={marketplaceSelectedTags}
+      onToggleTag={(tag) => {
+        if (!setMarketplaceSelectedTags) return;
+        const active = marketplaceSelectedTags.includes(tag);
+        const next = active ? marketplaceSelectedTags.filter(t => t !== tag) : [...marketplaceSelectedTags, tag];
+        setMarketplaceSelectedTags(next);
+      }}
+      availableTags={availableTags}
+      segment={marketplaceFilter === 'kortix' ? 'kortix' : marketplaceFilter === 'community' ? 'community' : marketplaceFilter === 'mine' ? 'mine' : 'all'}
+      onSegmentChange={(seg) => {
+        const map: Record<string, 'all' | 'kortix' | 'community' | 'mine'> = { all: 'all', featured: 'all', kortix: 'kortix', community: 'community', mine: 'mine' };
+        setMarketplaceFilter(map[seg]);
+      }}
+      viewMode={viewMode}
+      onViewModeChange={(m) => setViewMode(m)}
+    />
 
-      <div className="flex-1">
+    {/* View toggle moved into FiltersBar so it sits after the 'mine' segment */}
+
+    <div className="flex-1">
         {marketplaceLoading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className={viewMode === 'grid' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'flex flex-col gap-4'}>
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-gradient-to-br from-card/95 to-card/50 backdrop-blur-sm rounded-3xl overflow-hidden border border-border/40 shadow-sm">
-                <div className="p-6 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <Skeleton className="h-12 w-12 rounded-2xl" />
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                  </div>
-                  <Skeleton className="h-6 rounded w-3/4" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 rounded w-full" />
-                    <Skeleton className="h-4 rounded w-2/3" />
-                  </div>
-                  <Skeleton className="h-9 rounded-xl w-full" />
+              <div key={i} className={viewMode === 'grid' 
+                ? "bg-gradient-to-br from-card/95 to-card/50 backdrop-blur-sm rounded-3xl overflow-hidden border border-border/40 shadow-sm p-4 space-y-3"
+                : "bg-gradient-to-br from-card/95 to-card/50 backdrop-blur-sm rounded-xl overflow-hidden border border-border/40 shadow-sm p-4 space-y-3"
+              }>
+                <div className="flex items-start justify-between">
+                  <Skeleton className="h-10 w-10 rounded-xl" />
+                  <Skeleton className="h-5 w-12 rounded-full" />
                 </div>
+                <Skeleton className="h-5 rounded w-3/4" />
+                <div className="space-y-1.5">
+                  <Skeleton className="h-3 rounded w-full" />
+                  <Skeleton className="h-3 rounded w-2/3" />
+                </div>
+                <Skeleton className="h-8 rounded-lg w-full" />
               </div>
             ))}
           </div>
-        ) : allMarketplaceItems.length === 0 ? (
+        ) : filteredMarketplaceItems.length === 0 ? (
           <div className="text-center py-20">
             <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-3xl flex items-center justify-center mb-6">
               <Globe className="h-10 w-10 text-primary" />
@@ -163,14 +221,17 @@ export const MarketplaceTab = ({
                   title="Popular Agents"
                   subtitle="Sorted by popularity - most downloads first"
                 /> */}
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {allMarketplaceItems.map((item) => (
+                <div className={viewMode === 'grid' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'flex flex-col gap-4'}>
+                  {filteredMarketplaceItems.map((item) => (
                     <UnifiedAgentCard
                       key={item.id}
-                      variant="marketplace"
+                      // Use compact variant for both grid and list so styling is consistent
+                      variant={'compact'}
+                      size={viewMode === 'grid' ? 'md' : 'sm'}
                       data={{
                         id: item.id,
                         name: item.name,
+                        description: item.description,
                         tags: item.tags,
                         created_at: item.created_at,
                         creator_id: item.creator_id,
@@ -196,14 +257,17 @@ export const MarketplaceTab = ({
                 </div>
               </div>
             ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {allMarketplaceItems.map((item) => (
+              <div className={viewMode === 'grid' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'flex flex-col gap-4'}>
+                {filteredMarketplaceItems.map((item) => (
                   <UnifiedAgentCard
                     key={item.id}
-                    variant="marketplace"
+                    // Use compact variant for consistent list/grid styling
+                    variant={'compact'}
+                    size={viewMode === 'grid' ? 'md' : 'sm'}
                     data={{
                       id: item.id,
                       name: item.name,
+                      description: item.description,
                       tags: item.tags,
                       created_at: item.created_at,
                       creator_id: item.creator_id,
@@ -247,4 +311,4 @@ export const MarketplaceTab = ({
       </div>
     </div>
   );
-}; 
+};

@@ -18,7 +18,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAgents } from '@/hooks/react-query/agents/use-agents';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { MaintenanceAlert } from '../maintenance-alert';
-import { OnboardingProvider } from '@/components/onboarding/onboarding-provider';
+// Command Center removed from layout: render normal sidebar only
+import { OnboardingProvider } from '@/components/onboarding';
+import { CommandCenterProvider } from '@/contexts/CommandCenterContext';
 
 interface DashboardLayoutContentProps {
   children: React.ReactNode;
@@ -80,6 +82,21 @@ export default function DashboardLayoutContent({
 
   const mantenanceBanner: React.ReactNode | null = null;
 
+  const DashboardContent: React.FC = () => {
+    return (
+      <SidebarProvider>
+        <SidebarLeft />
+        <SidebarInset>
+          {mantenanceBanner}
+          <div className="bg-background">{children}</div>
+        </SidebarInset>
+
+        <StatusOverlay />
+        <FloatingMobileMenuButton />
+      </SidebarProvider>
+    );
+  };
+
   // Show loading state while checking auth, health, or maintenance status
   if (isLoading || isCheckingHealth || maintenanceLoading) {
     return (
@@ -107,34 +124,11 @@ export default function DashboardLayoutContent({
   return (
     <DeleteOperationProvider>
       <SubscriptionProvider>
-        <OnboardingProvider>
-          <SidebarProvider>
-            <SidebarLeft />
-            <SidebarInset>
-              {mantenanceBanner}
-              <div className="bg-background">{children}</div>
-            </SidebarInset>
-
-            {/* <PricingAlert 
-            open={showPricingAlert} 
-            onOpenChange={setShowPricingAlert}
-            closeable={false}
-            accountId={personalAccount?.account_id}
-            /> */}
-
-            {/* <MaintenanceAlert
-              open={showMaintenanceAlert}
-              onOpenChange={setShowMaintenanceAlert}
-              closeable={true}
-            /> */}
-
-            {/* Status overlay for deletion operations */}
-            <StatusOverlay />
-            
-            {/* Floating mobile menu button */}
-            <FloatingMobileMenuButton />
-          </SidebarProvider>
-        </OnboardingProvider>
+        <CommandCenterProvider>
+          <OnboardingProvider>
+            <DashboardContent />
+          </OnboardingProvider>
+        </CommandCenterProvider>
       </SubscriptionProvider>
     </DeleteOperationProvider>
   );

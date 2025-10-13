@@ -432,29 +432,126 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
     </motion.div>
   );
   
-  const renderDashboardCard = () => (
-    <div
-      className={cn(
-        'group relative bg-muted/30 rounded-3xl overflow-hidden transition-all duration-300 border cursor-pointer flex flex-col w-full border-border/50',
-        'hover:border-primary/20',
-        className
-      )}
-      onClick={() => onClick?.(data)}
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      <div className="h-full relative flex flex-col overflow-hidden w-full p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex-shrink-0">
-            <CardAvatar data={data} size={40} variant={variant} />
+  const renderCompactCard = () => {
+    const renderCompactBadge = () => {
+      if (variant === 'marketplace') {
+        return <MarketplaceBadge isKortixTeam={data.is_kortix_team} isOwner={isOwner} />;
+      }
+      return null;
+    };
+
+    const renderCompactActions = () => {
+      if (variant === 'marketplace') {
+        return (
+          <Button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrimaryAction?.(data, e);
+            }}
+            disabled={isActioning}
+            className="rounded-lg font-medium shadow-sm hover:shadow-md transition-all"
+            size="sm"
+          >
+            {isActioning ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                Installing...
+              </>
+            ) : (
+              <>
+                <Download className="h-3 w-3 mr-1" />
+                Install
+              </>
+            )}
+          </Button>
+        );
+      }
+      return null;
+    };
+
+    return (
+      <div className="relative group border rounded-lg hover:border-primary transition-colors">
+        <div className="block p-4 cursor-pointer" onClick={() => onClick?.(data)}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start gap-3 mb-2">
+              <h3 className="font-medium truncate group-hover:text-primary">{data.name}</h3>
+              {renderCompactBadge && (
+                <div className="flex items-center gap-2">
+                  {renderCompactBadge()}
+                </div>
+              )}
+            </div>
+            {/* Brief description / summary */}
+            {data.description && (
+              <p className="text-sm text-muted-foreground leading-tight mb-2 line-clamp-2">{data.description}</p>
+            )}
+            <div className="min-h-[1.25rem] mb-3">
+              <TagList tags={data.tags} maxTags={2} />
+            </div>
+              <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <User className="h-3 w-3" />
+                  {data.creator_name || 'Anonymous'}
+                </span>
+                {data.download_count !== undefined && data.download_count > 0 && (
+                  <>
+                    <span>•</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Download className="h-3 w-3" />
+                      {data.download_count}
+                    </span>
+                  </>
+                )}
+                {data.created_at && (
+                  <>
+                    <span>•</span>
+                    <span>{new Date(data.created_at).toLocaleDateString()}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {renderCompactActions && renderCompactActions()}
+            </div>
           </div>
-          <h3 className="text-base font-semibold text-foreground line-clamp-1 flex-1 min-w-0">
-            {data.name}
-          </h3>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
   
+  const renderDashboardCard = () => {
+    // Dashboard card - simplified version for quick access
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay }}
+        className="relative"
+      >
+        <Card 
+          className={cn(
+            'cursor-pointer transition-all duration-200 hover:shadow-md',
+            isSelected 
+              ? 'border-2 border-foreground bg-background' 
+              : 'border border-border hover:border-muted-foreground/30',
+            className
+          )}
+          onClick={() => onClick?.(data)}
+        >
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <CardAvatar data={data} size={32} variant={variant} />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-sm truncate">{data.name}</h3>
+                <p className="text-xs text-muted-foreground truncate">{data.description}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  };
   const renderOnboardingCard = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -520,16 +617,94 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
   );
   
   const renderStandardCard = () => {
-    // Get color based on tags
-    const cardColor = getColorFromTags(data.tags);
-    const colorClasses = getCardColorClasses(cardColor);
+  // Get color based on tags
+  const cardColor = getColorFromTags(data.tags);
+  const colorClasses = getCardColorClasses(cardColor);
+  // If an agent provides an explicit icon_background (solid color or gradient), prefer it
+  // and apply as an inline style. Otherwise fall back to the tag-based tailwind classes.
+  const bgStyle = data.icon_background ? { background: data.icon_background } as React.CSSProperties : undefined;
+  const bgClass = data.icon_background ? '' : colorClasses.bg;
+    
+    // Size-based styling
+    const sizeClasses = {
+      sm: {
+        padding: 'p-4',
+        avatarSize: 32,
+        titleSize: 'text-base',
+        spacing: 'space-y-2',
+        borderRadius: 'rounded-2xl'
+      },
+      md: {
+        padding: 'p-6',
+        avatarSize: 48,
+        titleSize: 'text-lg',
+        spacing: 'space-y-3',
+        borderRadius: 'rounded-3xl'
+      },
+      lg: {
+        padding: 'p-8',
+        avatarSize: 56,
+        titleSize: 'text-xl',
+        spacing: 'space-y-4',
+        borderRadius: 'rounded-3xl'
+      }
+    };
+    
+    const currentSize = sizeClasses[size];
     
     const cardClassName = cn(
-      'group relative bg-gradient-to-br backdrop-blur-sm rounded-3xl overflow-hidden transition-all duration-500 border cursor-pointer flex flex-col hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1',
-      colorClasses.bg,
+      'group relative backdrop-blur-sm overflow-hidden transition-all duration-500 border cursor-pointer flex flex-col hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1',
+      // include either the computed tailwind bg classes or nothing (if inline bgStyle is used)
+      bgClass,
       colorClasses.border,
+      currentSize.borderRadius,
       className
     );
+
+    // Lightweight card-level unicorn-like overlay (no UnicornStudio) for hover
+    const CardUnicornOverlay: React.FC<{ active: boolean }> = ({ active }) => {
+      const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const [flash, setFlash] = React.useState(0);
+
+      React.useEffect(() => {
+        if (!active || prefersReducedMotion) return;
+        let mounted = true;
+        const doFlash = () => {
+          const delay = 600 + Math.random() * 1000;
+          setTimeout(() => {
+            if (!mounted) return;
+            const flashes = Math.random() > 0.6 ? 2 + Math.floor(Math.random() * 2) : 1;
+            let i = 0;
+            const run = () => {
+              setFlash((f) => f + 1);
+              i += 1;
+              if (i < flashes) setTimeout(run, 60 + Math.random() * 90);
+              else doFlash();
+            };
+            run();
+          }, delay);
+        };
+        doFlash();
+        return () => { mounted = false; };
+      }, [active, prefersReducedMotion]);
+
+      if (!active) return null;
+
+      return (
+        <div aria-hidden className="absolute inset-0 pointer-events-none z-0">
+          {[0,1].map((layer) => (
+            <motion.div
+              key={`${flash}-${layer}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: flash ? [0, 0.6 - layer*0.2, 0] : 0 }}
+              transition={{ duration: 0.18 + layer*0.06, times: [0, 0.4, 1], ease: 'easeOut' }}
+              className="absolute inset-0 mix-blend-screen"
+              style={{ background: layer === 0 ? 'linear-gradient(180deg, rgba(255,255,255,0.6), transparent)' : 'rgba(96,165,250,0.06)', filter: `blur(${6 + layer*6}px)` }}
+            />
+          ))}
+        </div>
+      );
+    };
     
     const renderBadge = () => {
       switch (variant) {
@@ -661,21 +836,43 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
       return null;
     };
     
+    const [hovered, setHovered] = React.useState(false);
+
     return (
-      <div className={cardClassName} onClick={() => onClick?.(data)}>
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-primary/3 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
-        
+      <div className={cardClassName} style={bgStyle} onClick={() => onClick?.(data)} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+        <CardUnicornOverlay active={hovered} />
+        {/* Animated shimmer overlay (new design) */}
+        <motion.div aria-hidden className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 5 }}>
+          <motion.div
+            className="absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={hovered ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            <motion.div
+              className="absolute h-full w-[60%]"
+              style={{
+                left: '-60%',
+                background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%)',
+                filter: 'blur(18px)'
+              }}
+              animate={hovered ? { x: ['0%', '220%'] } : { x: '-100%' }}
+              transition={{ duration: 0.95, ease: 'easeInOut' }}
+            />
+          </motion.div>
+        </motion.div>
+
         {/* Glow effect - color-specific */}
         <div className={cn(
-          "absolute -inset-[1px] bg-gradient-to-br rounded-3xl opacity-0 group-hover:opacity-100 blur-sm transition-all duration-500 -z-10",
+          "absolute -inset-[1px] bg-gradient-to-br opacity-0 group-hover:opacity-100 blur-sm transition-all duration-500 -z-10",
+          currentSize.borderRadius,
           colorClasses.glow
         )} />
         
-        <div className="relative p-6 flex flex-col flex-1">
-          <div className="flex items-start justify-between mb-4">
+        <div className={cn("relative z-10 flex flex-col flex-1", currentSize.padding)}>
+          <div className="flex items-start justify-between mb-3">
             <div className="relative">
-              <CardAvatar data={data} variant={variant} />
+              <CardAvatar data={data} size={currentSize.avatarSize} variant={variant} />
               {/* Avatar glow on hover */}
               <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-50 transition-opacity duration-500" />
             </div>
@@ -684,16 +881,16 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
             </div>
           </div>
           
-          <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors duration-300">
+          <h3 className={cn("font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors duration-300", currentSize.titleSize)}>
             {data.name}
           </h3>
           
           <div className="flex-1 flex flex-col">
-            <div className="min-h-[1.25rem] mb-3">
-              <TagList tags={data.tags} />
+            <div className="min-h-[1rem] mb-3">
+              <TagList tags={data.tags} maxTags={size === 'sm' ? 2 : 3} />
             </div>
             
-            <div className="mt-auto space-y-3">
+            <div className={cn("mt-auto", currentSize.spacing)}>
               {renderMetadata()}
               {renderActions()}
             </div>
@@ -741,8 +938,9 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
     case 'showcase':
       return renderShowcaseCard();
     case 'dashboard':
-    case 'compact':
       return renderDashboardCard();
+    case 'compact':
+      return renderCompactCard();
     case 'onboarding':
       return renderOnboardingCard();
     default:

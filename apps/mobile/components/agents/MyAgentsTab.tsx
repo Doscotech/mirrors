@@ -171,11 +171,11 @@ export default function MyAgentsTab() {
   }));
 
   useEffect(() => {
-    fetchAvailableAgents();
+    fetchAvailableAgents(true); // Force refresh on mount
   }, []);
 
   const handleRefresh = () => {
-    fetchAvailableAgents();
+    fetchAvailableAgents(true); // Force refresh
   };
 
   const handleCreateAgent = () => {
@@ -200,7 +200,7 @@ export default function MyAgentsTab() {
     setActionMenuAgentId(null);
     try {
       await updateAgent(agent.agent_id, { is_default: !agent.is_default });
-      await fetchAvailableAgents();
+      await fetchAvailableAgents(true); // Force refresh
     } catch (error) {
       console.error('Failed to toggle default:', error);
       Alert.alert('Error', 'Failed to update default agent');
@@ -220,7 +220,7 @@ export default function MyAgentsTab() {
           onPress: async () => {
             try {
               await deleteAgent(agent.agent_id);
-              await fetchAvailableAgents();
+              await fetchAvailableAgents(true); // Force refresh
             } catch (error) {
               console.error('Failed to delete agent:', error);
               Alert.alert('Error', 'Failed to delete agent');
@@ -244,7 +244,7 @@ export default function MyAgentsTab() {
             try {
               setPublishingId(agent.agent_id);
               await publishAgent(agent.agent_id);
-              await fetchAvailableAgents();
+              await fetchAvailableAgents(true); // Force refresh
               Alert.alert('Success', 'Agent published to marketplace!');
             } catch (error) {
               console.error('Failed to publish agent:', error);
@@ -277,7 +277,7 @@ export default function MyAgentsTab() {
             try {
               setPublishingId(agent.agent_id);
               await unpublishAgent(agent.template_id!);
-              await fetchAvailableAgents();
+              await fetchAvailableAgents(true); // Force refresh
               Alert.alert('Success', 'Agent removed from marketplace');
             } catch (error) {
               console.error('Failed to unpublish agent:', error);

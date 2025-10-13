@@ -7,6 +7,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { OnboardingProvider } from '@/components/onboarding/onboarding-provider';
+import { CommandCenterProvider } from '@/contexts/CommandCenterContext';
 
 interface AgentPreviewLayoutProps {
   children: React.ReactNode;
@@ -41,12 +42,14 @@ export default function AgentPreviewLayout({
 
   return (
     <OnboardingProvider>
-      <SidebarProvider defaultOpen={true}>
-        <SidebarLeft />
-        <SidebarInset>
-          {children}
-        </SidebarInset>
-      </SidebarProvider>
+      <CommandCenterProvider>
+        <SidebarProvider defaultOpen={true}>
+          <SidebarLeft />
+          <SidebarInset>
+            {children}
+          </SidebarInset>
+        </SidebarProvider>
+      </CommandCenterProvider>
     </OnboardingProvider>
   );
 }

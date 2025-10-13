@@ -39,6 +39,7 @@ import { cn } from '@/lib/utils';
 import { usePathname, useSearchParams } from 'next/navigation';
 import posthog from 'posthog-js';
 import { useDocumentModalStore } from '@/lib/stores/use-document-modal-store';
+import { useCommandCenter } from '@/contexts/CommandCenterContext';
 
 function FloatingMobileMenuButton() {
   return null;
@@ -48,6 +49,7 @@ export function SidebarLeft({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const { state, setOpen, setOpenMobile } = useSidebar();
+  const { setCommandCenterMode } = useCommandCenter();
   const isMobile = useIsMobile();
   const [user, setUser] = useState<{
     name: string;
@@ -176,7 +178,7 @@ export function SidebarLeft({
               },
               {
                 href: '/agents?tab=explore',
-                label: 'Command Center',
+                label: 'Agents',
                 icon: Bot,
                 match: (p: string) => p.startsWith('/agents'),
               },

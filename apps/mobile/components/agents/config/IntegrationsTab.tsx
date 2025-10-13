@@ -43,6 +43,10 @@ export default function IntegrationsTab({
   const [appsModalVisible, setAppsModalVisible] = useState(false);
   const [appsLoading, setAppsLoading] = useState(false);
   const [apps, setApps] = useState<any[]>([]);
+  const [connectModalVisible, setConnectModalVisible] = useState(false);
+  const [selectedApp, setSelectedApp] = useState<any>(null);
+  const [profileName, setProfileName] = useState('');
+  const [connecting, setConnecting] = useState(false);
   const { fetchAvailableAgents } = useAgentStore();
 
   const styles = useThemedStyles((theme) => ({

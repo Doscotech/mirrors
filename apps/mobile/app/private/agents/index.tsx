@@ -13,6 +13,18 @@ export default function AgentsScreen() {
       flex: 1,
       backgroundColor: theme.background,
     },
+    header: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: theme.background,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: '700' as const,
+      color: theme.foreground,
+    },
     tabBar: {
       flexDirection: 'row' as const,
       backgroundColor: theme.card,
@@ -58,6 +70,9 @@ export default function AgentsScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Command Center</Text>
+      </View>
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'my-agents' && styles.activeTab]}

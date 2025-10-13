@@ -313,10 +313,13 @@ export const AgentsGrid: React.FC<AgentsGridProps> = ({
               
               <div className={`transition-all duration-200 ${isDeleting ? 'opacity-60 scale-95' : ''}`}>
                 <UnifiedAgentCard
-                  variant="agent"
+                  // Use compact variant to match marketplace/explore styling
+                  variant="compact"
+                  size={viewMode === 'grid' ? 'md' : 'sm'}
                   data={{
                     id: agent.agent_id,
                     name: agent.name,
+                    description: agent.description,
                     tags: agent.tags,
                     created_at: agent.created_at,
                     agent_id: agent.agent_id,

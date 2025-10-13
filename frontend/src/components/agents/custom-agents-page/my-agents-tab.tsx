@@ -5,6 +5,7 @@ import { Globe } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DiscoverHeader } from '@/components/agents/discover/DiscoverHeader';
 import { TabsNavigation } from './tabs-navigation';
+import UnicornLightning from '@/components/visuals/unicorn-lightning';
 import { SearchBar } from './search-bar';
 import { EmptyState } from '../empty-state';
 import { AgentsGrid } from '../agents-grid';
@@ -187,30 +188,33 @@ export const MyAgentsTab = ({
 
   return (
     <div className="space-y-8 flex flex-col min-h-full">
-      <DiscoverHeader
-        value={agentsSearchQuery}
-        onChange={setAgentsSearchQuery}
-        onSubmit={() => { /* pagination reset handled upstream */ }}
-        nav={<TabsNavigation activeTab={'my-agents'} onTabChange={(tab) => onTabChange?.(tab)} />}
-        right={(
-          <button
-            onClick={onCreateAgent}
-            className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 px-4 py-2.5 text-sm font-medium shadow-sm hover:shadow-md transition-all duration-300"
-            title="Create agent"
-            aria-label="Create agent"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            <span className="hidden sm:inline text-primary">New Agent</span>
-          </button>
-        )}
-        title="My Agents"
-        subtitle="Manage your personal and team agents. Create, edit, and publish templates."
-        placeholder="Search my agents"
-      />
+      {/* Unicorn lightning visual for my agents area (dark-mode only) */}
+      <div className="relative z-0">
+        <UnicornLightning projectId="Gr1LmwbKSeJOXhpYEdit" simulateHover className="pointer-events-none absolute inset-0" />
+        <DiscoverHeader
+          value={agentsSearchQuery}
+          onChange={setAgentsSearchQuery}
+          onSubmit={() => { /* pagination reset handled upstream */ }}
+          nav={<TabsNavigation activeTab={'my-agents'} onTabChange={(tab) => onTabChange?.(tab)} />}
+          right={
+            <button
+              onClick={onCreateAgent}
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 px-4 py-2.5 text-sm font-medium shadow-sm hover:shadow-md transition-all duration-300"
+              title="Create agent"
+              aria-label="Create agent"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              <span className="hidden sm:inline text-primary">New Agent</span>
+            </button>
+          }
+          title="My Agents"
+          subtitle="Manage your personal and team agents. Create, edit, and publish templates."
+          placeholder="Search my agents"
+        />
+        </div>
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="hidden" />
         <div className="flex items-center gap-3">
           <Select value={agentFilter} onValueChange={(value: AgentFilter) => setAgentFilter(value)}>
             <SelectTrigger className="w-[180px] h-11 rounded-xl border-border/50 bg-card/50 shadow-sm hover:shadow-md transition-all">
@@ -224,15 +228,18 @@ export const MyAgentsTab = ({
               ))}
             </SelectContent>
           </Select>
-          <div className="inline-flex items-center rounded-xl border border-border/50 bg-card/50 shadow-sm overflow-hidden">
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="inline-flex items-center rounded-xl border border-border/50 bg-card/50 shadow-sm overflow-hidden ml-2">
             <button
               onClick={() => setViewMode('grid')}
-              className={`px-4 py-2.5 text-sm font-medium transition-all ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+              className={`px-3 py-2 text-sm font-medium transition-all ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
               title="Grid view"
             >Grid</button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-4 py-2.5 text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
+              className={`px-3 py-2 text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/50'}`}
               title="List view"
             >List</button>
           </div>
@@ -264,22 +271,42 @@ export const MyAgentsTab = ({
                 viewMode={viewMode}
               />
             )}
-            
-            {agentsPagination && (
-              <Pagination
-                currentPage={agentsPagination.current_page}
-                totalPages={agentsPagination.total_pages}
-                totalItems={agentsPagination.total_items}
-                pageSize={agentsPageSize}
-                onPageChange={setAgentsPage}
-                onPageSizeChange={onAgentsPageSizeChange}
-                isLoading={agentsLoading}
-                showPageSizeSelector={true}
-                showJumpToPage={true}
-                showResultsInfo={true}
-              />
-            )}
           </>
+        )}
+      </div>
+
+      {/* Page footer: show pagination/results info at bottom */}
+      <div className="pt-4">
+        {agentFilter === 'templates' ? (
+          templatesPagination && (
+            <Pagination
+              currentPage={templatesPagination.current_page}
+              totalPages={templatesPagination.total_pages}
+              totalItems={templatesPagination.total_items}
+              pageSize={templatesPageSize}
+              onPageChange={setTemplatesPage}
+              onPageSizeChange={onTemplatesPageSizeChange}
+              isLoading={templatesLoading}
+              showPageSizeSelector={true}
+              showJumpToPage={true}
+              showResultsInfo={true}
+            />
+          )
+        ) : (
+          agentsPagination && (
+            <Pagination
+              currentPage={agentsPagination.current_page}
+              totalPages={agentsPagination.total_pages}
+              totalItems={agentsPagination.total_items}
+              pageSize={agentsPageSize}
+              onPageChange={setAgentsPage}
+              onPageSizeChange={onAgentsPageSizeChange}
+              isLoading={agentsLoading}
+              showPageSizeSelector={true}
+              showJumpToPage={true}
+              showResultsInfo={true}
+            />
+          )
         )}
       </div>
     </div>

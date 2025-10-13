@@ -9,7 +9,7 @@ interface AgentState {
   lastFetched: number | null;
   
   // Actions
-  fetchAvailableAgents: () => Promise<void>;
+  fetchAvailableAgents: (force?: boolean) => Promise<void>;
   setSelectedAgent: (agentId: string | null) => void;
   clearAgents: () => void;
 }
@@ -21,11 +21,11 @@ const useAgentStore = create<AgentState>((set, get) => ({
   error: null,
   lastFetched: null,
 
-  fetchAvailableAgents: async () => {
+  fetchAvailableAgents: async (force = false) => {
     const state = get();
     
-    // Cache for 5 minutes
-    if (state.lastFetched && Date.now() - state.lastFetched < 5 * 60 * 1000) {
+    // Cache for 5 minutes unless force refresh is requested
+    if (!force && state.lastFetched && Date.now() - state.lastFetched < 5 * 60 * 1000) {
       console.log('[AgentStore] Using cached agents');
       return;
     }

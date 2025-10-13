@@ -130,7 +130,7 @@ export default function MyTemplatesTab() {
   const loadTemplates = async () => {
     try {
       setIsLoading(true);
-      await fetchAvailableAgents();
+      await fetchAvailableAgents(true); // Force refresh
     } catch (error) {
       console.error('Failed to load templates:', error);
     } finally {
@@ -153,7 +153,7 @@ export default function MyTemplatesTab() {
             try {
               setUnpublishingId(agent.agent_id);
               await unpublishAgent(agent.template_id!);
-              await fetchAvailableAgents();
+              await fetchAvailableAgents(true); // Force refresh
               Alert.alert('Success', `"${agent.name}" has been unpublished from the marketplace.`);
             } catch (error) {
               console.error('Failed to unpublish agent:', error);

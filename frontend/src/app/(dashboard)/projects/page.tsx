@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getProjects } from '@/lib/api';
 import MobileSidebarToggle from '@/components/layout/MobileSidebarToggle';
 import { useDeleteThread } from '@/hooks/react-query/sidebar/use-sidebar';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Grid3X3, List } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -19,10 +19,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 
 export default function ProjectsPage() {
   // This page now represents the user's thread/message history.
   const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [threadToDelete, setThreadToDelete] = useState<{ id: string; name: string } | null>(null);
   
@@ -206,6 +208,19 @@ export default function ProjectsPage() {
     );
   }, [enriched, search]);
 
+  const getConversationIndicator = (thread: any) => {
+    const created = new Date(thread.created_at).getTime();
+    const updated = new Date(thread.updated_at || thread.created_at).getTime();
+    const durationMs = updated - created;
+    const durationMinutes = Math.floor(durationMs / (1000 * 60));
+    
+    // Simple heuristic: longer conversations likely have more messages
+    if (durationMinutes < 5) return 'Brief conversation';
+    if (durationMinutes < 30) return 'Short conversation'; 
+    if (durationMinutes < 120) return 'Extended conversation';
+    return 'Long conversation';
+  };
+
   const handleDeleteClick = (e: React.MouseEvent, threadId: string, threadName: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -248,15 +263,72 @@ export default function ProjectsPage() {
           placeholder="Search threads..."
           className="w-full max-w-sm h-9 px-3 rounded-md border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
+        <div className="flex items-center gap-1 border rounded-md p-1">
+          <Toggle
+            pressed={viewMode === 'grid'}
+            onPressedChange={() => setViewMode('grid')}
+            size="sm"
+            className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          >
+            <Grid3X3 className="h-4 w-4" />
+          </Toggle>
+          <Toggle
+            pressed={viewMode === 'list'}
+            onPressedChange={() => setViewMode('list')}
+            size="sm"
+            className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          >
+            <List className="h-4 w-4" />
+          </Toggle>
+        </div>
       </div>
       {isLoading && <div className="text-sm text-muted-foreground">Loading...</div>}
       {error && <div className="text-sm text-destructive">Failed to load threads</div>}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className={viewMode === 'grid' ? 'grid gap-4 md:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}>
         {filtered.map(t => {
           const target = `/agents/${t.thread_id}`; // existing route pattern for a single thread view
           const projectName = t.project_id ? (projectNameMap.get(t.project_id) || 'Project') : 'Personal';
           const updated = t.updated_at || t.created_at;
           const showProjectChip = projectName && projectName !== t._title;
+
+          if (viewMode === 'list') {
+            return (
+              <div key={t.thread_id} className="relative group border rounded-lg hover:border-primary transition-colors">
+                <Link href={target} className="block p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-3 mb-2">
+                        <h2 className="font-medium truncate group-hover:text-primary">{t._title}</h2>
+                        {showProjectChip && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground flex-shrink-0">{projectName}</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{getConversationIndicator(t)}</p>
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                        {t._agentName && (
+                          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-primary" />{t._agentName}</span>
+                        )}
+                        <span>Updated {new Date(updated).toLocaleString()}</span>
+                        <span>•</span>
+                        <span>ID {t.thread_id.slice(0,8)}</span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive flex-shrink-0"
+                      onClick={(e) => handleDeleteClick(e, t.thread_id, t._title)}
+                      disabled={isDeleting}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </Link>
+              </div>
+            );
+          }
+
+          // Grid view (existing layout)
           return (
             <div key={t.thread_id} className="relative group border rounded-lg hover:border-primary transition-colors">
               <Link href={target} className="block p-4">
@@ -277,7 +349,7 @@ export default function ProjectsPage() {
                     </Button>
                   </div>
                 </div>
-              <p className="text-xs text-muted-foreground line-clamp-2 min-h-[32px]">{t._description || 'No description available.'}</p>
+              <p className="text-xs text-muted-foreground line-clamp-2 min-h-[32px]">{getConversationIndicator(t)}</p>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
                 {t._agentName && (
                   <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-primary" />{t._agentName}</span>
@@ -291,7 +363,7 @@ export default function ProjectsPage() {
           );
         })}
         {!isLoading && filtered.length === 0 && (
-          <div className="col-span-full text-sm text-muted-foreground border rounded-lg p-8 text-center">
+          <div className={`${viewMode === 'grid' ? 'col-span-full' : ''} text-sm text-muted-foreground border rounded-lg p-8 text-center`}>
             No threads found.
           </div>
         )}

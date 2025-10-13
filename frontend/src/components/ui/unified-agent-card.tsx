@@ -26,6 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { KortixLogo } from '@/components/sidebar/kortix-logo';
 import { AgentAvatar } from '@/components/thread/content/agent-avatar';
+import CardUnicornOverlay from '@/components/visuals/card-unicorn-overlay';
 
 // Unified agent card variants
 export type AgentCardVariant = 
@@ -367,6 +368,7 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
   currentUserId
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  const [hovered, setHovered] = React.useState(false);
   
   const {
     onPrimaryAction,
@@ -399,8 +401,9 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
   
   // Render different variants
   const renderShowcaseCard = () => (
-    <motion.div className="flex flex-col items-start justify-end min-h-[400px] relative group cursor-pointer hover:bg-accent/30 transition-colors duration-300">
+    <motion.div className="flex flex-col items-start justify-end min-h-[400px] relative group cursor-pointer hover:bg-accent/30 transition-colors duration-300" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
       <div className="relative flex size-full items-center justify-center h-full overflow-hidden">
+        <CardUnicornOverlay active={hovered} />
         <div className="pointer-events-none absolute bottom-0 left-0 h-20 w-full bg-gradient-to-t from-background to-transparent z-20"></div>
         
         <div className="w-full h-full flex flex-col items-center justify-center gap-6 p-8 text-center">
@@ -470,7 +473,8 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
     };
 
     return (
-      <div className="relative group border rounded-lg hover:border-primary transition-colors">
+      <div className="relative group border rounded-lg hover:border-primary transition-colors" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+        <CardUnicornOverlay active={hovered} />
         <div className="block p-4 cursor-pointer" onClick={() => onClick?.(data)}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -528,7 +532,10 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay }}
         className="relative"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
       >
+        <CardUnicornOverlay active={hovered} />
         <Card 
           className={cn(
             'cursor-pointer transition-all duration-200 hover:shadow-md',
@@ -558,6 +565,8 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay }}
       className="relative"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <Card 
         className={cn(
@@ -569,6 +578,7 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
         )}
         onClick={() => onToggle?.(data.id)}
       >
+        <CardUnicornOverlay active={hovered} />
         <CardContent className="p-4 space-y-3">
           {/* Header with name and selection */}
           <div className="flex items-start justify-between gap-3">
@@ -661,50 +671,7 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
       className
     );
 
-    // Lightweight card-level unicorn-like overlay (no UnicornStudio) for hover
-    const CardUnicornOverlay: React.FC<{ active: boolean }> = ({ active }) => {
-      const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const [flash, setFlash] = React.useState(0);
-
-      React.useEffect(() => {
-        if (!active || prefersReducedMotion) return;
-        let mounted = true;
-        const doFlash = () => {
-          const delay = 600 + Math.random() * 1000;
-          setTimeout(() => {
-            if (!mounted) return;
-            const flashes = Math.random() > 0.6 ? 2 + Math.floor(Math.random() * 2) : 1;
-            let i = 0;
-            const run = () => {
-              setFlash((f) => f + 1);
-              i += 1;
-              if (i < flashes) setTimeout(run, 60 + Math.random() * 90);
-              else doFlash();
-            };
-            run();
-          }, delay);
-        };
-        doFlash();
-        return () => { mounted = false; };
-      }, [active, prefersReducedMotion]);
-
-      if (!active) return null;
-
-      return (
-        <div aria-hidden className="absolute inset-0 pointer-events-none z-0">
-          {[0,1].map((layer) => (
-            <motion.div
-              key={`${flash}-${layer}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: flash ? [0, 0.6 - layer*0.2, 0] : 0 }}
-              transition={{ duration: 0.18 + layer*0.06, times: [0, 0.4, 1], ease: 'easeOut' }}
-              className="absolute inset-0 mix-blend-screen"
-              style={{ background: layer === 0 ? 'linear-gradient(180deg, rgba(255,255,255,0.6), transparent)' : 'rgba(96,165,250,0.06)', filter: `blur(${6 + layer*6}px)` }}
-            />
-          ))}
-        </div>
-      );
-    };
+    // Use shared CardUnicornOverlay (imported at top) for the hover flash effect
     
     const renderBadge = () => {
       switch (variant) {

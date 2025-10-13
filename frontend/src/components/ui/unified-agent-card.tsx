@@ -803,8 +803,6 @@ export const UnifiedAgentCard: React.FC<UnifiedAgentCardProps> = ({
       return null;
     };
     
-    const [hovered, setHovered] = React.useState(false);
-
     return (
       <div className={cardClassName} style={bgStyle} onClick={() => onClick?.(data)} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
         <CardUnicornOverlay active={hovered} />

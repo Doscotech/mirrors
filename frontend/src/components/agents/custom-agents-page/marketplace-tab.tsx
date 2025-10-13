@@ -23,8 +23,8 @@ import type { MarketplaceTemplate } from '@/components/agents/installation/types
 interface MarketplaceTabProps {
   marketplaceSearchQuery: string;
   setMarketplaceSearchQuery: (value: string) => void;
-  marketplaceFilter: 'all' | 'kortix' | 'community' | 'mine';
-  setMarketplaceFilter: (value: 'all' | 'kortix' | 'community' | 'mine') => void;
+  marketplaceFilter: 'all' | 'xera' | 'community' | 'mine';
+  setMarketplaceFilter: (value: 'all' | 'xera' | 'community' | 'mine') => void;
   marketplaceLoading: boolean;
   allMarketplaceItems: MarketplaceTemplate[];
   mineItems: MarketplaceTemplate[];

@@ -178,6 +178,69 @@ class ModelRegistry:
             priority=96,
             enabled=True
         ))
+
+        # OpenAI GPT-4o (high-throughput, multimodal / low-latency offering)
+        self.register(Model(
+            id="openai/gpt-4o",
+            name="GPT-4o",
+            provider=ModelProvider.OPENAI,
+            aliases=["gpt-4o", "gpt-4o-alpha", "GPT-4o"],
+            context_window=1_000_000,
+            capabilities=[
+                ModelCapability.CHAT,
+                ModelCapability.FUNCTION_CALLING,
+                ModelCapability.VISION,
+                ModelCapability.STRUCTURED_OUTPUT,
+            ],
+            pricing=ModelPricing(
+                input_cost_per_million_tokens=1.50,
+                output_cost_per_million_tokens=10.00
+            ),
+            tier_availability=["paid"],
+            priority=98,
+            recommended=True,
+            enabled=True
+        ))
+
+        # OpenAI GPT-4.1 (incremental update to GPT-4 family - high quality)
+        self.register(Model(
+            id="openai/gpt-4.1",
+            name="GPT-4.1",
+            provider=ModelProvider.OPENAI,
+            aliases=["gpt-4.1", "gpt-4-1", "GPT-4.1"],
+            context_window=512_000,
+            capabilities=[
+                ModelCapability.CHAT,
+                ModelCapability.FUNCTION_CALLING,
+                ModelCapability.STRUCTURED_OUTPUT,
+            ],
+            pricing=ModelPricing(
+                input_cost_per_million_tokens=1.00,
+                output_cost_per_million_tokens=8.00
+            ),
+            tier_availability=["paid"],
+            priority=96,
+            enabled=True
+        ))
+
+        # OpenAI Nano (very small / very cheap model for light-weight tasks)
+        self.register(Model(
+            id="openai/gpt-nano",
+            name="GPT Nano",
+            provider=ModelProvider.OPENAI,
+            aliases=["gpt-nano", "nano", "GPT Nano"],
+            context_window=64_000,
+            capabilities=[
+                ModelCapability.CHAT,
+            ],
+            pricing=ModelPricing(
+                input_cost_per_million_tokens=0.05,
+                output_cost_per_million_tokens=0.20
+            ),
+            tier_availability=["free", "paid"],
+            priority=80,
+            enabled=True
+        ))
         
         self.register(Model(
             id="gemini/gemini-2.5-pro",
